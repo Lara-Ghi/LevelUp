@@ -264,7 +264,7 @@ class FocusClockCore {
         
         // Create and configure alarm with high priority
         this.currentAlarm = new Audio(alarmSound);
-        this.currentAlarm.loop = sessionType === 'standUp'; // Only loop for stand-up alarms
+        this.currentAlarm.loop = true; // Both audio types now loop
         this.currentAlarm.volume = 1.0;
         this.currentAlarm.setAttribute('autoplay', 'true');
         this.currentAlarm.setAttribute('preload', 'auto');
@@ -290,13 +290,7 @@ class FocusClockCore {
         // Try to play immediately
         ensureAlarmPlays();
 
-        // Auto-dismiss popup when non-looping audio ends
-        if (sessionType !== 'standUp') {
-            this.currentAlarm.addEventListener('ended', () => {
-                console.log('🎵 Audio finished naturally, auto-dismissing popup');
-                this.cleanupAlarmAndPopup();
-            });
-        }
+        // Both audio types now loop and require manual dismissal
 
         // Create a completely fresh popup element
         this.currentPopup = document.createElement('div');
@@ -656,15 +650,18 @@ class FocusClockUI {
                     <div class="clock-header">
                         <h2 class="clock-title">Desk Timer</h2>
                         <div class="clock-cycle-info">
-                            <span class="cycle-count">Cycle: <span id="cycleNumber">0</span></span>
+                            <span class="cycle-count" style="color: #3B82F6; font-weight: bold;">
+                                <i class="fas fa-sync-alt" style="color: #3B82F6; margin-right: 0.25rem;"></i>
+                                Cycle: <span id="cycleNumber" style="font-weight: bold; color: #000000;">0</span>
+                            </span>
                             <span class="clock-stat-inline">
-                                <i class="fas fa-chair"></i>
-                                <span class="session-type sitting-label">Sitting</span>
+                                <i class="fas fa-chair" style="color: #8B5CF6;"></i>
+                                <span class="session-type sitting-label" id="sittingLabel" style="font-weight: bold;">Sitting</span>
                                 <span class="stat-value" id="sittingTimeInfo">20m</span>
                             </span>
                             <span class="clock-stat-inline">
-                                <i class="fas fa-walking"></i>
-                                <span class="session-type standing-label">Standing</span>
+                                <i class="fas fa-walking" style="color: #10B981;"></i>
+                                <span class="session-type standing-label" id="standingLabel" style="font-weight: bold;">Standing</span>
                                 <span class="stat-value" id="standingTimeInfo">10m</span>
                             </span>
                         </div>
@@ -847,6 +844,8 @@ class FocusClockUI {
             // Stats
             sittingTimeInfo: document.getElementById('sittingTimeInfo'),
             standingTimeInfo: document.getElementById('standingTimeInfo'),
+            sittingLabel: document.getElementById('sittingLabel'),
+            standingLabel: document.getElementById('standingLabel'),
 
             // Setup modal
             setupModal: document.getElementById('setupModal'),
@@ -1101,6 +1100,19 @@ class FocusClockUI {
         } else {
             icon.className = 'fas fa-walking session-icon';
             label.textContent = 'Stand Up';
+        }
+
+        // Update header session labels based on current session
+        if (this.elements.sittingLabel && this.elements.standingLabel) {
+            if (isSitting) {
+                // Currently sitting - make sitting text purple, standing text default
+                this.elements.sittingLabel.style.color = '#8B5CF6'; // Purple
+                this.elements.standingLabel.style.color = '#374151'; // Default gray
+            } else {
+                // Currently standing - make standing text green, sitting text default
+                this.elements.sittingLabel.style.color = '#374151'; // Default gray
+                this.elements.standingLabel.style.color = '#10B981'; // Green
+            }
         }
 
         // Update side images based on session
