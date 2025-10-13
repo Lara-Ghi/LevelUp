@@ -1,11 +1,9 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# LevelUp
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A focus timer application that helps you maintain healthy work habits by alternating between sitting and standing, with a built-in points system based on Cornell University research.
+
+📖 **Points system with cycles - Thursday (Mats)**: See `POINTS_SYSTEM.md`  
+📝 **For project changes and updates**: See `CHANGELOG.md`
 
 ## About Laravel
 
@@ -61,61 +59,132 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 
-## Installation
+## 🚀 Team Setup Guide
 
-1. Clone the repository
+### Prerequisites
+Make sure you have installed:
+- **PHP 8.2+** 
+- **Composer** (PHP package manager)
+- **Node.js & NPM** 
+- **XAMPP** (if you don't have MySQL/MariaDB installed separately)
+
+### Step 1: Clone and Install
 ```bash
+# Clone the repository
 git clone https://github.com/Lara-Ghi/LevelUp.git
 cd LevelUp
-```
 
-2. Install PHP dependencies
-```bash
+# Install PHP dependencies
 composer install
-```
 
-3. Install NPM dependencies
-```bash
+# Install JavaScript dependencies  
 npm install
 ```
 
-4. For Windows Users Only: If you encounter PowerShell execution policy restrictions when running npm commands, run this command once in PowerShell as administrator:
+### Step 2: Windows PowerShell Fix (Windows Users Only)
+If you get PowerShell execution policy errors:
 ```powershell
+# Run this ONCE in PowerShell as Administrator:
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 ```
 
-5. Build assets for production
+### Step 3: Environment Setup
 ```bash
-npm run build
-```
-
-6. Create .env file and generate key
-```bash
+# Copy environment file
 cp .env.example .env
+
+# Generate app key
 php artisan key:generate
 ```
 
-7. Configure your database in .env and run migrations
-```bash
-php artisan migrate
+### Step 4: Database Setup
+
+#### Option A: Using XAMPP
+1. **Start XAMPP** - Open XAMPP Control Panel
+2. **Start Apache** - Click "Start" next to Apache
+3. **Start MySQL** - Click "Start" next to MySQL  
+4. **Keep XAMPP running** in the background while developing
+
+#### Option B: Using Local Database
+Edit `.env` file with your database credentials:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=levelup
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
 ```
 
-## Development
-
-1. Start the development server with hot reload (USE THIS ONE, OR ELSE YOU WONT BE ABLE TO SEE THE CHANGES FOR JS):
+### Step 5: Run Database Migrations
 ```bash
+# Create database tables
+php artisan migrate
+
+# Create test user for points system
+php artisan db:seed
+```
+
+### Step 6: Start Development Servers
+
+**You need TWO terminals running simultaneously:**
+
+#### Terminal 1: JavaScript Development Server
+```bash
+# Start this FIRST and keep it running
 npm run dev
 ```
-This will:
-- Start a local development server
-- Watch for file changes
-- Automatically refresh your browser when you make changes
-- No need to run `npm run build` during development
+**⚠️ IMPORTANT**: This watches for JavaScript/CSS changes and auto-refreshes. Don't close this terminal!
 
-Keep this running in a terminal while you work. Your changes will be visible instantly!
-
-2. For production deployment:
-```bash
-npm run build
+#### Terminal 2: PHP Server
+```bash  
+# Start Laravel server
+php artisan serve
 ```
-Only run this when you're ready to deploy to production. It creates optimized files in the `public/build` directory.
+
+### Step 7: Open the App
+Visit: **http://127.0.0.1:8000**
+
+## 🔧 Development Workflow
+
+### Making Changes
+1. **Keep both terminals running** (`npm run dev` + `php artisan serve`)
+2. **Edit files** - Your changes will auto-refresh in the browser
+3. **JavaScript/CSS changes** - Instant refresh (thanks to `npm run dev`)
+4. **PHP changes** - Refresh browser manually
+
+### Troubleshooting
+
+**❌ "Changes not showing"**
+- Make sure `npm run dev` is running
+- Check browser console for errors
+
+**❌ "Database errors"**  
+- Make sure XAMPP MySQL is running
+- Run `php artisan migrate` again
+
+**❌ "Points not working"**
+- Make sure test user exists: `php artisan db:seed`
+- Check browser console for API errors
+
+**❌ "Server not starting"**
+- Check if port 8000 is already in use
+- Try `php artisan serve --port=8001`
+
+## 📁 Key Files for Development
+
+- **Focus Clock**: `resources/js/home-clock/focus-clock.js`
+- **Styling**: `resources/css/home-clock/`  
+- **Backend API**: `app/Http/Controllers/HealthCycleController.php`
+- **Routes**: `routes/web.php`
+- **Database**: `database/migrations/`
+
+## 🎮 Testing the Points System
+
+1. Start a focus cycle (click the timer)
+2. Let it run through sitting → standing phases  
+3. Complete a full cycle
+4. Check browser console for point calculations
+5. Try different timing combinations to see scoring
+
+**Pro tip**: For testing, try 20 min sitting + 10 min standing for maximum points!
