@@ -190,25 +190,39 @@ class FocusClockCore {
 
     // Get popup content based on session type
     getPopupContentForSession(sessionType) {
+        // Get audio settings to show duration info
+        const settings = window.focusClockUI ? window.focusClockUI.storage.getSettings() : { alertDuration: 'loop', audioEnabled: true };
+        
+        let durationInfo = '';
+        if (settings.audioEnabled) {
+            if (settings.alertDuration === 'once') {
+                durationInfo = ' (Audio plays once)';
+            } else if (settings.alertDuration !== 'loop') {
+                durationInfo = ` (Audio plays for ${settings.alertDuration} seconds)`;
+            }
+        } else {
+            durationInfo = ' (Audio disabled)';
+        }
+
         const content = {
             standUp: {
                 icon: '🚶‍♂️',
                 title: 'Stand Up Break!',
-                message: `${this.standingTime}-min break to stretch and move around`,
-                buttonText: 'Stop Alarm',
+                message: `${this.standingTime}-min break to stretch and move around${durationInfo}`,
+                buttonText: settings.audioEnabled ? 'Stop Alarm' : 'Got It',
                 buttonColor: '#EF4444'
             },
             backToWork: {
                 icon: '💺',
                 title: 'Back to Work',
-                message: `Time for ${this.sittingTime} minutes of focused work`,
-                buttonText: 'Got It',
+                message: `Time for ${this.sittingTime} minutes of focused work${durationInfo}`,
+                buttonText: settings.audioEnabled ? 'Stop Alarm' : 'Got It',
                 buttonColor: '#3B82F6'
             },
             focused: {
                 icon: '🎯',
                 title: 'Focus Time',
-                message: `Deep work session - ${this.sittingTime} minutes of concentration`,
+                message: `Deep work session - ${this.sittingTime} minutes of concentration${durationInfo}`,
                 buttonText: 'Start Focusing',
                 buttonColor: '#059669'
             }
@@ -246,51 +260,89 @@ class FocusClockCore {
 
     // Play alarm and show popup
     playAlarmAndShowPopup(sessionType = 'standUp') {
+        // Get audio settings
+        const settings = window.focusClockUI ? window.focusClockUI.storage.getSettings() : { audioEnabled: true, alertDuration: 'loop', globalVolume: 80 };
+        
+        // If audio is disabled, do nothing at all (no popup, no sound)
+        if (!settings.audioEnabled) {
+            console.log('🔇 Audio alerts disabled - no popup or sound will be shown');
+            return;
+        }
+        
         // Clean up any existing alarm and popup first
         this.cleanupAlarmAndPopup();
         
         // Add a small delay to ensure cleanup is complete
         setTimeout(() => {
-            this.createNewAlarmPopup(sessionType);
+            this.createNewAlarmPopup(sessionType, settings);
         }, 100);
     }
 
     // Create new alarm popup (separated for better control)
-    createNewAlarmPopup(sessionType) {
-        console.log(`🔔 Creating ${sessionType} popup`);
+    createNewAlarmPopup(sessionType, settings = { audioEnabled: true, alertDuration: 'loop' }) {
+        console.log(`🔔 Creating ${sessionType} popup with settings:`, settings);
         
-        // Choose alarm sound based on session type
-        const alarmSound = this.getAlarmSoundForSession(sessionType);
-        
-        // Create and configure alarm with high priority
-        this.currentAlarm = new Audio(alarmSound);
-        this.currentAlarm.loop = true; // Both audio types now loop
-        this.currentAlarm.volume = 1.0;
-        this.currentAlarm.setAttribute('autoplay', 'true');
-        this.currentAlarm.setAttribute('preload', 'auto');
-        
-        // Function to ensure alarm plays
-        const ensureAlarmPlays = () => {
-            const playPromise = this.currentAlarm.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.warn('Playback failed, will retry:', error);
-                    // Retry on next user interaction
-                    const retryPlay = () => {
-                        if (this.currentAlarm) {
-                            this.currentAlarm.play().catch(console.warn);
+        // Only create audio if enabled
+        if (settings.audioEnabled) {
+            // Choose alarm sound based on session type
+            const alarmSound = this.getAlarmSoundForSession(sessionType);
+            
+            // Determine alarm type for volume persistence
+            const alarmType = sessionType === 'standUp' ? 'alarm1' : 'alarm2';
+            const savedVolume = window.focusClockUI ? window.focusClockUI.storage.getAlarmVolume(alarmType) : 100;
+            
+            // Create and configure alarm with saved volume
+            this.currentAlarm = new Audio(alarmSound);
+            this.currentAlarm.loop = settings.alertDuration === 'loop';
+            this.currentAlarm.volume = savedVolume / 100; // Use saved volume (0-1 range)
+            this.currentAlarm.setAttribute('autoplay', 'true');
+            this.currentAlarm.setAttribute('preload', 'auto');
+            
+            // Store the alarm type for volume saving
+            this.currentAlarmType = alarmType;
+
+            // Function to ensure alarm plays
+            const ensureAlarmPlays = () => {
+                const playPromise = this.currentAlarm.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.warn('Playback failed, will retry:', error);
+                        const retryPlay = () => {
+                            if (this.currentAlarm) {
+                                this.currentAlarm.play().catch(console.warn);
+                            }
+                            document.removeEventListener('click', retryPlay);
+                        };
+                        document.addEventListener('click', retryPlay);
+                    });
+                }
+            };
+
+            // Try to play immediately
+            ensureAlarmPlays();
+
+            // Handle timed alerts (auto-stop after specified duration)
+            if (settings.alertDuration !== 'loop') {
+                let autoDismissDelay = 0;
+                
+                if (settings.alertDuration === 'once') {
+                    // For single play, auto-dismiss when audio ends naturally
+                    this.currentAlarm.addEventListener('ended', () => {
+                        console.log('🎵 Single play audio finished, auto-dismissing popup');
+                        this.cleanupAlarmAndPopup();
+                    });
+                } else {
+                    // For timed alerts, auto-stop and dismiss after specified duration
+                    autoDismissDelay = parseInt(settings.alertDuration) * 1000;
+                    setTimeout(() => {
+                        if (this.currentAlarm && !this.currentAlarm.paused) {
+                            console.log(`⏰ Auto-stopping and dismissing after ${settings.alertDuration} seconds`);
+                            this.cleanupAlarmAndPopup();
                         }
-                        document.removeEventListener('click', retryPlay);
-                    };
-                    document.addEventListener('click', retryPlay);
-                });
+                    }, autoDismissDelay);
+                }
             }
-        };
-
-        // Try to play immediately
-        ensureAlarmPlays();
-
-        // Both audio types now loop and require manual dismissal
+        }
 
         // Create a completely fresh popup element
         this.currentPopup = document.createElement('div');
@@ -325,7 +377,7 @@ class FocusClockCore {
                                    class="popup-volume-slider"
                                    min="0" 
                                    max="100" 
-                                   value="100"
+                                   value="${this.currentAlarm ? Math.round(this.currentAlarm.volume * 100) : 100}"
                                    step="1"
                                    style="flex: 1; 
                                           height: 4px; 
@@ -338,7 +390,7 @@ class FocusClockCore {
                             <span class="popup-volume-percentage" style="font-size: 0.8rem; 
                                                                           color: #6B7280; 
                                                                           min-width: 35px; 
-                                                                          text-align: center;">100%</span>
+                                                                          text-align: center;">${this.currentAlarm ? Math.round(this.currentAlarm.volume * 100) : 100}%</span>
                         </div>
                     </div>
                 </div>
@@ -382,8 +434,18 @@ class FocusClockCore {
             console.warn('Stop button not found in popup');
         }
 
-        // Set up volume control
+        // Set up volume control with persistence
         if (volumeSlider && volumeIcon && volumePercentage && this.currentAlarm) {
+            // Initialize volume icon based on current volume
+            const currentVolume = this.currentAlarm.volume;
+            if (currentVolume === 0) {
+                volumeIcon.className = 'fas fa-volume-mute popup-volume-icon';
+            } else if (currentVolume < 0.5) {
+                volumeIcon.className = 'fas fa-volume-down popup-volume-icon';
+            } else {
+                volumeIcon.className = 'fas fa-volume-up popup-volume-icon';
+            }
+            
             volumeSlider.addEventListener('input', (e) => {
                 const volume = parseFloat(e.target.value) / 100;
                 this.currentAlarm.volume = volume;
@@ -399,6 +461,12 @@ class FocusClockCore {
                 
                 // Update percentage display
                 volumePercentage.textContent = Math.round(volume * 100) + '%';
+                
+                // Save volume for this alarm type
+                if (this.currentAlarmType && window.focusClockUI) {
+                    window.focusClockUI.storage.saveAlarmVolume(this.currentAlarmType, Math.round(volume * 100));
+                    console.log('💾 Saved volume for', this.currentAlarmType + ':', Math.round(volume * 100) + '%');
+                }
                 
                 console.log('🔊 Popup volume set to:', Math.round(volume * 100) + '%');
             });
@@ -491,7 +559,13 @@ class FocusClockStorage {
             standingTime: 10, // LINAK 20:10 pattern
             isFirstTime: true,
             totalCycles: 0,
-            lastUsed: null
+            lastUsed: null,
+            // Audio settings
+            audioEnabled: true,
+            alertDuration: 'loop', // 'loop', 'once', '10', '20', '30'
+            // Volume settings for each alarm type
+            volumeAlarm1: 100, // Volume for sitting to standing transition (alarm_1.mp3)
+            volumeAlarm2: 100  // Volume for standing to sitting transition (alarm_2.mp3)
         };
     }
 
@@ -559,6 +633,20 @@ class FocusClockStorage {
         return this.getSettings().totalCycles;
     }
 
+    // Save volume for specific alarm type
+    saveAlarmVolume(alarmType, volume) {
+        const volumeKey = alarmType === 'alarm1' ? 'volumeAlarm1' : 'volumeAlarm2';
+        const volumePercent = Math.max(0, Math.min(100, parseInt(volume) || 100));
+        return this.saveSettings({ [volumeKey]: volumePercent });
+    }
+
+    // Get volume for specific alarm type
+    getAlarmVolume(alarmType) {
+        const settings = this.getSettings();
+        const volumeKey = alarmType === 'alarm1' ? 'volumeAlarm1' : 'volumeAlarm2';
+        return settings[volumeKey] || 100;
+    }
+
     // Reset all settings (for testing or user reset)
     resetSettings() {
         try {
@@ -616,12 +704,14 @@ window.FocusClockStorage = FocusClockStorage;
 
 class FocusClockUI {
     constructor() {
+        console.log('🏗️ FocusClockUI constructor called');
         this.core = new FocusClockCore();
         this.storage = new FocusClockStorage();
         this.elements = {};
         this.isInitialized = false;
 
         this.init();
+        console.log('✅ FocusClockUI initialization completed');
     }
 
     // Initialize the Focus Clock UI
@@ -727,7 +817,7 @@ class FocusClockUI {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h3>🪑 Desk Timer Setup</h3>
-                        <p>Configure when to sit down and when to stand up for better health</p>
+                        <p>Configure your timer and audio settings for better health</p>
                     </div>
 
                     <div class="modal-body">
@@ -755,6 +845,41 @@ class FocusClockUI {
                                 <span>Great balance for your health!</span>
                             </div>
                         </div>
+
+                        <!-- Audio Settings Section -->
+                        <div class="audio-settings-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
+                            <h4 style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem;">
+                                <i class="fas fa-volume-up" style="color: #3B82F6; margin-right: 0.5rem;"></i>
+                                Audio Settings
+                            </h4>
+                            
+                            <div class="audio-setting-group" style="margin-bottom: 1rem;">
+                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="enableAudioAlerts" checked style="margin-right: 0.5rem;">
+                                    <span style="font-weight: 600;">Enable Audio Alerts</span>
+                                </label>
+                                <p style="margin: 0.25rem 0 0 1.5rem; font-size: 0.85rem; color: #6B7280;">
+                                    Play sounds when it's time to sit or stand
+                                </p>
+                            </div>
+
+                            <div id="audioControls" class="audio-controls">
+                                <div class="audio-setting-group" style="margin-bottom: 1rem;">
+                                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
+                                        Alert Duration
+                                    </label>
+                                    <select id="alertDuration" style="width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white;">
+                                        <option value="loop">Loop until manually stopped (recommended)</option>
+                                        <option value="once">Play once then stop</option>
+                                        <option value="10">Play for 10 seconds</option>
+                                        <option value="20">Play for 20 seconds</option>
+                                        <option value="30">Play for 30 seconds</option>
+                                    </select>
+                                </div>
+
+
+                            </div>
+                        </div>
                     </div>
 
                     <div class="modal-footer">
@@ -770,7 +895,7 @@ class FocusClockUI {
             <div class="clock-modal" id="settingsModal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>⚙️ Timer Settings</h3>
+                        <h3>⚙️ Timer & Audio Settings</h3>
                         <button class="close-modal" id="closeSettingsBtn">
                             <i class="fas fa-times"></i>
                         </button>
@@ -799,7 +924,42 @@ class FocusClockUI {
                             <!-- Health info will be populated here -->
                         </div>
 
-                        <div class="danger-zone">
+                        <!-- Audio Settings Section -->
+                        <div class="audio-settings-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
+                            <h4 style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem;">
+                                <i class="fas fa-volume-up" style="color: #3B82F6; margin-right: 0.5rem;"></i>
+                                Audio Settings
+                            </h4>
+                            
+                            <div class="audio-setting-group" style="margin-bottom: 1rem;">
+                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="editEnableAudioAlerts" checked style="margin-right: 0.5rem;">
+                                    <span style="font-weight: 600;">Enable Audio Alerts</span>
+                                </label>
+                                <p style="margin: 0.25rem 0 0 1.5rem; font-size: 0.85rem; color: #6B7280;">
+                                    Play sounds when it's time to sit or stand
+                                </p>
+                            </div>
+
+                            <div id="editAudioControls" class="audio-controls">
+                                <div class="audio-setting-group" style="margin-bottom: 1rem;">
+                                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
+                                        Alert Duration
+                                    </label>
+                                    <select id="editAlertDuration" style="width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white;">
+                                        <option value="loop">Loop until manually stopped (recommended)</option>
+                                        <option value="once">Play once then stop</option>
+                                        <option value="10">Play for 10 seconds</option>
+                                        <option value="20">Play for 20 seconds</option>
+                                        <option value="30">Play for 30 seconds</option>
+                                    </select>
+                                </div>
+
+
+                            </div>
+                        </div>
+
+                        <div class="danger-zone" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
                             <h4><i class="fas fa-exclamation-triangle"></i> Reset Zone</h4>
                             <button class="btn-danger" id="resetSettingsBtn">
                                 <i class="fas fa-trash"></i>
@@ -828,6 +988,7 @@ class FocusClockUI {
 
     // Bind DOM elements
     bindElements() {
+        console.log('🔗 Binding DOM elements...');
         this.elements = {
             // Main elements
             timeDisplay: document.getElementById('timeDisplay'),
@@ -853,6 +1014,8 @@ class FocusClockUI {
             standingTimeInput: document.getElementById('standingTimeInput'),
             healthInfo: document.getElementById('healthInfo'),
             saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+            enableAudioAlerts: document.getElementById('enableAudioAlerts'),
+            alertDuration: document.getElementById('alertDuration'),
 
             // Settings modal
             settingsModal: document.getElementById('settingsModal'),
@@ -863,9 +1026,20 @@ class FocusClockUI {
             updateSettingsBtn: document.getElementById('updateSettingsBtn'),
             cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
             resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+            editEnableAudioAlerts: document.getElementById('editEnableAudioAlerts'),
+            editAlertDuration: document.getElementById('editAlertDuration'),
 
 
         };
+        
+        console.log('✅ DOM elements bound:', {
+            settingsBtn: !!this.elements.settingsBtn,
+            settingsModal: !!this.elements.settingsModal,
+            editSittingTimeInput: !!this.elements.editSittingTimeInput,
+            editStandingTimeInput: !!this.elements.editStandingTimeInput,
+            editEnableAudioAlerts: !!this.elements.editEnableAudioAlerts,
+            editAlertDuration: !!this.elements.editAlertDuration
+        });
     }
 
     // Setup event listeners
@@ -874,19 +1048,43 @@ class FocusClockUI {
         this.elements.startBtn.addEventListener('click', () => this.startTimer());
         this.elements.pauseBtn.addEventListener('click', () => this.pauseTimer());
         this.elements.stopBtn.addEventListener('click', () => this.stopTimer());
-        this.elements.settingsBtn.addEventListener('click', () => {
-            console.log('⚙️ Settings button clicked!');
-            try {
-                this.showSettingsModal();
-            } catch (error) {
-                console.error('Error opening settings modal:', error);
-            }
-        });
+        if (this.elements.settingsBtn) {
+            this.elements.settingsBtn.addEventListener('click', () => {
+                console.log('⚙️ Settings button clicked!');
+                
+                // Debug: Check what elements are available
+                console.log('📊 Available elements check:');
+                console.log('- settingsModal:', !!this.elements.settingsModal);
+                console.log('- editSittingTimeInput:', !!this.elements.editSittingTimeInput);
+                console.log('- editStandingTimeInput:', !!this.elements.editStandingTimeInput);
+                console.log('- editEnableAudioAlerts:', !!this.elements.editEnableAudioAlerts);
+                console.log('- editAlertDuration:', !!this.elements.editAlertDuration);
+                
+                // Debug: Check DOM directly
+                const modalInDom = document.getElementById('settingsModal');
+                console.log('- settingsModal in DOM:', !!modalInDom);
+                if (modalInDom) {
+                    console.log('- settingsModal classes:', modalInDom.className);
+                    console.log('- settingsModal current style:', modalInDom.style.cssText);
+                }
+                
+                try {
+                    this.showSettingsModal();
+                } catch (error) {
+                    console.error('❌ Error opening settings modal:', error);
+                    console.error(error.stack);
+                }
+            });
+            console.log('✅ Settings button event listener attached');
+        } else {
+            console.error('❌ Settings button element not found during event listener setup');
+        }
 
         // Setup modal
         this.elements.saveSettingsBtn.addEventListener('click', () => this.saveInitialSettings());
         this.elements.sittingTimeInput.addEventListener('input', () => this.validateSetupInputs());
         this.elements.standingTimeInput.addEventListener('input', () => this.validateSetupInputs());
+        this.elements.enableAudioAlerts.addEventListener('change', () => this.toggleAudioControls());
 
         // Settings modal
         this.elements.closeSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
@@ -895,6 +1093,7 @@ class FocusClockUI {
         this.elements.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
         this.elements.editSittingTimeInput.addEventListener('input', () => this.validateEditInputs());
         this.elements.editStandingTimeInput.addEventListener('input', () => this.validateEditInputs());
+        this.elements.editEnableAudioAlerts.addEventListener('change', () => this.toggleEditAudioControls());
 
 
 
@@ -954,31 +1153,217 @@ class FocusClockUI {
     showSettingsModal() {
         console.log('📝 Opening settings modal...');
         try {
+            // Check if elements exist
+            console.log('Checking elements:', {
+                editSittingTimeInput: !!this.elements.editSittingTimeInput,
+                editStandingTimeInput: !!this.elements.editStandingTimeInput,
+                settingsModal: !!this.elements.settingsModal,
+                editEnableAudioAlerts: !!this.elements.editEnableAudioAlerts,
+                editAlertDuration: !!this.elements.editAlertDuration
+            });
+            
             const settings = this.storage.getSettings();
             console.log('Settings loaded:', settings);
             
-            if (!this.elements.editSittingTimeInput || !this.elements.editStandingTimeInput || !this.elements.settingsModal) {
-                console.error('Settings modal elements not found:', {
-                    editSittingTimeInput: !!this.elements.editSittingTimeInput,
-                    editStandingTimeInput: !!this.elements.editStandingTimeInput,
-                    settingsModal: !!this.elements.settingsModal
-                });
-                return;
+            // Always refresh the DOM references to ensure they're current
+            console.log('🔄 Refreshing DOM element references...');
+            this.elements.settingsModal = document.getElementById('settingsModal');
+            this.elements.editSittingTimeInput = document.getElementById('editSittingTimeInput');
+            this.elements.editStandingTimeInput = document.getElementById('editStandingTimeInput');
+            this.elements.editEnableAudioAlerts = document.getElementById('editEnableAudioAlerts');
+            this.elements.editAlertDuration = document.getElementById('editAlertDuration');
+            this.elements.closeSettingsBtn = document.getElementById('closeSettingsBtn');
+            this.elements.updateSettingsBtn = document.getElementById('updateSettingsBtn');
+            this.elements.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+            this.elements.resetSettingsBtn = document.getElementById('resetSettingsBtn');
+            
+            if (!this.elements.settingsModal) {
+                console.error('❌ Settings modal not found in DOM - creating it dynamically');
+                this.createSettingsModal();
+                
+                // Refresh all element references after creating the modal
+                this.elements.settingsModal = document.getElementById('settingsModal');
+                this.elements.editSittingTimeInput = document.getElementById('editSittingTimeInput');
+                this.elements.editStandingTimeInput = document.getElementById('editStandingTimeInput');
+                this.elements.editEnableAudioAlerts = document.getElementById('editEnableAudioAlerts');
+                this.elements.editAlertDuration = document.getElementById('editAlertDuration');
+                this.elements.closeSettingsBtn = document.getElementById('closeSettingsBtn');
+                this.elements.updateSettingsBtn = document.getElementById('updateSettingsBtn');
+                this.elements.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+                this.elements.resetSettingsBtn = document.getElementById('resetSettingsBtn');
+                
+                if (!this.elements.settingsModal) {
+                    console.error('❌ Failed to create settings modal');
+                    alert('Failed to create settings modal. Please refresh the page and try again.');
+                    return;
+                }
+                
+                console.log('✅ Settings modal created and elements refreshed');
             }
             
+            console.log('✅ Fresh DOM elements obtained:', {
+                settingsModal: !!this.elements.settingsModal,
+                editSittingTimeInput: !!this.elements.editSittingTimeInput,
+                editStandingTimeInput: !!this.elements.editStandingTimeInput,
+                editEnableAudioAlerts: !!this.elements.editEnableAudioAlerts,
+                editAlertDuration: !!this.elements.editAlertDuration
+            });
+            
+            // Load timer settings
             this.elements.editSittingTimeInput.value = settings.sittingTime;
             this.elements.editStandingTimeInput.value = settings.standingTime;
-            this.elements.settingsModal.style.display = 'flex';
-            console.log('✅ Settings modal should now be visible');
+            
+            // Load audio settings
+            this.elements.editEnableAudioAlerts.checked = settings.audioEnabled;
+            this.elements.editAlertDuration.value = settings.alertDuration;
+            
+            // Force show the modal with important styles
+            this.elements.settingsModal.style.cssText = 'display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 10000 !important; background: rgba(0,0,0,0.7) !important; justify-content: center !important; align-items: center !important;';
+            
+            // Also force show the modal content
+            const modalContent = this.elements.settingsModal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; position: relative !important; z-index: 10001 !important; background: white !important; padding: 2rem !important; border-radius: 8px !important; max-width: 500px !important; width: 90% !important;';
+                console.log('✅ Modal content also forced to show');
+            }
+            
+            console.log('✅ Settings modal forced to show with inline styles');
+            
+            // Double-check if modal is actually visible
+            setTimeout(() => {
+                const computedStyle = window.getComputedStyle(this.elements.settingsModal);
+                console.log('Settings modal computed display:', computedStyle.display);
+                console.log('Settings modal visibility:', computedStyle.visibility);
+                console.log('Settings modal z-index:', computedStyle.zIndex);
+            }, 100);
+            
             this.validateEditInputs();
+            this.toggleEditAudioControls();
+            
+            // Re-attach event listeners to fresh elements
+            this.attachSettingsModalListeners();
         } catch (error) {
             console.error('Error in showSettingsModal:', error);
         }
     }
 
+    // Create settings modal dynamically if it doesn't exist
+    createSettingsModal() {
+        console.log('🏗️ Creating settings modal dynamically...');
+        
+        const modalHtml = `
+            <div class="clock-modal" id="settingsModal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>⚙️ Timer & Audio Settings</h3>
+                        <button class="close-modal" id="closeSettingsBtn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Timer Settings -->
+                        <div class="setting-group">
+                            <h4>⏱️ Timer Settings</h4>
+                            <div class="input-group">
+                                <label for="editSittingTimeInput">Sitting Time (minutes)</label>
+                                <input type="number" id="editSittingTimeInput" min="1" max="120" value="20">
+                            </div>
+                            <div class="input-group">
+                                <label for="editStandingTimeInput">Standing Time (minutes)</label>
+                                <input type="number" id="editStandingTimeInput" min="1" max="60" value="10">
+                            </div>
+                        </div>
+
+                        <!-- Audio Settings -->
+                        <div class="setting-group">
+                            <h4>🔊 Audio Settings</h4>
+                            <div class="checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="editEnableAudioAlerts" checked>
+                                    <span style="font-weight: 600;">Enable Audio Alerts</span>
+                                </label>
+                                <p style="margin: 0.25rem 0 0 1.5rem; font-size: 0.85rem; color: #6B7280;">
+                                    Play sounds when it's time to sit or stand
+                                </p>
+                            </div>
+
+                            <div id="editAudioControls" class="audio-controls">
+                                <div class="audio-setting-group" style="margin-bottom: 1rem;">
+                                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
+                                        Alert Duration
+                                    </label>
+                                    <select id="editAlertDuration" style="width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white;">
+                                        <option value="loop">Loop until manually stopped (recommended)</option>
+                                        <option value="once">Play once then stop</option>
+                                        <option value="10">Play for 10 seconds</option>
+                                        <option value="20">Play for 20 seconds</option>
+                                        <option value="30">Play for 30 seconds</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn-modal btn-cancel" id="cancelSettingsBtn">Cancel</button>
+                        <button class="btn-modal btn-save" id="updateSettingsBtn">
+                            <i class="fas fa-save"></i>
+                            Update Settings
+                        </button>
+                        <button class="btn-danger" id="resetSettingsBtn">
+                            <i class="fas fa-undo"></i>
+                            Reset to Defaults
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add the modal to the document body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        console.log('✅ Settings modal created and added to DOM');
+    }
+
+    // Attach event listeners specifically for settings modal
+    attachSettingsModalListeners() {
+        if (this.elements.closeSettingsBtn) {
+            // Remove existing listeners to prevent duplicates
+            this.elements.closeSettingsBtn.removeEventListener('click', this.hideSettingsModal.bind(this));
+            this.elements.closeSettingsBtn.addEventListener('click', this.hideSettingsModal.bind(this));
+        }
+        
+        if (this.elements.cancelSettingsBtn) {
+            this.elements.cancelSettingsBtn.removeEventListener('click', this.hideSettingsModal.bind(this));
+            this.elements.cancelSettingsBtn.addEventListener('click', this.hideSettingsModal.bind(this));
+        }
+        
+        if (this.elements.updateSettingsBtn) {
+            this.elements.updateSettingsBtn.removeEventListener('click', this.updateSettings.bind(this));
+            this.elements.updateSettingsBtn.addEventListener('click', this.updateSettings.bind(this));
+        }
+        
+        if (this.elements.resetSettingsBtn) {
+            this.elements.resetSettingsBtn.removeEventListener('click', this.resetSettings.bind(this));
+            this.elements.resetSettingsBtn.addEventListener('click', this.resetSettings.bind(this));
+        }
+        
+        if (this.elements.editEnableAudioAlerts) {
+            this.elements.editEnableAudioAlerts.removeEventListener('change', this.toggleEditAudioControls.bind(this));
+            this.elements.editEnableAudioAlerts.addEventListener('change', this.toggleEditAudioControls.bind(this));
+        }
+        
+        console.log('✅ Settings modal event listeners attached');
+    }
+
     // Hide settings modal
     hideSettingsModal() {
-        this.elements.settingsModal.style.display = 'none';
+        if (this.elements.settingsModal) {
+            this.elements.settingsModal.style.display = 'none';
+            console.log('✅ Settings modal hidden');
+        } else {
+            console.warn('⚠️ Cannot hide settings modal - element not found');
+        }
     }
 
     // Validate setup inputs (no strict minimums)
@@ -1017,8 +1402,18 @@ class FocusClockUI {
     saveInitialSettings() {
         const sittingTime = Math.max(1, parseInt(this.elements.sittingTimeInput.value) || 20);
         const standingTime = Math.max(1, parseInt(this.elements.standingTimeInput.value) || 10);
+        const audioEnabled = this.elements.enableAudioAlerts.checked;
+        const alertDuration = this.elements.alertDuration.value;
 
+        // Save timer settings
         this.storage.updateTimes(sittingTime, standingTime);
+        
+        // Save audio settings
+        this.storage.saveSettings({
+            audioEnabled: audioEnabled,
+            alertDuration: alertDuration
+        });
+        
         this.storage.markAsConfigured();
         this.core.initialize(sittingTime, standingTime);
 
@@ -1031,8 +1426,18 @@ class FocusClockUI {
     updateSettings() {
         const sittingTime = Math.max(1, parseInt(this.elements.editSittingTimeInput.value) || 20);
         const standingTime = Math.max(1, parseInt(this.elements.editStandingTimeInput.value) || 10);
+        const audioEnabled = this.elements.editEnableAudioAlerts.checked;
+        const alertDuration = this.elements.editAlertDuration.value;
 
+        // Save timer settings
         this.storage.updateTimes(sittingTime, standingTime);
+        
+        // Save audio settings
+        this.storage.saveSettings({
+            audioEnabled: audioEnabled,
+            alertDuration: alertDuration
+        });
+        
         this.core.updateTimes(sittingTime, standingTime);
 
         this.hideSettingsModal();
@@ -1286,6 +1691,26 @@ class FocusClockUI {
         this.elements.standingTimeInfo.textContent = `${settings.standingTime}m`;
         this.elements.cycleNumber.textContent = this.core.cycleCount;
     }
+
+    // Toggle audio controls visibility in setup modal
+    toggleAudioControls() {
+        const audioControls = document.getElementById('audioControls');
+        const isEnabled = this.elements.enableAudioAlerts.checked;
+        audioControls.style.opacity = isEnabled ? '1' : '0.5';
+        audioControls.style.pointerEvents = isEnabled ? 'auto' : 'none';
+    }
+
+    // Toggle audio controls visibility in edit modal
+    toggleEditAudioControls() {
+        const audioControls = document.getElementById('editAudioControls');
+        if (audioControls && this.elements.editEnableAudioAlerts) {
+            const isEnabled = this.elements.editEnableAudioAlerts.checked;
+            audioControls.style.opacity = isEnabled ? '1' : '0.5';
+            audioControls.style.pointerEvents = isEnabled ? 'auto' : 'none';
+        }
+    }
+
+
 
 
 
