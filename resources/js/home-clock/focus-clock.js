@@ -35,14 +35,29 @@ class FocusClockCore {
         this.callbacks = { ...this.callbacks, ...callbacks };
     }
 
-    // Start the timer
+    // Start or resume the timer
     start() {
         if (this.isRunning) return;
 
-        this.isRunning = true;
-        this.sessionStartTime = Date.now();
-        this.sessionDuration = this.isSittingSession ? this.sittingTime * 60 : this.standingTime * 60;
+        // Clear any existing interval first
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
 
+        // If resuming from pause, use existing currentTime
+        // If starting fresh, set up new session duration
+        if (!this.sessionStartTime || this.currentTime >= this.sessionDuration) {
+            this.sessionDuration = this.isSittingSession ? this.sittingTime * 60 : this.standingTime * 60;
+            this.currentTime = this.sessionDuration;
+        }
+        
+        // Update the start time and status immediately
+        this.sessionStartTime = Date.now() - ((this.sessionDuration - this.currentTime) * 1000);
+        this.isRunning = true;
+        
+        // Start the interval and update display immediately
+        this.callbacks.onTick(this.currentTime, this.isSittingSession);
         this.intervalId = setInterval(() => {
             this.tick();
         }, 100); // More frequent updates for better accuracy
@@ -67,7 +82,7 @@ class FocusClockCore {
         this.pause();
         this.currentTime = this.isSittingSession ? this.sittingTime * 60 : this.standingTime * 60;
         this.sessionDuration = this.currentTime;
-        this.sessionStartTime = null;
+        this.sessionStartTime = null; // This is key for distinguishing between fresh start and resume
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
     }
 
@@ -76,23 +91,33 @@ class FocusClockCore {
         if (!this.isRunning || !this.sessionStartTime) return;
 
         // Calculate elapsed time since session started
-        const elapsedSeconds = Math.floor((Date.now() - this.sessionStartTime) / 1000);
-        this.currentTime = Math.max(0, this.sessionDuration - elapsedSeconds);
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - this.sessionStartTime) / 1000);
+        const newTime = Math.max(0, this.sessionDuration - elapsedSeconds);
+        
+        // Only update if time has actually changed
+        if (newTime !== this.currentTime) {
+            this.currentTime = newTime;
+            // Update display
+            this.callbacks.onTick(this.currentTime, this.isSittingSession);
 
-        if (this.currentTime <= 0) {
-            // Ensure we don't get stuck in a loop
-            this.currentTime = 0;
-            this.completeSession();
-            return;
+            // Check if we need to switch sessions
+            if (this.currentTime <= 0) {
+                // Prevent multiple switches
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                this.currentTime = 0;
+                this.completeSession();
+                return;
+            }
         }
-
-        this.callbacks.onTick(this.currentTime, this.isSittingSession);
     }
 
     // Complete current session and switch
     completeSession() {
         console.log(`🔄 Completing session - Current state: ${this.isSittingSession ? 'Sitting' : 'Standing'}`);
-        console.log(`Current time left: ${this.currentTime}s, Session duration: ${this.sessionDuration}s`);
         
         // Validate timer settings before proceeding
         if (this.sittingTime <= 0 || this.standingTime <= 0) {
@@ -102,41 +127,40 @@ class FocusClockCore {
             });
             return;
         }
+
+        // Stop the current timer
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+        this.isRunning = false;
         
-        const previousSession = this.isSittingSession;
-        
-        if (this.isSittingSession) {
+        const wasSitting = this.isSittingSession;
+        this.isSittingSession = !wasSitting;  // Switch session type
+
+        if (wasSitting) {
             // Sitting session completed, switch to standing
             console.log('✅ Switching from sitting to standing');
-            this.isSittingSession = false;
-            this.currentTime = this.standingTime * 60;
-            this.sessionDuration = this.standingTime * 60;
+            // Increment cycle count when sitting session completes
             this.cycleCount++;
-            
-            console.log(`🔢 Cycle count updated to: ${this.cycleCount}`);
             this.callbacks.onCycleComplete(this.cycleCount);
         } else {
             // Standing session completed, switch to sitting
             console.log('✅ Switching from standing to sitting');
-            this.isSittingSession = true;
-            this.currentTime = this.sittingTime * 60;
-            this.sessionDuration = this.sittingTime * 60;
         }
 
-        console.log(`🔄 Session switched: ${previousSession ? 'Sitting' : 'Standing'} → ${this.isSittingSession ? 'Sitting' : 'Standing'}`);
-        console.log(`⏰ New session - Duration: ${this.sessionDuration}s, Current time: ${this.currentTime}s`);
-        
-        // Call session change callback with the NEW session state
+        // Update display and trigger callbacks before starting new session
         this.callbacks.onSessionChange(this.isSittingSession);
-
-        // Update display immediately with new session values
+        
+        // Clear any existing interval and reset session state
+        this.sessionDuration = this.isSittingSession ? this.sittingTime * 60 : this.standingTime * 60;
+        this.currentTime = this.sessionDuration;
+        this.sessionStartTime = Date.now();
+        this.isRunning = true;
+        
+        // Start new interval
+        this.intervalId = setInterval(() => this.tick(), 100);
+        
+        // Update display immediately with new session
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
-
-        // Continue running if it was running - reset session start time for new session
-        if (this.isRunning) {
-            this.sessionStartTime = Date.now();
-            console.log('⏳ Timer continues running with new session start time');
-        }
     }
 
     // Get current session info
@@ -355,12 +379,6 @@ class FocusClockUI {
         this.elements = {};
         this.isInitialized = false;
 
-        // Alarm system properties
-        this.alarmAudio = null;
-        this.isAlarmPlaying = false;
-        this.alarmTimeout = null;
-        this.snoozeTime = 5 * 60; // 5 minutes snooze
-
         this.init();
     }
 
@@ -379,47 +397,6 @@ class FocusClockUI {
         }
 
         this.isInitialized = true;
-
-        // Initialize alarm system
-        this.initAlarmSystem();
-        
-        // Add test methods to window for debugging
-        window.testAlarm = () => {
-            console.log('🧪 Testing alarm system manually...');
-            this.handleSessionChange(false); // Trigger standing session
-        };
-        
-        window.quickTest = () => {
-            console.log('🚀 Setting up 10-second sitting, 5-second standing test...');
-            this.core.pause();
-            this.core.sittingTime = 10/60; // 10 seconds
-            this.core.standingTime = 5/60; // 5 seconds
-            this.core.currentTime = 10;
-            this.core.sessionDuration = 10;
-            this.core.isSittingSession = true;
-            this.updateDisplay(10, true);
-            console.log('✅ Ready! Click Start to test with 10-second sitting, 5-second standing timer');
-        };
-    }
-
-    // Initialize alarm system
-    initAlarmSystem() {
-        // Create audio element for alarm
-        this.alarmAudio = new Audio('/alarm_files/alarm_1.mp3');
-        this.alarmAudio.loop = true; // Keep looping until stopped
-        this.alarmAudio.volume = 0.7; // Set reasonable volume
-        this.alarmAudio.preload = 'auto'; // Preload the audio file
-
-        // Handle audio loading errors
-        this.alarmAudio.addEventListener('error', (e) => {
-            console.warn('Alarm audio failed to load:', e);
-            this.showAlarmError();
-        });
-
-        // Handle successful loading
-        this.alarmAudio.addEventListener('canplaythrough', () => {
-            console.log('Alarm audio loaded successfully');
-        });
     }
 
     // Create HTML structure
@@ -492,11 +469,6 @@ class FocusClockUI {
                             <button class="btn-clock btn-settings" id="settingsBtn">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
-                            </button>
-                            <!-- Single Stop Alarm Button - Hidden by default -->
-                            <button class="btn-clock btn-stop-alarm" id="stopAlarmBtn" style="display: none;">
-                                <i class="fas fa-bell-slash"></i>
-                                <span>Stop Alarm</span>
                             </button>
                         </div>
                     </div>
@@ -641,17 +613,8 @@ class FocusClockUI {
             closeSettingsBtn: document.getElementById('closeSettingsBtn'),
             updateSettingsBtn: document.getElementById('updateSettingsBtn'),
             cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
-            resetSettingsBtn: document.getElementById('resetSettingsBtn'),
-
-            // Alarm controls
-            stopAlarmBtn: document.getElementById('stopAlarmBtn')
+            resetSettingsBtn: document.getElementById('resetSettingsBtn')
         };
-        
-        // Debug: Check if alarm button was found
-        console.log('🔍 Stop alarm button found:', this.elements.stopAlarmBtn);
-        if (!this.elements.stopAlarmBtn) {
-            console.error('❌ Stop alarm button not found in DOM!');
-        }
     }
 
     // Setup event listeners
@@ -674,14 +637,6 @@ class FocusClockUI {
         this.elements.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
         this.elements.editSittingTimeInput.addEventListener('input', () => this.validateEditInputs());
         this.elements.editStandingTimeInput.addEventListener('input', () => this.validateEditInputs());
-
-        // Alarm control events
-        if (this.elements.stopAlarmBtn) {
-            this.elements.stopAlarmBtn.addEventListener('click', () => this.stopAlarm());
-            console.log('✅ Stop alarm button event listener attached');
-        } else {
-            console.error('❌ Cannot attach event listener - stop alarm button not found');
-        }
 
         // Modal backdrop clicks
         this.elements.setupModal.addEventListener('click', (e) => {
@@ -828,15 +783,7 @@ class FocusClockUI {
         console.log('Starting state:', state);
         this.core.start();
         
-        // Unlock audio autoplay for future alarm plays
-        if (this.alarmAudio) {
-            this.alarmAudio.play().then(() => {
-                this.alarmAudio.pause();
-                this.alarmAudio.currentTime = 0;
-            }).catch(() => {
-                // Ignore if autoplay is blocked
-            });
-        }
+
         
         this.updateButtonStates(true);
     }
@@ -853,9 +800,10 @@ class FocusClockUI {
 
     // Update button states
     updateButtonStates(isRunning) {
+        const hasPausedTime = !isRunning && this.core.currentTime < this.core.sessionDuration;
         this.elements.startBtn.disabled = isRunning;
         this.elements.pauseBtn.disabled = !isRunning;
-        this.elements.stopBtn.disabled = !isRunning;
+        this.elements.stopBtn.disabled = !isRunning && !hasPausedTime; // Enable reset when paused
     }
 
     // Update main display
@@ -920,23 +868,11 @@ class FocusClockUI {
         this.elements.progressRing.style.strokeDashoffset = offset;
     }
 
-    // Handle session change
+        // Handle session change
     handleSessionChange(isSitting) {
         console.log(`🎯 handleSessionChange called with: ${isSitting ? 'Sitting' : 'Standing'}`);
-
-        // Play alarm when switching to standing session
-        if (!isSitting) {
-            console.log('🔔 Time to stand up! Playing alarm and showing notification');
-            this.showStandUpNotification();
-            this.playAlarm();
-        } else {
-            console.log('💺 Back to sitting - stopping alarm');
-            // Stop alarm when switching back to sitting (if still playing)
-            this.stopAlarm();
-        }
-    }
-
-    // Handle cycle completion
+        // Removed notifications
+    }    // Handle cycle completion
     async handleCycleComplete(cycleCount) {
         console.log('🔄 Cycle completed:', cycleCount);
         this.storage.incrementCycles();
@@ -999,64 +935,17 @@ class FocusClockUI {
         }
     }
 
-    // Show points feedback notification
+        // Show points feedback notification - Removed
     showPointsFeedback(data) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'points-notification';
-        notification.style.cssText = `
-            position: fixed;
-            top: 100px;
-            right: 20px;
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 10000;
-            min-width: 300px;
-            animation: slideIn 0.3s ease;
-        `;
+        // Update points display silently
+        if (data.points_earned > 0) {
+            this.updatePointsDisplay(data.total_points, data.daily_points);
+        }
+    }
 
-        const colorMap = {
-            'green': '#10B981',
-            'yellow': '#F59E0B',
-            'orange': '#F97316',
-            'red': '#EF4444',
-            'blue': '#4A90E2'
-        };
-
-        const bgColor = colorMap[data.color] || '#4A90E2';
-
-        notification.innerHTML = `
-            <div style="display: flex; align-items: start; gap: 1rem;">
-                <div style="width: 4px; height: 100%; background: ${bgColor}; border-radius: 2px;"></div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">
-                        ${data.points_earned > 0 ? `+${data.points_earned} Points! 🎉` : 'Cycle Complete'}
-                    </div>
-                    <div style="color: #666; margin-bottom: 0.5rem;">
-                        Health Score: ${data.health_score}/100
-                    </div>
-                    <div style="color: #333; font-size: 0.9rem;">
-                        ${data.feedback}
-                    </div>
-                    ${data.daily_limit_reached ? `
-                        <div style="margin-top: 0.5rem; padding: 0.5rem; background: #FEF3C7; border-radius: 6px; font-size: 0.85rem; color: #92400E;">
-                            🏆 Daily limit reached! Come back tomorrow for more points.
-                        </div>
-                    ` : ''}
-                </div>
-                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: #999; cursor: pointer; font-size: 1.2rem; padding: 0;">×</button>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
+    // Show visual notification when it's time to stand up - Removed
+    showStandUpNotification() {
+        // Removed notification
     }
 
     // Load user's points on page load
@@ -1082,72 +971,13 @@ class FocusClockUI {
         this.elements.cycleNumber.textContent = this.core.cycleCount;
     }
 
-    // Alarm control methods - REWRITTEN FOR RELIABILITY
-    playAlarm() {
-        console.log('🔊 playAlarm called');
-        
-        // Play audio alarm
-        if (this.alarmAudio && !this.isAlarmPlaying) {
-            console.log('🎵 Starting alarm playback');
-            this.isAlarmPlaying = true;
-            this.alarmAudio.currentTime = 0;
-            this.alarmAudio.play().catch(error => {
-                console.warn('Failed to play alarm:', error);
-                this.isAlarmPlaying = false;
-            });
-        }
-        
-        // Show alarm controls using multiple methods for reliability
-        this.showAlarmControls();
-        
-        // FALLBACK: Also create a modal popup as backup (like the old working version)
-        this.createAlarmModal();
-    }
 
-    stopAlarm() {
-        console.log('🔕 stopAlarm called');
-        
-        // Stop audio
-        if (this.alarmAudio && this.isAlarmPlaying) {
-            this.isAlarmPlaying = false;
-            this.alarmAudio.pause();
-            this.alarmAudio.currentTime = 0;
-        }
 
-        // Hide all alarm controls
-        this.hideAlarmControls();
-        this.removeAlarmModal();
 
-        // Clear any timeout
-        if (this.alarmTimeout) {
-            clearTimeout(this.alarmTimeout);
-            this.alarmTimeout = null;
-        }
-    }
 
-    showAlarmControls() {
-        console.log('🔔 Showing alarm controls');
-        
-        // Method 1: Try to show existing button
-        const stopAlarmBtn = document.getElementById('stopAlarmBtn');
-        if (stopAlarmBtn) {
-            stopAlarmBtn.style.display = 'flex';
-            stopAlarmBtn.style.visibility = 'visible';
-            console.log('✅ Existing alarm button shown');
-        } else {
-            console.warn('⚠️ Static alarm button not found, will use modal fallback');
-        }
-    }
 
-    hideAlarmControls() {
-        console.log('🔕 Hiding alarm controls');
-        
-        // Hide static button
-        const stopAlarmBtn = document.getElementById('stopAlarmBtn');
-        if (stopAlarmBtn) {
-            stopAlarmBtn.style.display = 'none';
-        }
-    }
+
+
 
     // FALLBACK: Create modal popup (like the old working version)
     createAlarmModal() {
@@ -1218,13 +1048,7 @@ class FocusClockUI {
         console.log('✅ Alarm modal created as fallback');
     }
 
-    removeAlarmModal() {
-        const existingModal = document.getElementById('alarmModal');
-        if (existingModal) {
-            existingModal.remove();
-            console.log('🗑️ Alarm modal removed');
-        }
-    }
+
 
     // Show visual notification when it's time to stand up
     showStandUpNotification() {
@@ -1275,40 +1099,6 @@ class FocusClockUI {
     }
 
     // Show error if alarm audio fails to load
-    showAlarmError() {
-        console.warn('Alarm system: Audio file not found or failed to load');
-        
-        // Still show the visual notification even if audio fails
-        this.showStandUpNotification();
-        
-        // Show a subtle error message
-        const errorNotification = document.createElement('div');
-        errorNotification.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #FEF3C7;
-            color: #92400E;
-            padding: 1rem;
-            border-radius: 8px;
-            border-left: 4px solid #F59E0B;
-            z-index: 10000;
-            max-width: 300px;
-            font-size: 0.9rem;
-        `;
-
-        errorNotification.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.2rem;">⚠️</span>
-                <span>Alarm audio unavailable. Visual notification shown instead.</span>
-            </div>
-        `;
-
-        document.body.appendChild(errorNotification);
-
-        setTimeout(() => errorNotification.remove(), 5000);
-    }
-
 
 }
 

@@ -61,4 +61,61 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 
-## test to see if it works
+## Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/Lara-Ghi/LevelUp.git
+cd LevelUp
+```
+
+2. Install PHP dependencies
+```bash
+composer install
+```
+
+3. Install NPM dependencies
+```bash
+npm install
+```
+
+4. For Windows Users Only: If you encounter PowerShell execution policy restrictions when running npm commands, run this command once in PowerShell as administrator:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+```
+
+5. Build assets for production
+```bash
+npm run build
+```
+
+6. Create .env file and generate key
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+7. Configure your database in .env and run migrations
+```bash
+php artisan migrate
+```
+
+## Development
+
+1. Start the development server with hot reload:
+```bash
+npm run dev
+```
+This will:
+- Start a local development server
+- Watch for file changes
+- Automatically refresh your browser when you make changes
+- No need to run `npm run build` during development
+
+Keep this running in a terminal while you work. Your changes will be visible instantly!
+
+2. For production deployment:
+```bash
+npm run build
+```
+Only run this when you're ready to deploy to production. It creates optimized files in the `public/build` directory.

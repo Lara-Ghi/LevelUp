@@ -1745,32 +1745,6 @@ html {
     }
 }
 
-/* ===========================================
-   ⏰ ALARM SYSTEM STYLES
-   =========================================== */
-
-.btn-stop-alarm {
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-    color: white;
-    animation: alarmPulse 1s ease-in-out infinite alternate;
-}
-
-.btn-stop-alarm:hover:not(:disabled) {
-    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-/* Alarm button animation */
-@keyframes alarmPulse {
-    0% {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-    100% {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 4px rgba(239, 68, 68, 0.2);
-    }
-}
-
 /* Notification animations */
 @keyframes slideIn {
     from {
@@ -1791,17 +1765,5 @@ html {
     to {
         opacity: 0;
         transform: translateX(100%);
-    }
-}
-
-/* Modal animation for alarm popup */
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.8) translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
     }
 }
