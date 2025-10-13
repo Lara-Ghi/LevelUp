@@ -316,9 +316,37 @@ class FocusClockCore {
                     </div>
                 </div>
                 <div class="modal-body" style="padding: 0.5rem 0;">
-                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">
+                    <p style="margin: 0 0 1rem 0; font-size: 0.9rem; color: #666;">
                         ${popupContent.message}
                     </p>
+                    
+                    <!-- Volume Control in Popup -->
+                    <div class="popup-volume-control" style="margin: 1rem 0; 
+                                                             padding: 0.75rem; 
+                                                             background: rgba(0,0,0,0.05); 
+                                                             border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-volume-up popup-volume-icon" style="color: #6B7280; min-width: 16px;"></i>
+                            <input type="range" 
+                                   class="popup-volume-slider"
+                                   min="0" 
+                                   max="100" 
+                                   value="100"
+                                   step="1"
+                                   style="flex: 1; 
+                                          height: 4px; 
+                                          border-radius: 2px; 
+                                          background: #E5E7EB; 
+                                          outline: none; 
+                                          cursor: pointer; 
+                                          accent-color: ${popupContent.buttonColor}; 
+                                          -webkit-appearance: none;">
+                            <span class="popup-volume-percentage" style="font-size: 0.8rem; 
+                                                                          color: #6B7280; 
+                                                                          min-width: 35px; 
+                                                                          text-align: center;">100%</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer" style="padding: 0.5rem 0 0 0; margin: 0;">
                     <button class="stop-alarm-btn" 
@@ -344,6 +372,10 @@ class FocusClockCore {
 
         // Set up event listeners directly here
         const stopBtn = this.currentPopup.querySelector('.stop-alarm-btn');
+        const volumeSlider = this.currentPopup.querySelector('.popup-volume-slider');
+        const volumeIcon = this.currentPopup.querySelector('.popup-volume-icon');
+        const volumePercentage = this.currentPopup.querySelector('.popup-volume-percentage');
+        
         if (stopBtn) {
             console.log('✅ Stop button found, setting up event listener');
             stopBtn.addEventListener('click', (e) => {
@@ -354,6 +386,28 @@ class FocusClockCore {
             });
         } else {
             console.warn('Stop button not found in popup');
+        }
+
+        // Set up volume control
+        if (volumeSlider && volumeIcon && volumePercentage && this.currentAlarm) {
+            volumeSlider.addEventListener('input', (e) => {
+                const volume = parseFloat(e.target.value) / 100;
+                this.currentAlarm.volume = volume;
+                
+                // Update volume icon
+                if (volume === 0) {
+                    volumeIcon.className = 'fas fa-volume-mute popup-volume-icon';
+                } else if (volume < 0.5) {
+                    volumeIcon.className = 'fas fa-volume-down popup-volume-icon';
+                } else {
+                    volumeIcon.className = 'fas fa-volume-up popup-volume-icon';
+                }
+                
+                // Update percentage display
+                volumePercentage.textContent = Math.round(volume * 100) + '%';
+                
+                console.log('🔊 Popup volume set to:', Math.round(volume * 100) + '%');
+            });
         }
     }
 
@@ -665,6 +719,8 @@ class FocusClockUI {
                                 <span>Settings</span>
                             </button>
                         </div>
+
+
                     </div>
                 </div>
             </section>
@@ -807,7 +863,9 @@ class FocusClockUI {
             closeSettingsBtn: document.getElementById('closeSettingsBtn'),
             updateSettingsBtn: document.getElementById('updateSettingsBtn'),
             cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
-            resetSettingsBtn: document.getElementById('resetSettingsBtn')
+            resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+
+
         };
     }
 
@@ -838,6 +896,8 @@ class FocusClockUI {
         this.elements.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
         this.elements.editSittingTimeInput.addEventListener('input', () => this.validateEditInputs());
         this.elements.editStandingTimeInput.addEventListener('input', () => this.validateEditInputs());
+
+
 
         // Modal backdrop clicks
         this.elements.setupModal.addEventListener('click', (e) => {
@@ -1214,6 +1274,8 @@ class FocusClockUI {
         this.elements.standingTimeInfo.textContent = `${settings.standingTime}m`;
         this.elements.cycleNumber.textContent = this.core.cycleCount;
     }
+
+
 
 
 
