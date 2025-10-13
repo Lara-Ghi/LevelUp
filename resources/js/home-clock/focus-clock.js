@@ -1167,38 +1167,34 @@ class FocusClockUI {
             
             // Always refresh the DOM references to ensure they're current
             console.log('🔄 Refreshing DOM element references...');
+            
+            // Remove existing modal if it exists to force recreation with new design
+            const existingModal = document.getElementById('settingsModal');
+            if (existingModal) {
+                console.log('🗑️ Removing old settings modal to create new compact version');
+                existingModal.remove();
+            }
+            
+            // Always create a fresh modal with the new design
+            console.log('🏗️ Creating fresh compact settings modal');
+            this.createSettingsModal();
+            
+            // Refresh all element references after creating the modal
             this.elements.settingsModal = document.getElementById('settingsModal');
             this.elements.editSittingTimeInput = document.getElementById('editSittingTimeInput');
             this.elements.editStandingTimeInput = document.getElementById('editStandingTimeInput');
             this.elements.editEnableAudioAlerts = document.getElementById('editEnableAudioAlerts');
             this.elements.editAlertDuration = document.getElementById('editAlertDuration');
+            this.elements.editHealthInfo = document.getElementById('editHealthInfo');
             this.elements.closeSettingsBtn = document.getElementById('closeSettingsBtn');
             this.elements.updateSettingsBtn = document.getElementById('updateSettingsBtn');
             this.elements.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
             this.elements.resetSettingsBtn = document.getElementById('resetSettingsBtn');
             
             if (!this.elements.settingsModal) {
-                console.error('❌ Settings modal not found in DOM - creating it dynamically');
-                this.createSettingsModal();
-                
-                // Refresh all element references after creating the modal
-                this.elements.settingsModal = document.getElementById('settingsModal');
-                this.elements.editSittingTimeInput = document.getElementById('editSittingTimeInput');
-                this.elements.editStandingTimeInput = document.getElementById('editStandingTimeInput');
-                this.elements.editEnableAudioAlerts = document.getElementById('editEnableAudioAlerts');
-                this.elements.editAlertDuration = document.getElementById('editAlertDuration');
-                this.elements.closeSettingsBtn = document.getElementById('closeSettingsBtn');
-                this.elements.updateSettingsBtn = document.getElementById('updateSettingsBtn');
-                this.elements.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
-                this.elements.resetSettingsBtn = document.getElementById('resetSettingsBtn');
-                
-                if (!this.elements.settingsModal) {
-                    console.error('❌ Failed to create settings modal');
-                    alert('Failed to create settings modal. Please refresh the page and try again.');
-                    return;
-                }
-                
-                console.log('✅ Settings modal created and elements refreshed');
+                console.error('❌ Failed to create settings modal');
+                alert('Failed to create settings modal. Please refresh the page and try again.');
+                return;
             }
             
             console.log('✅ Fresh DOM elements obtained:', {
@@ -1206,7 +1202,8 @@ class FocusClockUI {
                 editSittingTimeInput: !!this.elements.editSittingTimeInput,
                 editStandingTimeInput: !!this.elements.editStandingTimeInput,
                 editEnableAudioAlerts: !!this.elements.editEnableAudioAlerts,
-                editAlertDuration: !!this.elements.editAlertDuration
+                editAlertDuration: !!this.elements.editAlertDuration,
+                editHealthInfo: !!this.elements.editHealthInfo
             });
             
             // Load timer settings
@@ -1237,11 +1234,12 @@ class FocusClockUI {
                 console.log('Settings modal z-index:', computedStyle.zIndex);
             }, 100);
             
-            this.validateEditInputs();
-            this.toggleEditAudioControls();
-            
             // Re-attach event listeners to fresh elements
             this.attachSettingsModalListeners();
+            
+            // Update health info and audio controls based on current values
+            this.validateEditInputs();
+            this.toggleEditAudioControls();
         } catch (error) {
             console.error('Error in showSettingsModal:', error);
         }
@@ -1253,67 +1251,86 @@ class FocusClockUI {
         
         const modalHtml = `
             <div class="clock-modal" id="settingsModal" style="display: none;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>⚙️ Timer & Audio Settings</h3>
-                        <button class="close-modal" id="closeSettingsBtn">
+                <div class="modal-content" style="max-width: 450px;">
+                    <div class="modal-header" style="padding-bottom: 0.75rem; position: relative;">
+                        <button class="close-modal" id="closeSettingsBtn" style="position: absolute; top: 0; right: 0; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #6B7280; padding: 0.25rem; line-height: 1;">
                             <i class="fas fa-times"></i>
                         </button>
+                        <h3>⚙️ Settings</h3>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 0.9rem;">Update your timer and audio preferences</p>
                     </div>
 
-                    <div class="modal-body">
-                        <!-- Timer Settings -->
-                        <div class="setting-group">
-                            <h4>⏱️ Timer Settings</h4>
-                            <div class="input-group">
-                                <label for="editSittingTimeInput">Sitting Time (minutes)</label>
-                                <input type="number" id="editSittingTimeInput" min="1" max="120" value="20">
+                    <div class="modal-body" style="padding: 1rem 0;">
+                        <!-- Timer Settings in Horizontal Layout -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="time-input-group" style="margin-bottom: 0;">
+                                <label for="editSittingTimeInput">
+                                    <i class="fas fa-chair"></i>
+                                    Sitting (minutes)
+                                    <span class="recommended-info">💡 20 min</span>
+                                </label>
+                                <input type="number" id="editSittingTimeInput" min="1" max="180" value="20" />
                             </div>
-                            <div class="input-group">
-                                <label for="editStandingTimeInput">Standing Time (minutes)</label>
-                                <input type="number" id="editStandingTimeInput" min="1" max="60" value="10">
+
+                            <div class="time-input-group" style="margin-bottom: 0;">
+                                <label for="editStandingTimeInput">
+                                    <i class="fas fa-walking"></i>
+                                    Standing (minutes)
+                                    <span class="recommended-info">💡 10 min</span>
+                                </label>
+                                <input type="number" id="editStandingTimeInput" min="1" max="60" value="10" />
                             </div>
                         </div>
 
-                        <!-- Audio Settings -->
-                        <div class="setting-group">
-                            <h4>🔊 Audio Settings</h4>
-                            <div class="checkbox-group">
-                                <label>
-                                    <input type="checkbox" id="editEnableAudioAlerts" checked>
-                                    <span style="font-weight: 600;">Enable Audio Alerts</span>
+                        <div class="health-info" id="editHealthInfo" style="margin-bottom: 1rem;">
+                            <div class="health-indicator good">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Great balance for your health!</span>
+                            </div>
+                        </div>
+
+                        <!-- Audio Settings Section -->
+                        <div class="audio-settings-section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #E5E7EB;">
+                            <h4 style="margin: 0 0 0.75rem 0; color: #374151; font-size: 0.95rem;">
+                                <i class="fas fa-volume-up" style="color: #3B82F6; margin-right: 0.5rem;"></i>
+                                Audio
+                            </h4>
+                            
+                            <div class="audio-setting-group" style="margin-bottom: 0.75rem;">
+                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="editEnableAudioAlerts" checked style="margin-right: 0.5rem;">
+                                    <span style="font-weight: 600;">Enable Alerts</span>
                                 </label>
-                                <p style="margin: 0.25rem 0 0 1.5rem; font-size: 0.85rem; color: #6B7280;">
-                                    Play sounds when it's time to sit or stand
+                                <p style="margin: 0.2rem 0 0 1.5rem; font-size: 0.8rem; color: #6B7280;">
+                                    Play sounds for transitions
                                 </p>
                             </div>
 
                             <div id="editAudioControls" class="audio-controls">
-                                <div class="audio-setting-group" style="margin-bottom: 1rem;">
-                                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
-                                        Alert Duration
+                                <div class="audio-setting-group">
+                                    <label style="font-weight: 600; margin-bottom: 0.4rem; display: block; font-size: 0.9rem;">
+                                        Duration
                                     </label>
-                                    <select id="editAlertDuration" style="width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white;">
-                                        <option value="loop">Loop until manually stopped (recommended)</option>
-                                        <option value="once">Play once then stop</option>
-                                        <option value="10">Play for 10 seconds</option>
-                                        <option value="20">Play for 20 seconds</option>
-                                        <option value="30">Play for 30 seconds</option>
+                                    <select id="editAlertDuration" style="width: 100%; padding: 0.4rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white; font-size: 0.85rem;">
+                                        <option value="loop">Loop (recommended)</option>
+                                        <option value="once">Once</option>
+                                        <option value="10">10 seconds</option>
+                                        <option value="20">20 seconds</option>
+                                        <option value="30">30 seconds</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="modal-footer">
-                        <button class="btn-modal btn-cancel" id="cancelSettingsBtn">Cancel</button>
-                        <button class="btn-modal btn-save" id="updateSettingsBtn">
+                    <div class="modal-footer" style="display: flex; gap: 0.5rem; padding-top: 1rem;">
+                        <button class="btn-modal btn-save" id="updateSettingsBtn" style="flex: 1;">
                             <i class="fas fa-save"></i>
-                            Update Settings
+                            Save
                         </button>
-                        <button class="btn-danger" id="resetSettingsBtn">
+                        <button class="btn-danger" id="resetSettingsBtn" style="flex: 1;">
                             <i class="fas fa-undo"></i>
-                            Reset to Defaults
+                            Reset
                         </button>
                     </div>
                 </div>
@@ -1333,11 +1350,6 @@ class FocusClockUI {
             this.elements.closeSettingsBtn.addEventListener('click', this.hideSettingsModal.bind(this));
         }
         
-        if (this.elements.cancelSettingsBtn) {
-            this.elements.cancelSettingsBtn.removeEventListener('click', this.hideSettingsModal.bind(this));
-            this.elements.cancelSettingsBtn.addEventListener('click', this.hideSettingsModal.bind(this));
-        }
-        
         if (this.elements.updateSettingsBtn) {
             this.elements.updateSettingsBtn.removeEventListener('click', this.updateSettings.bind(this));
             this.elements.updateSettingsBtn.addEventListener('click', this.updateSettings.bind(this));
@@ -1351,6 +1363,17 @@ class FocusClockUI {
         if (this.elements.editEnableAudioAlerts) {
             this.elements.editEnableAudioAlerts.removeEventListener('change', this.toggleEditAudioControls.bind(this));
             this.elements.editEnableAudioAlerts.addEventListener('change', this.toggleEditAudioControls.bind(this));
+        }
+        
+        // Add input event listeners for real-time health info updates
+        if (this.elements.editSittingTimeInput) {
+            this.elements.editSittingTimeInput.removeEventListener('input', this.validateEditInputs.bind(this));
+            this.elements.editSittingTimeInput.addEventListener('input', this.validateEditInputs.bind(this));
+        }
+        
+        if (this.elements.editStandingTimeInput) {
+            this.elements.editStandingTimeInput.removeEventListener('input', this.validateEditInputs.bind(this));
+            this.elements.editStandingTimeInput.addEventListener('input', this.validateEditInputs.bind(this));
         }
         
         console.log('✅ Settings modal event listeners attached');
@@ -1380,10 +1403,20 @@ class FocusClockUI {
 
     // Validate edit inputs (no strict minimums)
     validateEditInputs() {
-        const sittingTime = parseInt(this.elements.editSittingTimeInput.value) || 20;
-        const standingTime = parseInt(this.elements.editStandingTimeInput.value) || 10;
+        const sittingTime = parseInt(this.elements.editSittingTimeInput?.value) || 20;
+        const standingTime = parseInt(this.elements.editStandingTimeInput?.value) || 10;
 
-        this.updateHealthInfo(sittingTime, standingTime, this.elements.editHealthInfo);
+        console.log('🔍 validateEditInputs called:', {
+            sittingTime,
+            standingTime,
+            editHealthInfo: !!this.elements.editHealthInfo
+        });
+
+        if (this.elements.editHealthInfo) {
+            this.updateHealthInfo(sittingTime, standingTime, this.elements.editHealthInfo);
+        } else {
+            console.warn('⚠️ editHealthInfo element not found, cannot update health indicator');
+        }
     }
 
     // Update health info display
