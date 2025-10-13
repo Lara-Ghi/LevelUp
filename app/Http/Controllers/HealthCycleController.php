@@ -196,9 +196,15 @@ class HealthCycleController extends Controller
         
         $user->resetDailyPointsIfNeeded();
 
+        // Get today's cycle count from database
+        $todaysCycles = $user->healthCycles()
+            ->whereDate('completed_at', today())
+            ->count();
+
         return response()->json([
             'total_points' => $user->total_points,
             'daily_points' => $user->daily_points,
+            'todays_cycles' => $todaysCycles,
             'can_earn_more' => $user->canEarnPoints(),
             'points_remaining_today' => max(0, 100 - $user->daily_points),
         ]);

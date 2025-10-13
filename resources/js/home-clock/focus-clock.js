@@ -9,7 +9,7 @@ class FocusClockCore {
         this.currentTime = 0; // seconds
         this.isRunning = false;
         this.isSittingSession = true;
-        this.cycleCount = 0;
+        // Removed cycleCount - now using database today's cycles instead
         this.intervalId = null;
         this.sessionStartTime = null; // When the current session started
         this.sessionDuration = 0; // Total duration of current session in seconds
@@ -22,24 +22,8 @@ class FocusClockCore {
         };
     }
 
-    // Load persisted state from storage
-    loadPersistedState(storage) {
-        const savedState = storage.getSavedTimerState();
-        if (savedState) {
-            this.cycleCount = savedState.cycleCount || 0;
-            console.log('📥 Loaded persisted cycle count:', this.cycleCount);
-        }
-    }
-
-    // Save current state to storage
-    saveCurrentState(storage) {
-        const state = {
-            cycleCount: this.cycleCount,
-            lastSaved: Date.now()
-        };
-        storage.saveTimerState(state);
-        console.log('💾 Saved timer state:', state);
-    }
+    // Timer state persistence removed - cycles now come from database
+    // No need to persist cycle count since it's always fetched fresh from database
 
     // Initialize with custom sitting and standing times
     initialize(sittingMinutes, standingMinutes) {
@@ -170,15 +154,9 @@ class FocusClockCore {
             // Standing session completed, switch to sitting
             console.log('✅ Switching from standing to sitting');
             
-            // Increment cycle count when FULL cycle completes (sitting + standing)
-            this.cycleCount++;
-            
-            // Save the updated cycle count to storage immediately
-            if (window.focusClockUI && window.focusClockUI.storage) {
-                this.saveCurrentState(window.focusClockUI.storage);
-            }
-            
-            this.callbacks.onCycleComplete(this.cycleCount);
+            // Full cycle completed (sitting + standing) - trigger callback
+            // Note: Cycle count now comes from database, not localStorage
+            this.callbacks.onCycleComplete();
             
             // Play alarm and show popup for back to work (same as stand-up but different audio)
             this.playAlarmAndShowPopup('backToWork');
@@ -503,7 +481,6 @@ class FocusClockCore {
         return {
             isSitting: this.isSittingSession,
             timeLeft: this.currentTime,
-            cycleCount: this.cycleCount,
             isRunning: this.isRunning
         };
     }
@@ -579,8 +556,7 @@ window.FocusClockCore = FocusClockCore;
 class FocusClockStorage {
     constructor() {
         this.storageKey = 'levelup_focus_clock_settings';
-        this.timerStateKey = 'levelup_timer_state';
-        // pointsKey removed - no more points caching, database is source of truth
+        // timerStateKey and pointsKey removed - database is source of truth
         this.defaultSettings = {
             sittingTime: 20, // LINAK 20:10 pattern
             standingTime: 10, // LINAK 20:10 pattern
@@ -674,27 +650,7 @@ class FocusClockStorage {
         return settings[volumeKey] || 100;
     }
 
-    // Save timer state (cycles, session info)
-    saveTimerState(state) {
-        try {
-            localStorage.setItem(this.timerStateKey, JSON.stringify(state));
-            return true;
-        } catch (error) {
-            console.error('Error saving timer state:', error);
-            return false;
-        }
-    }
-
-    // Get saved timer state
-    getSavedTimerState() {
-        try {
-            const saved = localStorage.getItem(this.timerStateKey);
-            return saved ? JSON.parse(saved) : null;
-        } catch (error) {
-            console.warn('Error loading timer state:', error);
-            return null;
-        }
-    }
+    // Timer state removed - cycles now come from database, not localStorage
 
     // Points caching removed - database is the single source of truth
     // Points are always loaded fresh from the MySQL database via API calls
@@ -706,7 +662,6 @@ class FocusClockStorage {
             
             // Clear device-specific preferences only
             localStorage.removeItem(this.storageKey);
-            localStorage.removeItem(this.timerStateKey);
             
             // Also clear any legacy cache data
             const keysToCheck = ['levelup_focus_clock_settings', 'levelup_timer_state', 'levelup_points_cache'];
@@ -805,11 +760,10 @@ class FocusClockUI {
             <section class="clock-section">
                 <div class="clock-container">
                     <div class="clock-header">
-                        <h2 class="clock-title">Desk Timer</h2>
                         <div class="clock-cycle-info">
                             <span class="cycle-count" style="color: #3B82F6; font-weight: bold;">
-                                <i class="fas fa-sync-alt" style="color: #3B82F6; margin-right: 0.25rem;"></i>
-                                Cycle: <span id="cycleNumber" style="font-weight: bold; color: #000000;">0</span>
+                                <i class="fas fa-calendar-day" style="color: #3B82F6; margin-right: 0.25rem;"></i>
+                                Today's Cycles: <span id="todaysCycles" style="font-weight: bold; color: #000000;">0</span>
                             </span>
                             <span class="clock-stat-inline">
                                 <i class="fas fa-chair" style="color: #8B5CF6;"></i>
@@ -1060,7 +1014,7 @@ class FocusClockUI {
             // Main elements
             timeDisplay: document.getElementById('timeDisplay'),
             sessionIndicator: document.getElementById('sessionIndicator'),
-            cycleNumber: document.getElementById('cycleNumber'),
+            todaysCycles: document.getElementById('todaysCycles'),
             progressRing: document.getElementById('progressRing'),
 
             // Control buttons
@@ -1199,13 +1153,10 @@ class FocusClockUI {
         
         this.core.initialize(settings.sittingTime, settings.standingTime);
         
-        // Load persisted timer state (cycle count, etc.)
-        this.core.loadPersistedState(this.storage);
-        
         this.updateStatsDisplay();
         this.updateDisplay(settings.sittingTime * 60, true);
 
-        // Load user's points from backend or cache
+        // Load user's points and today's cycles from backend
         this.loadPointsStatus();
     }
 
@@ -1550,7 +1501,7 @@ class FocusClockUI {
 
     // Reset all settings
     resetSettings() {
-        if (confirm('⚠️ Reset Device Settings?\n\nThis will clear:\n• Timer settings (back to 20:10)\n• Volume preferences\n• Audio settings\n• Cycle count display\n\n(Your points in database will NOT be affected)\n\nAre you sure?')) {
+        if (confirm('⚠️ Reset Device Settings?\n\nThis will clear:\n• Timer settings (back to 20:10)\n• Volume preferences\n• Audio settings\n\n(Your points and cycles in database will NOT be affected)\n\nAre you sure?')) {
             // Stop any running timer
             this.core.pause();
             
@@ -1559,7 +1510,6 @@ class FocusClockUI {
             
             // Reset core to defaults
             this.core.initialize(20, 10);
-            this.core.cycleCount = 0; // Reset cycle count display
             
             console.log('🧹 Cleared device settings and preferences');
             
@@ -1568,7 +1518,7 @@ class FocusClockUI {
             this.updateDisplay(20 * 60, true);
             this.updateButtonStates(false);
             
-            // Reload points from database (they should still be there)
+            // Reload points and cycles from database (they should still be there)
             this.loadPointsStatus();
             
             // Hide modal and show success message
@@ -1576,7 +1526,7 @@ class FocusClockUI {
             
             // Show confirmation
             setTimeout(() => {
-                alert('✅ Device settings reset!\n\nYour points and cycles in the database are preserved.');
+                alert('✅ Device settings reset!\n\nYour points and cycles in the database are preserved.\n\nToday\'s cycles will reload from database.');
             }, 100);
             
             console.log('🔄 Device settings reset, database points preserved');
@@ -1695,19 +1645,29 @@ class FocusClockUI {
     }
 
     // Handle cycle completion
-    async handleCycleComplete(cycleCount) {
-        console.log('🔄 Cycle completed:', cycleCount);
-        this.storage.incrementCycles();
-        this.elements.cycleNumber.textContent = cycleCount;
-        this.updateStatsDisplay();
+    async handleCycleComplete() {
+        console.log('🔄 Cycle completed');
 
-        // Submit cycle to backend for scoring
-        await this.submitHealthCycle(cycleCount);
+        // Submit cycle to backend for scoring (this will increment database count)
+        await this.submitHealthCycle();
+
+        // Reload today's cycles count from database
+        this.loadPointsStatus();
     }
 
     // Submit completed health cycle to backend
-    async submitHealthCycle(cycleNumber) {
+    async submitHealthCycle() {
         const settings = this.storage.getSettings();
+
+        // Get current cycle count from database for submission
+        let cycleNumber = 1; // Default for first cycle
+        try {
+            const statusResponse = await fetch('/api/health-cycle/points-status');
+            const statusData = await statusResponse.json();
+            cycleNumber = (statusData.todays_cycles || 0) + 1; // Next cycle number
+        } catch (error) {
+            console.log('Could not get current cycle count, using default');
+        }
 
         console.log('🚀 Submitting health cycle:', {
             sitting_minutes: settings.sittingTime,
@@ -1766,6 +1726,14 @@ class FocusClockUI {
 
         // No more caching - database is the single source of truth
         console.log('📊 Points display updated from database:', { totalPoints, dailyPoints });
+    }
+
+    // Update today's cycles display
+    updateTodaysCyclesDisplay(todaysCycles) {
+        if (this.elements.todaysCycles) {
+            this.elements.todaysCycles.textContent = todaysCycles;
+            console.log('📅 Today\'s cycles updated from database:', todaysCycles);
+        }
     }
 
         // Setup popup event listeners
@@ -1890,11 +1858,10 @@ class FocusClockUI {
     // Update stats display
     updateStatsDisplay() {
         const settings = this.storage.getSettings();
-        const stats = this.storage.getUsageStats();
 
         this.elements.sittingTimeInfo.textContent = `${settings.sittingTime} min`;
         this.elements.standingTimeInfo.textContent = `${settings.standingTime} min`;
-        this.elements.cycleNumber.textContent = this.core.cycleCount;
+        // Today's cycles are now updated via loadPointsStatus() from database
     }
 
     // Toggle audio controls visibility in setup modal
