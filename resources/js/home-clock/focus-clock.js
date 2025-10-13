@@ -747,12 +747,12 @@ class FocusClockUI {
                             <span class="clock-stat-inline">
                                 <i class="fas fa-chair" style="color: #8B5CF6;"></i>
                                 <span class="session-type sitting-label" id="sittingLabel" style="font-weight: bold;">Sitting</span>
-                                <span class="stat-value" id="sittingTimeInfo">20m</span>
+                                <span class="stat-value" id="sittingTimeInfo">20 min</span>
                             </span>
                             <span class="clock-stat-inline">
                                 <i class="fas fa-walking" style="color: #10B981;"></i>
                                 <span class="session-type standing-label" id="standingLabel" style="font-weight: bold;">Standing</span>
-                                <span class="stat-value" id="standingTimeInfo">10m</span>
+                                <span class="stat-value" id="standingTimeInfo">10 min</span>
                             </span>
                         </div>
                     </div>
@@ -1720,8 +1720,8 @@ class FocusClockUI {
         const settings = this.storage.getSettings();
         const stats = this.storage.getUsageStats();
 
-        this.elements.sittingTimeInfo.textContent = `${settings.sittingTime}m`;
-        this.elements.standingTimeInfo.textContent = `${settings.standingTime}m`;
+        this.elements.sittingTimeInfo.textContent = `${settings.sittingTime} min`;
+        this.elements.standingTimeInfo.textContent = `${settings.standingTime} min`;
         this.elements.cycleNumber.textContent = this.core.cycleCount;
     }
 
