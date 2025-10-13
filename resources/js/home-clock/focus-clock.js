@@ -272,65 +272,19 @@ class FocusClockCore {
         `;
         document.body.appendChild(this.currentPopup);
 
-        // Set up event listeners
-        this.setupPopupEventListeners(this.currentPopup);
-
-        // Create compact popup using existing modal styles
-        const modal = document.createElement('div');
-        modal.className = 'clock-modal';
-        modal.style.display = 'flex';
-        
-        // Create the modal content
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        modalContent.style.cssText = 'max-width: 300px; padding: 1rem;';
-
-        modalContent.innerHTML = `
-                <div class="modal-header" style="padding: 0 0 0.5rem 0; margin: 0;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.5rem;">🚶‍♂️</span>
-                        <h3 style="margin: 0; font-size: 1.1rem;">Stand Up Break!</h3>
-                    </div>
-                </div>
-                <div class="modal-body" style="padding: 0.5rem 0;">
-                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">
-                        ${this.standingTime}-min break to stretch and move
-                    </p>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0;">
-                        <i class="fas fa-volume-down" style="color: #666; width: 20px;"></i>
-                        <input type="range" 
-                               min="0" 
-                               max="100" 
-                               value="100"
-                               class="volume-slider"
-                               style="flex: 1; margin: 0;
-                                      height: 4px;
-                                      border-radius: 2px;
-                                      background: #e0e0e0;
-                                      outline: none;
-                                      -webkit-appearance: none;">
-                        <i class="fas fa-volume-up" style="color: #666; width: 20px;"></i>
-                    </div>
-                </div>
-                <div class="modal-footer" style="padding: 0.5rem 0 0 0; margin: 0;">
-                    <button class="btn-modal btn-save" 
-                            style="width: 100%; padding: 0.5rem; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                        <i class="fas fa-bell-slash"></i>
-                        Stop Alarm
-                    </button>
-                </div>
-        `;
-
-        // Add the content to the modal
-        modal.appendChild(modalContent);
-
-        // Add event listeners after the content is in the DOM
-        const stopBtn = modalContent.querySelector('.btn-save');
-        const volumeSlider = modalContent.querySelector('.volume-slider');
-        const volumeDownIcon = modalContent.querySelector('.fa-volume-down');
-        const volumeUpIcon = modalContent.querySelector('.fa-volume-up');
-
-        document.body.appendChild(modal);
+        // Set up event listeners directly here
+        const stopBtn = this.currentPopup.querySelector('.stop-alarm-btn');
+        if (stopBtn) {
+            console.log('✅ Stop button found, setting up event listener');
+            stopBtn.addEventListener('click', (e) => {
+                console.log('🔴 Stop button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                this.cleanupAlarmAndPopup();
+            });
+        } else {
+            console.warn('Stop button not found in popup');
+        }
     }
 
     // Get current session info
@@ -1109,16 +1063,24 @@ class FocusClockUI {
 
         // Setup popup event listeners
     setupPopupEventListeners(popup) {
-        if (!popup) return;
-
-        const stopBtn = popup.querySelector('.stop-alarm-btn');
-        if (!stopBtn) {
-            console.warn('Stop button not found in popup');
+        if (!popup) {
+            console.warn('No popup provided to setupPopupEventListeners');
             return;
         }
 
+        const stopBtn = popup.querySelector('.stop-alarm-btn');
+        if (!stopBtn) {
+            console.warn('Stop button not found in popup - available classes:', popup.innerHTML);
+            return;
+        }
+
+        console.log('✅ Stop button found, setting up event listener');
+        
         // Simple click handler to stop alarm
-        stopBtn.addEventListener('click', () => {
+        stopBtn.addEventListener('click', (e) => {
+            console.log('🔴 Stop button clicked!');
+            e.preventDefault();
+            e.stopPropagation();
             this.cleanupAlarmAndPopup();
         });
     }
