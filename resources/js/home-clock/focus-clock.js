@@ -144,15 +144,19 @@ class FocusClockCore {
         if (wasSitting) {
             // Sitting session completed, switch to standing
             console.log('✅ Switching from sitting to standing');
-            // Increment cycle count when sitting session completes
-            this.cycleCount++;
-            this.callbacks.onCycleComplete(this.cycleCount);
             
-            // Play alarm and show popup for standing break
-            this.playAlarmAndShowPopup();
+            // Play alarm and show popup for standing break (energetic notification)
+            this.playAlarmAndShowPopup('standUp');
         } else {
             // Standing session completed, switch to sitting
             console.log('✅ Switching from standing to sitting');
+            
+            // Increment cycle count when FULL cycle completes (sitting + standing)
+            this.cycleCount++;
+            this.callbacks.onCycleComplete(this.cycleCount);
+            
+            // Play alarm and show popup for back to work (same as stand-up but different audio)
+            this.playAlarmAndShowPopup('backToWork');
         }
 
         // Update display and trigger callbacks before starting new session
@@ -171,8 +175,54 @@ class FocusClockCore {
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
     }
     
+    // Get alarm sound based on session type
+    getAlarmSoundForSession(sessionType = 'standUp') {
+        // Different sounds for different transitions
+        const alarmSounds = {
+            standUp: '/alarm_files/alarm_1.mp3',         // Energetic sound for standing break
+            backToWork: '/alarm_files/alarm_2.mp3',     // Gentler sound for back to work
+            focused: '/alarm_files/alarm_1.mp3',        // Use alarm_1 as fallback
+            gentle: '/alarm_files/alarm_2.mp3'          // Use alarm_2 as fallback
+        };
+
+        return alarmSounds[sessionType] || alarmSounds.standUp;
+    }
+
+    // Get popup content based on session type
+    getPopupContentForSession(sessionType) {
+        const content = {
+            standUp: {
+                icon: '🚶‍♂️',
+                title: 'Stand Up Break!',
+                message: `${this.standingTime}-min break to stretch and move around`,
+                buttonText: 'Stop Alarm',
+                buttonColor: '#EF4444'
+            },
+            backToWork: {
+                icon: '💺',
+                title: 'Back to Work',
+                message: `Time for ${this.sittingTime} minutes of focused work`,
+                buttonText: 'Got It',
+                buttonColor: '#3B82F6'
+            },
+            focused: {
+                icon: '🎯',
+                title: 'Focus Time',
+                message: `Deep work session - ${this.sittingTime} minutes of concentration`,
+                buttonText: 'Start Focusing',
+                buttonColor: '#059669'
+            }
+        };
+
+        return content[sessionType] || content.standUp;
+    }
+
+
+
     // Clean up any existing alarm and popup
     cleanupAlarmAndPopup() {
+        console.log('🧹 Cleaning up existing alarm and popup');
+        
         // Stop and cleanup alarm
         if (this.currentAlarm) {
             this.currentAlarm.pause();
@@ -180,34 +230,41 @@ class FocusClockCore {
             this.currentAlarm = null;
         }
 
-        // Remove the popup with animation
-        if (this.currentPopup && this.currentPopup.parentNode) {
-            this.currentPopup.style.animation = 'fadeOut 0.3s ease';
-            setTimeout(() => {
-                if (this.currentPopup && this.currentPopup.parentNode) {
-                    this.currentPopup.remove();
-                }
-                this.currentPopup = null;
-            }, 300);
-        }
-
-        // Clean up any other modals that might exist
+        // Immediately remove all existing modals to prevent overlap
         const existingModals = document.querySelectorAll('.clock-modal');
         existingModals.forEach(modal => {
-            if (modal && modal.parentNode && modal !== this.currentPopup) {
+            if (modal && modal.parentNode) {
                 modal.remove();
             }
         });
+
+        // Clear the reference
+        this.currentPopup = null;
+        
+        console.log('✅ Cleanup completed');
     }
 
     // Play alarm and show popup
-    playAlarmAndShowPopup() {
+    playAlarmAndShowPopup(sessionType = 'standUp') {
         // Clean up any existing alarm and popup first
         this.cleanupAlarmAndPopup();
+        
+        // Add a small delay to ensure cleanup is complete
+        setTimeout(() => {
+            this.createNewAlarmPopup(sessionType);
+        }, 100);
+    }
 
+    // Create new alarm popup (separated for better control)
+    createNewAlarmPopup(sessionType) {
+        console.log(`🔔 Creating ${sessionType} popup`);
+        
+        // Choose alarm sound based on session type
+        const alarmSound = this.getAlarmSoundForSession(sessionType);
+        
         // Create and configure alarm with high priority
-        this.currentAlarm = new Audio('/alarm_files/alarm_1.mp3');
-        this.currentAlarm.loop = true;
+        this.currentAlarm = new Audio(alarmSound);
+        this.currentAlarm.loop = sessionType === 'standUp'; // Only loop for stand-up alarms
         this.currentAlarm.volume = 1.0;
         this.currentAlarm.setAttribute('autoplay', 'true');
         this.currentAlarm.setAttribute('preload', 'auto');
@@ -233,21 +290,34 @@ class FocusClockCore {
         // Try to play immediately
         ensureAlarmPlays();
 
-        // Create and show popup
+        // Auto-dismiss popup when non-looping audio ends
+        if (sessionType !== 'standUp') {
+            this.currentAlarm.addEventListener('ended', () => {
+                console.log('🎵 Audio finished naturally, auto-dismissing popup');
+                this.cleanupAlarmAndPopup();
+            });
+        }
+
+        // Create a completely fresh popup element
         this.currentPopup = document.createElement('div');
         this.currentPopup.className = 'clock-modal';
         this.currentPopup.style.display = 'flex';
+        
+        // Get content based on session type
+        const popupContent = this.getPopupContentForSession(sessionType);
+        console.log(`📋 Popup content for ${sessionType}:`, popupContent);
+        
         this.currentPopup.innerHTML = `
             <div class="modal-content" style="max-width: 300px; padding: 1rem;">
                 <div class="modal-header" style="padding: 0 0 0.5rem 0; margin: 0;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.5rem;">🚶‍♂️</span>
-                        <h3 style="margin: 0; font-size: 1.1rem;">Stand Up Break!</h3>
+                        <span style="font-size: 1.5rem;">${popupContent.icon}</span>
+                        <h3 style="margin: 0; font-size: 1.1rem;">${popupContent.title}</h3>
                     </div>
                 </div>
                 <div class="modal-body" style="padding: 0.5rem 0;">
                     <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">
-                        ${this.standingTime}-min break to stretch and move
+                        ${popupContent.message}
                     </p>
                 </div>
                 <div class="modal-footer" style="padding: 0.5rem 0 0 0; margin: 0;">
@@ -259,13 +329,13 @@ class FocusClockCore {
                                    align-items: center; 
                                    justify-content: center; 
                                    gap: 0.5rem;
-                                   background: #EF4444;
+                                   background: ${popupContent.buttonColor};
                                    color: white;
                                    border: none;
                                    border-radius: 0.375rem;
                                    cursor: pointer;">
                         <i class="fas fa-bell-slash"></i>
-                        Stop Alarm
+                        ${popupContent.buttonText}
                     </button>
                 </div>
             </div>
