@@ -13,6 +13,8 @@ class FocusClockCore {
         this.intervalId = null;
         this.sessionStartTime = null; // When the current session started
         this.sessionDuration = 0; // Total duration of current session in seconds
+        this.currentAlarm = null; // Track current alarm audio
+        this.currentPopup = null; // Track current popup
         this.callbacks = {
             onTick: () => {},
             onSessionChange: () => {},
@@ -136,6 +138,9 @@ class FocusClockCore {
         const wasSitting = this.isSittingSession;
         this.isSittingSession = !wasSitting;  // Switch session type
 
+        // Clean up any existing alarm and popup before switching
+        this.cleanupAlarmAndPopup();
+
         if (wasSitting) {
             // Sitting session completed, switch to standing
             console.log('✅ Switching from sitting to standing');
@@ -166,24 +171,58 @@ class FocusClockCore {
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
     }
     
+    // Clean up any existing alarm and popup
+    cleanupAlarmAndPopup() {
+        // Stop and cleanup alarm
+        if (this.currentAlarm) {
+            this.currentAlarm.pause();
+            this.currentAlarm.currentTime = 0;
+            this.currentAlarm = null;
+        }
+
+        // Remove the popup with animation
+        if (this.currentPopup && this.currentPopup.parentNode) {
+            this.currentPopup.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                if (this.currentPopup && this.currentPopup.parentNode) {
+                    this.currentPopup.remove();
+                }
+                this.currentPopup = null;
+            }, 300);
+        }
+
+        // Clean up any other modals that might exist
+        const existingModals = document.querySelectorAll('.clock-modal');
+        existingModals.forEach(modal => {
+            if (modal && modal.parentNode && modal !== this.currentPopup) {
+                modal.remove();
+            }
+        });
+    }
+
     // Play alarm and show popup
     playAlarmAndShowPopup() {
+        // Clean up any existing alarm and popup first
+        this.cleanupAlarmAndPopup();
+
         // Create and configure alarm with high priority
-        const alarm = new Audio('/alarm_files/alarm_1.mp3');
-        alarm.loop = true;
-        alarm.volume = 1.0;
-        alarm.setAttribute('autoplay', 'true');
-        alarm.setAttribute('preload', 'auto');
+        this.currentAlarm = new Audio('/alarm_files/alarm_1.mp3');
+        this.currentAlarm.loop = true;
+        this.currentAlarm.volume = 1.0;
+        this.currentAlarm.setAttribute('autoplay', 'true');
+        this.currentAlarm.setAttribute('preload', 'auto');
         
         // Function to ensure alarm plays
         const ensureAlarmPlays = () => {
-            const playPromise = alarm.play();
+            const playPromise = this.currentAlarm.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
                     console.warn('Playback failed, will retry:', error);
                     // Retry on next user interaction
                     const retryPlay = () => {
-                        alarm.play().catch(console.warn);
+                        if (this.currentAlarm) {
+                            this.currentAlarm.play().catch(console.warn);
+                        }
                         document.removeEventListener('click', retryPlay);
                     };
                     document.addEventListener('click', retryPlay);
@@ -194,21 +233,11 @@ class FocusClockCore {
         // Try to play immediately
         ensureAlarmPlays();
 
-        // Also try to show a notification which can help with audio permissions
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Time to Stand Up!', {
-                body: `Take a ${this.standingTime}-minute standing break`,
-                icon: '/favicon.ico',
-                silent: true // Don't play notification sound, we have our alarm
-            });
-        }
-
-        // Create compact popup using existing modal styles
-        const modal = document.createElement('div');
-        modal.className = 'clock-modal';
-        modal.style.display = 'flex';
-        
-        modal.innerHTML = `
+        // Create and show popup
+        this.currentPopup = document.createElement('div');
+        this.currentPopup.className = 'clock-modal';
+        this.currentPopup.style.display = 'flex';
+        this.currentPopup.innerHTML = `
             <div class="modal-content" style="max-width: 300px; padding: 1rem;">
                 <div class="modal-header" style="padding: 0 0 0.5rem 0; margin: 0;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -217,9 +246,71 @@ class FocusClockCore {
                     </div>
                 </div>
                 <div class="modal-body" style="padding: 0.5rem 0;">
-                    <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">
                         ${this.standingTime}-min break to stretch and move
                     </p>
+                </div>
+                <div class="modal-footer" style="padding: 0.5rem 0 0 0; margin: 0;">
+                    <button class="stop-alarm-btn" 
+                            style="width: 100%; 
+                                   padding: 0.5rem; 
+                                   font-size: 0.9rem; 
+                                   display: flex; 
+                                   align-items: center; 
+                                   justify-content: center; 
+                                   gap: 0.5rem;
+                                   background: #EF4444;
+                                   color: white;
+                                   border: none;
+                                   border-radius: 0.375rem;
+                                   cursor: pointer;">
+                        <i class="fas fa-bell-slash"></i>
+                        Stop Alarm
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(this.currentPopup);
+
+        // Set up event listeners
+        this.setupPopupEventListeners(this.currentPopup);
+
+        // Create compact popup using existing modal styles
+        const modal = document.createElement('div');
+        modal.className = 'clock-modal';
+        modal.style.display = 'flex';
+        
+        // Create the modal content
+        const modalContent = document.createElement('div');
+        modalContent.className = 'modal-content';
+        modalContent.style.cssText = 'max-width: 300px; padding: 1rem;';
+
+        modalContent.innerHTML = `
+                <div class="modal-header" style="padding: 0 0 0.5rem 0; margin: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.5rem;">🚶‍♂️</span>
+                        <h3 style="margin: 0; font-size: 1.1rem;">Stand Up Break!</h3>
+                    </div>
+                </div>
+                <div class="modal-body" style="padding: 0.5rem 0;">
+                    <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">
+                        ${this.standingTime}-min break to stretch and move
+                    </p>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0;">
+                        <i class="fas fa-volume-down" style="color: #666; width: 20px;"></i>
+                        <input type="range" 
+                               min="0" 
+                               max="100" 
+                               value="100"
+                               class="volume-slider"
+                               style="flex: 1; margin: 0;
+                                      height: 4px;
+                                      border-radius: 2px;
+                                      background: #e0e0e0;
+                                      outline: none;
+                                      -webkit-appearance: none;">
+                        <i class="fas fa-volume-up" style="color: #666; width: 20px;"></i>
+                    </div>
                 </div>
                 <div class="modal-footer" style="padding: 0.5rem 0 0 0; margin: 0;">
                     <button class="btn-modal btn-save" 
@@ -228,19 +319,18 @@ class FocusClockCore {
                         Stop Alarm
                     </button>
                 </div>
-            </div>
         `;
 
-        document.body.appendChild(modal);
+        // Add the content to the modal
+        modal.appendChild(modalContent);
 
-        // Handle stop alarm button
-        const stopButton = modal.querySelector('.btn-save');
-        stopButton.addEventListener('click', () => {
-            alarm.pause();
-            alarm.currentTime = 0;
-            modal.style.animation = 'fadeOut 0.3s ease';
-            setTimeout(() => modal.remove(), 300);
-        });
+        // Add event listeners after the content is in the DOM
+        const stopBtn = modalContent.querySelector('.btn-save');
+        const volumeSlider = modalContent.querySelector('.volume-slider');
+        const volumeDownIcon = modalContent.querySelector('.fa-volume-down');
+        const volumeUpIcon = modalContent.querySelector('.fa-volume-up');
+
+        document.body.appendChild(modal);
     }
 
     // Get current session info
@@ -948,11 +1038,13 @@ class FocusClockUI {
         this.elements.progressRing.style.strokeDashoffset = offset;
     }
 
-        // Handle session change
+    // Handle session change
     handleSessionChange(isSitting) {
         console.log(`🎯 handleSessionChange called with: ${isSitting ? 'Sitting' : 'Standing'}`);
-        // Removed notifications
-    }    // Handle cycle completion
+        // Session change is now handled by the core timer
+    }
+
+    // Handle cycle completion
     async handleCycleComplete(cycleCount) {
         console.log('🔄 Cycle completed:', cycleCount);
         this.storage.incrementCycles();
@@ -1015,7 +1107,23 @@ class FocusClockUI {
         }
     }
 
-        // Show points feedback notification - Removed
+        // Setup popup event listeners
+    setupPopupEventListeners(popup) {
+        if (!popup) return;
+
+        const stopBtn = popup.querySelector('.stop-alarm-btn');
+        if (!stopBtn) {
+            console.warn('Stop button not found in popup');
+            return;
+        }
+
+        // Simple click handler to stop alarm
+        stopBtn.addEventListener('click', () => {
+            this.cleanupAlarmAndPopup();
+        });
+    }
+
+    // Show points feedback notification - Removed
     showPointsFeedback(data) {
         // Update points display silently
         if (data.points_earned > 0) {
@@ -1058,125 +1166,6 @@ class FocusClockUI {
 
 
 
-
-    // FALLBACK: Create modal popup (like the old working version)
-    createAlarmModal() {
-        // Remove any existing modal first
-        this.removeAlarmModal();
-        
-        const modal = document.createElement('div');
-        modal.id = 'alarmModal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        `;
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = `
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-width: 400px;
-            animation: modalSlideIn 0.3s ease;
-        `;
-        
-        modalContent.innerHTML = `
-            <div style="font-size: 3rem; margin-bottom: 1rem;">🚶‍♂️</div>
-            <h2 style="margin-bottom: 1rem; color: #333;">Time to Stand Up!</h2>
-            <p style="margin-bottom: 2rem; color: #666;">Take a ${this.core.standingTime}-minute standing break for better health.</p>
-            <button id="stopAlarmModalBtn" style="
-                background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-                color: white;
-                border: none;
-                padding: 1rem 2rem;
-                border-radius: 8px;
-                font-size: 1.1rem;
-                font-weight: 600;
-                cursor: pointer;
-                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-            ">
-                <i class="fas fa-bell-slash" style="margin-right: 0.5rem;"></i>
-                Stop Alarm
-            </button>
-        `;
-        
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        // Add event listener to modal button
-        const modalBtn = document.getElementById('stopAlarmModalBtn');
-        if (modalBtn) {
-            modalBtn.addEventListener('click', () => this.stopAlarm());
-            modalBtn.addEventListener('mouseover', function() {
-                this.style.background = 'linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)';
-            });
-            modalBtn.addEventListener('mouseout', function() {
-                this.style.background = 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)';
-            });
-        }
-        
-        console.log('✅ Alarm modal created as fallback');
-    }
-
-
-
-    // Show visual notification when it's time to stand up
-    showStandUpNotification() {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'stand-up-notification';
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            z-index: 10000;
-            min-width: 280px;
-            animation: slideIn 0.3s ease;
-        `;
-
-        notification.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="font-size: 2rem;">🚶‍♂️</div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.2rem;">
-                        Time to Stand Up!
-                    </div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">
-                        Take a ${this.core.standingTime}-minute standing break
-                    </div>
-                </div>
-                <button onclick="this.parentElement.parentElement.remove()" 
-                        style="background: rgba(255,255,255,0.2); border: none; color: white; 
-                               cursor: pointer; font-size: 1.2rem; padding: 0.3rem; 
-                               border-radius: 50%; width: 30px; height: 30px;">×</button>
-            </div>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Auto-remove after 8 seconds (alarm continues until manually stopped)
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }
-        }, 8000);
-    }
 
     // Show error if alarm audio fails to load
 
