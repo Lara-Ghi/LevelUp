@@ -102,7 +102,7 @@ php artisan migrate
 
 ## Development
 
-1. Start the development server with hot reload:
+1. Start the development server with hot reload (USE THIS ONE, OR ELSE YOU WONT BE ABLE TO SEE THE CHANGES FOR JS):
 ```bash
 npm run dev
 ```
