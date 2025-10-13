@@ -1617,6 +1617,12 @@ class FocusClockUI {
     async submitHealthCycle(cycleNumber) {
         const settings = this.storage.getSettings();
 
+        console.log('🚀 Submitting health cycle:', {
+            sitting_minutes: settings.sittingTime,
+            standing_minutes: settings.standingTime,
+            cycle_number: cycleNumber
+        });
+
         try {
             const response = await fetch('/api/health-cycle/complete', {
                 method: 'POST',
@@ -1631,7 +1637,9 @@ class FocusClockUI {
                 })
             });
 
+            console.log('📡 API Response status:', response.status);
             const data = await response.json();
+            console.log('📊 API Response data:', data);
 
             if (data.success) {
                 // Update points display
@@ -1691,9 +1699,56 @@ class FocusClockUI {
 
     // Show points feedback notification - Removed
     showPointsFeedback(data) {
-        // Update points display silently
-        if (data.points_earned > 0) {
-            this.updatePointsDisplay(data.total_points, data.daily_points);
+        // Always update points display
+        this.updatePointsDisplay(data.total_points, data.daily_points);
+        
+        // Show detailed feedback notification
+        console.log('🏆 Health Cycle Complete!', {
+            healthScore: data.health_score,
+            pointsEarned: data.points_earned,
+            feedback: data.feedback,
+            totalPoints: data.total_points,
+            dailyPoints: data.daily_points
+        });
+        
+        // Show visual notification with score details
+        if (data.health_score !== undefined) {
+            const notification = document.createElement('div');
+            notification.className = 'points-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                border-radius: 8px;
+                padding: 1rem;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                min-width: 300px;
+                border-left: 4px solid ${data.color === 'green' ? '#10B981' : data.color === 'yellow' ? '#F59E0B' : data.color === 'orange' ? '#F97316' : '#EF4444'};
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Cycle Complete!</div>
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    Health Score: <strong>${data.health_score}/100</strong>
+                </div>
+                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                    Points Earned: <strong>+${data.points_earned}</strong>
+                </div>
+                <div style="font-size: 0.85rem; color: #6B7280;">
+                    ${data.feedback}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification && notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
         }
     }
 
