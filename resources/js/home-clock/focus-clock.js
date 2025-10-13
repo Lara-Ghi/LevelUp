@@ -747,7 +747,14 @@ class FocusClockUI {
         this.elements.startBtn.addEventListener('click', () => this.startTimer());
         this.elements.pauseBtn.addEventListener('click', () => this.pauseTimer());
         this.elements.stopBtn.addEventListener('click', () => this.stopTimer());
-        this.elements.settingsBtn.addEventListener('click', () => this.showSettingsModal());
+        this.elements.settingsBtn.addEventListener('click', () => {
+            console.log('⚙️ Settings button clicked!');
+            try {
+                this.showSettingsModal();
+            } catch (error) {
+                console.error('Error opening settings modal:', error);
+            }
+        });
 
         // Setup modal
         this.elements.saveSettingsBtn.addEventListener('click', () => this.saveInitialSettings());
@@ -816,11 +823,28 @@ class FocusClockUI {
 
     // Show settings modal
     showSettingsModal() {
-        const settings = this.storage.getSettings();
-        this.elements.editSittingTimeInput.value = settings.sittingTime;
-        this.elements.editStandingTimeInput.value = settings.standingTime;
-        this.elements.settingsModal.style.display = 'flex';
-        this.validateEditInputs();
+        console.log('📝 Opening settings modal...');
+        try {
+            const settings = this.storage.getSettings();
+            console.log('Settings loaded:', settings);
+            
+            if (!this.elements.editSittingTimeInput || !this.elements.editStandingTimeInput || !this.elements.settingsModal) {
+                console.error('Settings modal elements not found:', {
+                    editSittingTimeInput: !!this.elements.editSittingTimeInput,
+                    editStandingTimeInput: !!this.elements.editStandingTimeInput,
+                    settingsModal: !!this.elements.settingsModal
+                });
+                return;
+            }
+            
+            this.elements.editSittingTimeInput.value = settings.sittingTime;
+            this.elements.editStandingTimeInput.value = settings.standingTime;
+            this.elements.settingsModal.style.display = 'flex';
+            console.log('✅ Settings modal should now be visible');
+            this.validateEditInputs();
+        } catch (error) {
+            console.error('Error in showSettingsModal:', error);
+        }
     }
 
     // Hide settings modal
