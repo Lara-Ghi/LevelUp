@@ -22,6 +22,25 @@ class FocusClockCore {
         };
     }
 
+    // Load persisted state from storage
+    loadPersistedState(storage) {
+        const savedState = storage.getSavedTimerState();
+        if (savedState) {
+            this.cycleCount = savedState.cycleCount || 0;
+            console.log('📥 Loaded persisted cycle count:', this.cycleCount);
+        }
+    }
+
+    // Save current state to storage
+    saveCurrentState(storage) {
+        const state = {
+            cycleCount: this.cycleCount,
+            lastSaved: Date.now()
+        };
+        storage.saveTimerState(state);
+        console.log('💾 Saved timer state:', state);
+    }
+
     // Initialize with custom sitting and standing times
     initialize(sittingMinutes, standingMinutes) {
         this.sittingTime = Math.max(1, sittingMinutes);
@@ -153,6 +172,12 @@ class FocusClockCore {
             
             // Increment cycle count when FULL cycle completes (sitting + standing)
             this.cycleCount++;
+            
+            // Save the updated cycle count to storage immediately
+            if (window.focusClockUI && window.focusClockUI.storage) {
+                this.saveCurrentState(window.focusClockUI.storage);
+            }
+            
             this.callbacks.onCycleComplete(this.cycleCount);
             
             // Play alarm and show popup for back to work (same as stand-up but different audio)
@@ -554,6 +579,8 @@ window.FocusClockCore = FocusClockCore;
 class FocusClockStorage {
     constructor() {
         this.storageKey = 'levelup_focus_clock_settings';
+        this.timerStateKey = 'levelup_timer_state';
+        this.pointsKey = 'levelup_points_cache';
         this.defaultSettings = {
             sittingTime: 20, // LINAK 20:10 pattern
             standingTime: 10, // LINAK 20:10 pattern
@@ -647,10 +674,91 @@ class FocusClockStorage {
         return settings[volumeKey] || 100;
     }
 
+    // Save timer state (cycles, session info)
+    saveTimerState(state) {
+        try {
+            localStorage.setItem(this.timerStateKey, JSON.stringify(state));
+            return true;
+        } catch (error) {
+            console.error('Error saving timer state:', error);
+            return false;
+        }
+    }
+
+    // Get saved timer state
+    getSavedTimerState() {
+        try {
+            const saved = localStorage.getItem(this.timerStateKey);
+            return saved ? JSON.parse(saved) : null;
+        } catch (error) {
+            console.warn('Error loading timer state:', error);
+            return null;
+        }
+    }
+
+    // Save points cache for persistence across page loads
+    savePointsCache(pointsData) {
+        try {
+            const cacheData = {
+                ...pointsData,
+                lastUpdated: Date.now()
+            };
+            localStorage.setItem(this.pointsKey, JSON.stringify(cacheData));
+            return true;
+        } catch (error) {
+            console.error('Error saving points cache:', error);
+            return false;
+        }
+    }
+
+    // Get cached points data
+    getCachedPoints() {
+        try {
+            const cached = localStorage.getItem(this.pointsKey);
+            if (cached) {
+                const data = JSON.parse(cached);
+                console.log('🔍 Raw cached points data:', data);
+                
+                // Return cached data if it's less than 5 minutes old
+                if (Date.now() - data.lastUpdated < 5 * 60 * 1000) {
+                    console.log('✅ Cached points are fresh, returning:', data);
+                    return data;
+                } else {
+                    console.log('⏰ Cached points are stale, ignoring');
+                    // Remove stale cache
+                    localStorage.removeItem(this.pointsKey);
+                }
+            } else {
+                console.log('📭 No cached points found');
+            }
+        } catch (error) {
+            console.warn('Error loading points cache:', error);
+            // Clear corrupted cache
+            localStorage.removeItem(this.pointsKey);
+        }
+        return null;
+    }
+
     // Reset all settings (for testing or user reset)
     resetSettings() {
         try {
+            console.log('🗑️ Clearing all localStorage data...');
+            
+            // Clear all our specific keys
             localStorage.removeItem(this.storageKey);
+            localStorage.removeItem(this.timerStateKey);
+            localStorage.removeItem(this.pointsKey);
+            
+            // Also try to clear any potential variations of the keys (just in case)
+            const keysToCheck = ['levelup_focus_clock_settings', 'levelup_timer_state', 'levelup_points_cache'];
+            keysToCheck.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    console.log(`🗑️ Removing ${key}`);
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            console.log('✅ All localStorage data cleared successfully');
             return true;
         } catch (error) {
             console.error('Error resetting Focus Clock settings:', error);
@@ -1131,10 +1239,14 @@ class FocusClockUI {
         settings.standingTime = Math.max(1, settings.standingTime);
         
         this.core.initialize(settings.sittingTime, settings.standingTime);
+        
+        // Load persisted timer state (cycle count, etc.)
+        this.core.loadPersistedState(this.storage);
+        
         this.updateStatsDisplay();
         this.updateDisplay(settings.sittingTime * 60, true);
 
-        // Load user's points from backend
+        // Load user's points from backend or cache
         this.loadPointsStatus();
     }
 
@@ -1479,15 +1591,48 @@ class FocusClockUI {
 
     // Reset all settings
     resetSettings() {
-        if (confirm('Are you sure you want to reset all settings? This will clear your cycle history.')) {
-            this.storage.resetSettings();
+        if (confirm('⚠️ Reset Everything?\n\nThis will clear:\n• Timer settings\n• Cycle history\n• Cached points\n• Volume preferences\n\nAre you sure?')) {
+            // Stop any running timer
             this.core.pause();
-            // Use default 20:10 pattern (LINAK)
+            
+            // Reset storage (clears all localStorage data)
+            this.storage.resetSettings();
+            
+            // Reset core to defaults
             this.core.initialize(20, 10);
+            this.core.cycleCount = 0; // Reset cycle count
+            
+            // IMMEDIATELY clear points display (force override cache)
+            const totalPointsEl = document.getElementById('totalPoints');
+            const dailyPointsEl = document.getElementById('dailyPoints');
+            
+            if (totalPointsEl) {
+                totalPointsEl.textContent = '0';
+            }
+            if (dailyPointsEl) {
+                dailyPointsEl.textContent = '0/100 today';
+                dailyPointsEl.style.color = 'rgba(255,255,255,0.8)';
+            }
+            
+            // Clear any cached points data
+            this.storage.savePointsCache({ total_points: 0, daily_points: 0 });
+            
+            console.log('🧹 Forcibly cleared points display and cache');
+            
+            // Update UI
             this.updateStatsDisplay();
             this.updateDisplay(20 * 60, true);
-            this.hideSettingsModal();
             this.updateButtonStates(false);
+            
+            // Hide modal and show success message
+            this.hideSettingsModal();
+            
+            // Show confirmation
+            setTimeout(() => {
+                alert('✅ All data has been reset successfully!');
+            }, 100);
+            
+            console.log('🔄 All settings and data reset to defaults');
         }
     }
 
@@ -1671,6 +1816,12 @@ class FocusClockUI {
             dailyPointsEl.textContent = `${dailyPoints}/100 today`;
             dailyPointsEl.style.color = color;
         }
+
+        // Cache the points data for persistence
+        this.storage.savePointsCache({
+            total_points: totalPoints,
+            daily_points: dailyPoints
+        });
     }
 
         // Setup popup event listeners
@@ -1697,9 +1848,15 @@ class FocusClockUI {
         });
     }
 
-    // Show points feedback notification - Removed
+    // Show points feedback notification
     showPointsFeedback(data) {
-        // Always update points display
+        // ALWAYS update points display first - this ensures navbar is updated
+        console.log('🎯 Updating points display:', {
+            total: data.total_points,
+            daily: data.daily_points,
+            earned: data.points_earned
+        });
+        
         this.updatePointsDisplay(data.total_points, data.daily_points);
         
         // Show detailed feedback notification
@@ -1711,7 +1868,7 @@ class FocusClockUI {
             dailyPoints: data.daily_points
         });
         
-        // Show visual notification with score details
+        // Show visual notification with score details INCLUDING daily points progress
         if (data.health_score !== undefined) {
             const notification = document.createElement('div');
             notification.className = 'points-notification';
@@ -1728,6 +1885,11 @@ class FocusClockUI {
                 border-left: 4px solid ${data.color === 'green' ? '#10B981' : data.color === 'yellow' ? '#F59E0B' : data.color === 'orange' ? '#F97316' : '#EF4444'};
             `;
             
+            // Calculate daily progress
+            const dailyProgress = `${data.daily_points}/100 daily`;
+            const isNearLimit = data.daily_points >= 80;
+            const isAtLimit = data.daily_points >= 100;
+            
             notification.innerHTML = `
                 <div style="font-weight: 600; margin-bottom: 0.5rem;">Cycle Complete!</div>
                 <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
@@ -1736,6 +1898,9 @@ class FocusClockUI {
                 <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
                     Points Earned: <strong>+${data.points_earned}</strong>
                 </div>
+                <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: ${isAtLimit ? '#F59E0B' : isNearLimit ? '#F97316' : '#6B7280'};">
+                    Daily Progress: <strong>${dailyProgress}</strong> ${isAtLimit ? '🏆 Daily limit reached!' : isNearLimit ? '⚡ Close to daily limit!' : ''}
+                </div>
                 <div style="font-size: 0.85rem; color: #6B7280;">
                     ${data.feedback}
                 </div>
@@ -1743,12 +1908,12 @@ class FocusClockUI {
             
             document.body.appendChild(notification);
             
-            // Auto-remove after 5 seconds
+            // Auto-remove after 6 seconds (longer to read daily progress)
             setTimeout(() => {
                 if (notification && notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 5000);
+            }, 6000);
         }
     }
 
@@ -1760,13 +1925,33 @@ class FocusClockUI {
     // Load user's points on page load
     async loadPointsStatus() {
         try {
+            // First, try to load cached points for immediate display (but only if they're valid)
+            const cached = this.storage.getCachedPoints();
+            if (cached && (cached.total_points > 0 || cached.daily_points > 0)) {
+                console.log('📊 Loading cached points:', cached);
+                this.updatePointsDisplay(cached.total_points, cached.daily_points);
+            } else {
+                // If cache is empty or contains only zeros, show zeros immediately
+                console.log('📊 No valid cached points, showing zeros');
+                this.updatePointsDisplay(0, 0);
+            }
+
+            // Then fetch fresh data from server
             const response = await fetch('/api/health-cycle/points-status');
             const data = await response.json();
 
+            console.log('📡 Fresh points data from server:', data);
             this.updatePointsDisplay(data.total_points, data.daily_points);
         } catch (error) {
-            console.log('Points system unavailable (not logged in)');
-            // User not logged in - show default values
+            console.log('Points system unavailable (not logged in or network error)');
+            
+            // If network fails, check cache one more time
+            const fallbackCached = this.storage.getCachedPoints();
+            if (fallbackCached) {
+                this.updatePointsDisplay(fallbackCached.total_points, fallbackCached.daily_points);
+            } else {
+                this.updatePointsDisplay(0, 0);
+            }
         }
     }
 
