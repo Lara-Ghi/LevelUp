@@ -15,17 +15,34 @@ class HealthCycleController extends Controller
      * @param int $stand - standing time in minutes
      * @return int - score from 0 to 100
      */
-    private function calculateHealthScore($sit, $stand)
+    /**
+     * Reset daily points if user's date changed (using timezone-aware date)
+     */
+    private function resetDailyPointsForUserDate($user, $userDate)
+    {
+        // Check if this is a new day for the user
+        $lastResetDate = $user->last_daily_reset ? 
+            \Carbon\Carbon::parse($user->last_daily_reset)->toDateString() : null;
+            
+        if ($lastResetDate !== $userDate) {
+            // Reset daily points for new day
+            $user->daily_points = 0;
+            $user->last_daily_reset = $userDate;
+            $user->save();
+        }
+    }
+
+    private function calculateHealthScore($sittingMinutes, $standingMinutes)
     {
         // Safety: avoid division errors
-        if ($stand <= 0 || $sit <= 0) {
+        if ($standingMinutes <= 0 || $sittingMinutes <= 0) {
             return 0;
         }
 
         // Minimum cycle time check (15 minutes total)
         // Prevents gaming the system with tiny cycles
         $minCycleTime = 15; // minutes
-        $total = $sit + $stand;
+        $total = $sittingMinutes + $standingMinutes;
         
         if ($total < $minCycleTime) {
             return 0; // Cycle too short, no points
@@ -34,7 +51,7 @@ class HealthCycleController extends Controller
         // Step 1: Calculate ratio accuracy
         // Ideal ratio = 2 (20 min sitting / 10 min standing)
         $idealRatio = 2.0;
-        $userRatio = $sit / $stand;
+        $userRatio = $sittingMinutes / $standingMinutes;
 
         // The closer the ratio is to 2, the higher the score (0–1)
         $ratioScore = max(0, 1 - abs($userRatio - $idealRatio) / $idealRatio);
@@ -96,6 +113,7 @@ class HealthCycleController extends Controller
             'sitting_minutes' => 'required|integer|min:1',
             'standing_minutes' => 'required|integer|min:1',
             'cycle_number' => 'required|integer|min:1',
+            'user_date' => 'nullable|string|date_format:Y-m-d',
         ]);
 
         $user = Auth::user();
@@ -116,6 +134,12 @@ class HealthCycleController extends Controller
             }
         }
         
+        // Get user's timezone date (from frontend) or fallback to server date
+        $userDate = $request->get('user_date', now()->toDateString());
+        
+        // Trigger daily reset using user's timezone date
+        $this->resetDailyPointsForUserDate($user, $userDate);
+        
         // Calculate health score
         $healthScore = $this->calculateHealthScore(
             $request->sitting_minutes,
@@ -126,56 +150,77 @@ class HealthCycleController extends Controller
         $result = $this->scoreToPoints($healthScore);
         $pointsEarned = $result['points'];
 
-        // Check if user can earn points today
-        if (!$user->canEarnPoints()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Daily limit reached! You\'ve earned 100 points today. Come back tomorrow!',
-                'health_score' => $healthScore,
-                'points_earned' => 0,
-                'daily_points' => $user->daily_points,
-                'total_points' => $user->total_points,
-                'feedback' => 'Daily limit reached (100 points)',
-                'color' => 'blue',
-            ]);
+        // Check if user can earn points today (use cached daily_points for consistency)
+        $actualPointsEarned = 0;
+        $dailyLimitReached = !$user->canEarnPoints();
+        
+        if (!$dailyLimitReached) {
+            // Add points to user (respecting daily limit)
+            $actualPointsEarned = $user->addPoints($pointsEarned);
         }
 
-        // Add points to user (respecting daily limit)
-        $actualPointsEarned = $user->addPoints($pointsEarned);
-
-        // Save the health cycle
+        // Save the health cycle REGARDLESS of whether points are awarded
+        // Use user's timezone date for the completed_at timestamp
+        $userDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $userDate . ' ' . now()->format('H:i:s'));
+        
         $healthCycle = HealthCycle::create([
             'user_id' => $user->id,
             'sitting_minutes' => $request->sitting_minutes,
             'standing_minutes' => $request->standing_minutes,
             'cycle_number' => $request->cycle_number,
             'health_score' => $healthScore,
-            'points_earned' => $actualPointsEarned,
-            'completed_at' => now(),
+            'points_earned' => $actualPointsEarned, // 0 if daily limit reached
+            'completed_at' => $userDateTime,
         ]);
+
+        // Get today's cycle count using user's timezone date
+        $todaysCycles = $user->healthCycles()
+            ->whereDate('completed_at', $userDate)
+            ->count();
+
+        if ($dailyLimitReached) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Daily limit reached! You\'ve earned 100 points today. Come back tomorrow!',
+                'health_score' => $healthScore,
+                'points_earned' => 0,
+                'daily_points' => 100, // Use the limit, not database sum
+                'total_points' => $user->total_points,
+                'todays_cycles' => $todaysCycles, // This will now be incremented!
+                'feedback' => 'Daily limit reached (100 points)',
+                'color' => 'blue',
+                'user_date' => $userDate, // Include for debugging
+            ]);
+        }
 
         // Check if user hit the daily limit with this cycle
         $message = $actualPointsEarned < $pointsEarned 
             ? "You earned {$actualPointsEarned} points (daily limit reached!)" 
             : "You earned {$actualPointsEarned} points!";
 
+        // Use the user's cached daily_points (which respects the 100 limit)
+        // This ensures consistency and prevents showing >100 points
+        $dailyPoints = $user->daily_points;
+
         return response()->json([
             'success' => true,
             'message' => $message,
             'health_score' => $healthScore,
             'points_earned' => $actualPointsEarned,
-            'daily_points' => $user->daily_points,
+            'daily_points' => $dailyPoints,
             'total_points' => $user->total_points,
+            'todays_cycles' => $todaysCycles,
             'feedback' => $result['feedback'],
             'color' => $result['color'],
-            'daily_limit_reached' => $user->daily_points >= 100,
+            'daily_limit_reached' => $dailyPoints >= 100,
+            'user_date' => $userDate, // Include for debugging
         ]);
     }
 
     /**
      * Get user's points and daily status
      */
-    public function getPointsStatus()
+    public function getPointsStatus(Request $request)
     {
         $user = Auth::user();
         
@@ -194,19 +239,27 @@ class HealthCycleController extends Controller
             }
         }
         
-        $user->resetDailyPointsIfNeeded();
+        // Get user's timezone date (from frontend) or fallback to server date
+        $userDate = $request->get('user_date', now()->toDateString());
+        
+        // Trigger daily reset using user's timezone date
+        $this->resetDailyPointsForUserDate($user, $userDate);
+        
+        // Use cached daily_points for consistency (respects 100 limit)
+        $dailyPoints = $user->daily_points;
 
-        // Get today's cycle count from database
+        // Get today's cycle count from database using user's date
         $todaysCycles = $user->healthCycles()
-            ->whereDate('completed_at', today())
+            ->whereDate('completed_at', $userDate)
             ->count();
 
         return response()->json([
             'total_points' => $user->total_points,
-            'daily_points' => $user->daily_points,
+            'daily_points' => $dailyPoints,
             'todays_cycles' => $todaysCycles,
-            'can_earn_more' => $user->canEarnPoints(),
-            'points_remaining_today' => max(0, 100 - $user->daily_points),
+            'can_earn_more' => $dailyPoints < 100,
+            'points_remaining_today' => max(0, 100 - $dailyPoints),
+            'user_date' => $userDate, // Include for debugging
         ]);
     }
 

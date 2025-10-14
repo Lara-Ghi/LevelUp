@@ -24,6 +24,7 @@ class User extends Authenticatable
         'total_points',
         'daily_points',
         'last_points_date',
+        'last_daily_reset',
     ];
 
     /**
@@ -66,9 +67,13 @@ class User extends Authenticatable
         $today = now()->toDateString();
         
         if ($this->last_points_date !== $today) {
+            // New day detected - reset daily points to 0
+            // Any existing cycles for today will be from a timezone mismatch and should not count
             $this->daily_points = 0;
             $this->last_points_date = $today;
             $this->save();
+            
+            \Log::info("Daily points reset for user {$this->id}: new day {$today}");
         }
     }
 

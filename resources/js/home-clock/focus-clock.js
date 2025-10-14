@@ -11,10 +11,14 @@ class FocusClockCore {
         this.isSittingSession = true;
         // Removed cycleCount - now using database today's cycles instead
         this.intervalId = null;
+        this.backupIntervalId = null; // Backup timer for background reliability
+        this.completionTimeoutId = null; // Failsafe timeout for session completion
+        this.alarmTimeoutId = null; // Scheduled alarm timeout for precise 30-second warning
         this.sessionStartTime = null; // When the current session started
         this.sessionDuration = 0; // Total duration of current session in seconds
         this.currentAlarm = null; // Track current alarm audio
         this.currentPopup = null; // Track current popup
+        this.warningShown = false; // Track if 30-second warning has been shown for current session
         this.callbacks = {
             onTick: () => {},
             onSessionChange: () => {},
@@ -49,23 +53,88 @@ class FocusClockCore {
             clearInterval(this.intervalId);
             this.intervalId = null;
         }
+        if (this.backupIntervalId) {
+            clearInterval(this.backupIntervalId);
+            this.backupIntervalId = null;
+        }
+        if (this.completionTimeoutId) {
+            clearTimeout(this.completionTimeoutId);
+            this.completionTimeoutId = null;
+        }
+        if (this.alarmTimeoutId) {
+            clearTimeout(this.alarmTimeoutId);
+            this.alarmTimeoutId = null;
+        }
+
+        // Preload alarm audio files for instant playback
+        this.preloadAlarmAudio();
 
         // If resuming from pause, use existing currentTime
         // If starting fresh, set up new session duration
         if (!this.sessionStartTime || this.currentTime >= this.sessionDuration) {
             this.sessionDuration = this.isSittingSession ? this.sittingTime * 60 : this.standingTime * 60;
             this.currentTime = this.sessionDuration;
+            this.warningShown = false; // Reset warning for new session
         }
         
         // Update the start time and status immediately
         this.sessionStartTime = Date.now() - ((this.sessionDuration - this.currentTime) * 1000);
         this.isRunning = true;
         
+        // Calculate when this session should complete
+        const timeUntilCompletion = this.currentTime * 1000; // Convert to milliseconds
+        
+        // Set a failsafe timeout to ensure session completes even if intervals are throttled
+        if (this.completionTimeoutId) {
+            clearTimeout(this.completionTimeoutId);
+        }
+        this.completionTimeoutId = setTimeout(() => {
+            if (this.isRunning) {
+                console.log('⏰ Failsafe timeout triggered - ensuring session completion');
+                this.checkForMissedCompletion();
+            }
+        }, timeUntilCompletion + 100); // Add 100ms buffer
+        
+        // Schedule 30-second warning alarm (independent of tick intervals)
+        if (this.alarmTimeoutId) {
+            clearTimeout(this.alarmTimeoutId);
+        }
+        const timeUntilAlarm = (this.currentTime - 30) * 1000; // 30 seconds before end
+        if (timeUntilAlarm > 0) {
+            // Schedule stopping of current alarm if it would overlap
+            this.scheduleAlarmStop(timeUntilAlarm);
+            
+            this.alarmTimeoutId = setTimeout(() => {
+                if (this.isRunning && !this.warningShown) {
+                    console.log('⏰ Scheduled 30-second alarm triggered at exact timing');
+                    this.warningShown = true;
+                    
+                    // Play the MAIN alarm 30 seconds before session ends
+                    if (this.isSittingSession) {
+                        this.playAlarmAndShowPopup('standUp');
+                    } else {
+                        this.playAlarmAndShowPopup('backToWork');
+                    }
+                }
+            }, timeUntilAlarm);
+            
+            console.log(`⏰ Scheduled 30-second alarm to trigger in ${timeUntilAlarm}ms`);
+        } else {
+            console.log('⏰ Session too short for 30-second warning');
+        }
+        
         // Start the interval and update display immediately
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
+        
+        // Use multiple timing strategies to prevent background throttling issues
         this.intervalId = setInterval(() => {
             this.tick();
-        }, 100); // More frequent updates for better accuracy
+        }, 50); // More frequent updates (50ms) for critical health alerts
+        
+        // Add a secondary backup timer that checks every second
+        this.backupIntervalId = setInterval(() => {
+            this.checkForMissedCompletion();
+        }, 1000);
     }
 
     // Pause the timer
@@ -74,6 +143,18 @@ class FocusClockCore {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
+        }
+        if (this.backupIntervalId) {
+            clearInterval(this.backupIntervalId);
+            this.backupIntervalId = null;
+        }
+        if (this.completionTimeoutId) {
+            clearTimeout(this.completionTimeoutId);
+            this.completionTimeoutId = null;
+        }
+        if (this.alarmTimeoutId) {
+            clearTimeout(this.alarmTimeoutId);
+            this.alarmTimeoutId = null;
         }
         // Calculate remaining time when paused
         if (this.sessionStartTime) {
@@ -120,6 +201,23 @@ class FocusClockCore {
         }
     }
 
+    // Check for missed session completions (called when tab becomes visible)
+    checkForMissedCompletion() {
+        if (!this.isRunning || !this.sessionStartTime) return;
+
+        // Calculate how much time has actually passed
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - this.sessionStartTime) / 1000);
+        const actualTimeLeft = Math.max(0, this.sessionDuration - elapsedSeconds);
+        
+        // If the session should have completed while we were in background
+        if (actualTimeLeft === 0 && this.currentTime > 0) {
+            console.log('⚠️ Missed session completion detected! Completing immediately...');
+            this.currentTime = 0;
+            this.completeSession();
+        }
+    }
+
     // Complete current session and switch
     completeSession() {
         console.log(`🔄 Completing session - Current state: ${this.isSittingSession ? 'Sitting' : 'Standing'}`);
@@ -136,20 +234,31 @@ class FocusClockCore {
         // Stop the current timer
         clearInterval(this.intervalId);
         this.intervalId = null;
+        if (this.backupIntervalId) {
+            clearInterval(this.backupIntervalId);
+            this.backupIntervalId = null;
+        }
+        if (this.completionTimeoutId) {
+            clearTimeout(this.completionTimeoutId);
+            this.completionTimeoutId = null;
+        }
+        if (this.alarmTimeoutId) {
+            clearTimeout(this.alarmTimeoutId);
+            this.alarmTimeoutId = null;
+        }
         this.isRunning = false;
         
         const wasSitting = this.isSittingSession;
         this.isSittingSession = !wasSitting;  // Switch session type
 
-        // Clean up any existing alarm and popup before switching
-        this.cleanupAlarmAndPopup();
+        // Note: We don't clean up alarm/popup here anymore so it persists through session changes
+        // This gives users more time to interact with the 30-second warning popup
 
         if (wasSitting) {
             // Sitting session completed, switch to standing
             console.log('✅ Switching from sitting to standing');
             
-            // Play alarm and show popup for standing break (energetic notification)
-            this.playAlarmAndShowPopup('standUp');
+            // No alarm here - it already played at 30 seconds warning
         } else {
             // Standing session completed, switch to sitting
             console.log('✅ Switching from standing to sitting');
@@ -158,8 +267,7 @@ class FocusClockCore {
             // Note: Cycle count now comes from database, not localStorage
             this.callbacks.onCycleComplete();
             
-            // Play alarm and show popup for back to work (same as stand-up but different audio)
-            this.playAlarmAndShowPopup('backToWork');
+            // No alarm here - it already played at 2 minutes warning
         }
 
         // Update display and trigger callbacks before starting new session
@@ -170,12 +278,106 @@ class FocusClockCore {
         this.currentTime = this.sessionDuration;
         this.sessionStartTime = Date.now();
         this.isRunning = true;
+        this.warningShown = false; // Reset warning for new session
         
-        // Start new interval
-        this.intervalId = setInterval(() => this.tick(), 100);
+        // Set failsafe timeout for new session
+        if (this.completionTimeoutId) {
+            clearTimeout(this.completionTimeoutId);
+        }
+        this.completionTimeoutId = setTimeout(() => {
+            if (this.isRunning) {
+                console.log('⏰ Failsafe timeout triggered - ensuring session completion');
+                this.checkForMissedCompletion();
+            }
+        }, this.sessionDuration * 1000 + 100);
+        
+        // Schedule 30-second warning alarm for new session
+        if (this.alarmTimeoutId) {
+            clearTimeout(this.alarmTimeoutId);
+        }
+        const timeUntilAlarm = (this.sessionDuration - 30) * 1000; // 30 seconds before end
+        if (timeUntilAlarm > 0) {
+            // Schedule stopping of current alarm if it would overlap
+            this.scheduleAlarmStop(timeUntilAlarm);
+            
+            this.alarmTimeoutId = setTimeout(() => {
+                if (this.isRunning && !this.warningShown) {
+                    console.log('⏰ Scheduled 30-second alarm triggered for new session at exact timing');
+                    this.warningShown = true;
+                    
+                    // Play the MAIN alarm 30 seconds before session ends
+                    if (this.isSittingSession) {
+                        this.playAlarmAndShowPopup('standUp');
+                    } else {
+                        this.playAlarmAndShowPopup('backToWork');
+                    }
+                }
+            }, timeUntilAlarm);
+            
+            console.log(`⏰ Scheduled 30-second alarm for new session to trigger in ${timeUntilAlarm}ms`);
+        }
+        
+        // Start new intervals with enhanced background support
+        this.intervalId = setInterval(() => this.tick(), 50);
+        this.backupIntervalId = setInterval(() => this.checkForMissedCompletion(), 1000);
         
         // Update display immediately with new session
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
+    }
+    
+    // Preload alarm audio for instant playback
+    preloadAlarmAudio() {
+        try {
+            // Preload both alarm sounds
+            if (!this.preloadedAudio) {
+                this.preloadedAudio = {};
+            }
+            
+            const alarmFiles = ['/alarm_files/alarm_1.mp3', '/alarm_files/alarm_2.mp3'];
+            
+            alarmFiles.forEach(file => {
+                if (!this.preloadedAudio[file]) {
+                    const audio = new Audio(file);
+                    audio.preload = 'auto';
+                    audio.load(); // Force loading
+                    this.preloadedAudio[file] = audio;
+                    console.log(`🔊 Preloaded audio: ${file}`);
+                }
+            });
+        } catch (error) {
+            console.warn('Audio preload failed:', error);
+        }
+    }
+    
+    // Calculate when to stop current alarm to avoid overlaps with next alarm
+    scheduleAlarmStop(nextAlarmDelay) {
+        // If no current alarm is playing, nothing to stop
+        if (!this.currentAlarm || this.currentAlarm.paused || this.currentAlarm.ended) {
+            return;
+        }
+        
+        // Check if the alarm is set to loop (continuous play)
+        const settings = window.focusClockUI ? window.focusClockUI.storage.getSettings() : { alertDuration: 'loop' };
+        
+        if (settings.alertDuration === 'loop') {
+            // Stop the current alarm 15 seconds before the next one starts
+            const stopTime = Math.max(0, nextAlarmDelay - (15 * 1000)); // 15 seconds before next alarm
+            
+            if (stopTime > 0) {
+                setTimeout(() => {
+                    if (this.currentAlarm && !this.currentAlarm.paused) {
+                        console.log('� Stopping current alarm 15 seconds before next alarm');
+                        this.cleanupAlarmAndPopup();
+                    }
+                }, stopTime);
+                
+                console.log(`🔇 Scheduled current alarm to stop in ${stopTime / 1000}s (15s before next alarm)`);
+            } else {
+                // If next alarm is very soon, stop current alarm immediately
+                console.log('🔇 Stopping current alarm immediately - next alarm starting soon');
+                this.cleanupAlarmAndPopup();
+            }
+        }
     }
     
     // Get alarm sound based on session type
@@ -275,10 +477,8 @@ class FocusClockCore {
         // Clean up any existing alarm and popup first
         this.cleanupAlarmAndPopup();
         
-        // Add a small delay to ensure cleanup is complete
-        setTimeout(() => {
-            this.createNewAlarmPopup(sessionType, settings);
-        }, 100);
+        // Create new alarm popup immediately (no delay for instant audio)
+        this.createNewAlarmPopup(sessionType, settings);
     }
 
     // Create new alarm popup (separated for better control)
@@ -294,12 +494,22 @@ class FocusClockCore {
             const alarmType = sessionType === 'standUp' ? 'alarm1' : 'alarm2';
             const savedVolume = window.focusClockUI ? window.focusClockUI.storage.getAlarmVolume(alarmType) : 100;
             
-            // Create and configure alarm with saved volume
-            this.currentAlarm = new Audio(alarmSound);
+            // Use preloaded audio if available for instant playback
+            if (this.preloadedAudio && this.preloadedAudio[alarmSound]) {
+                // Clone the preloaded audio for instant playback
+                this.currentAlarm = this.preloadedAudio[alarmSound].cloneNode();
+                console.log(`🚀 Using preloaded audio: ${alarmSound}`);
+            } else {
+                // Fallback to creating new Audio object
+                this.currentAlarm = new Audio(alarmSound);
+                this.currentAlarm.setAttribute('preload', 'auto');
+                console.log(`⏳ Creating new audio: ${alarmSound}`);
+            }
+            
+            // Configure alarm properties
             this.currentAlarm.loop = settings.alertDuration === 'loop';
             this.currentAlarm.volume = savedVolume / 100; // Use saved volume (0-1 range)
             this.currentAlarm.setAttribute('autoplay', 'true');
-            this.currentAlarm.setAttribute('preload', 'auto');
             
             // Store the alarm type for volume saving
             this.currentAlarmType = alarmType;
@@ -1475,6 +1685,9 @@ class FocusClockUI {
         this.hideSetupModal();
         this.updateStatsDisplay();
         this.updateDisplay(sittingTime * 60, true);
+        
+        // Load points from database after setup completion
+        this.loadPointsStatus();
     }
 
     // Update settings from settings modal
@@ -1518,16 +1731,26 @@ class FocusClockUI {
             this.updateDisplay(20 * 60, true);
             this.updateButtonStates(false);
             
-            // Reload points and cycles from database (they should still be there)
-            this.loadPointsStatus();
-            
-            // Hide modal and show success message
+            // Hide modal first
             this.hideSettingsModal();
             
-            // Show confirmation
-            setTimeout(() => {
-                alert('✅ Device settings reset!\n\nYour points and cycles in the database are preserved.\n\nToday\'s cycles will reload from database.');
-            }, 100);
+            // Check if user is now first-time and show setup modal
+            if (this.storage.isFirstTimeUser()) {
+                console.log('🔄 User is now first-time after reset - showing setup modal');
+                setTimeout(() => {
+                    this.showSetupModal();
+                }, 300);
+            } else {
+                // If not first-time, reload points and cycles from database
+                setTimeout(() => {
+                    this.loadPointsStatus();
+                }, 200);
+                
+                // Show confirmation
+                setTimeout(() => {
+                    alert('✅ Device settings reset!\n\nYour points and cycles in the database are preserved.\n\nToday\'s cycles will reload from database.');
+                }, 100);
+            }
             
             console.log('🔄 Device settings reset, database points preserved');
         }
@@ -1648,11 +1871,10 @@ class FocusClockUI {
     async handleCycleComplete() {
         console.log('🔄 Cycle completed');
 
-        // Submit cycle to backend for scoring (this will increment database count)
+        // Submit cycle to backend for scoring (this will increment database count and return all updated data)
         await this.submitHealthCycle();
 
-        // Reload today's cycles count from database
-        this.loadPointsStatus();
+        // No need for additional loadPointsStatus() call since submitHealthCycle now updates everything
     }
 
     // Submit completed health cycle to backend
@@ -1662,7 +1884,12 @@ class FocusClockUI {
         // Get current cycle count from database for submission
         let cycleNumber = 1; // Default for first cycle
         try {
-            const statusResponse = await fetch('/api/health-cycle/points-status');
+            // Get user's current date in their LOCAL timezone (not UTC)
+            const now = new Date();
+            const userDate = now.getFullYear() + '-' + 
+                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(now.getDate()).padStart(2, '0');
+            const statusResponse = await fetch(`/api/health-cycle/points-status?user_date=${userDate}`);
             const statusData = await statusResponse.json();
             cycleNumber = (statusData.todays_cycles || 0) + 1; // Next cycle number
         } catch (error) {
@@ -1676,6 +1903,12 @@ class FocusClockUI {
         });
 
         try {
+            // Get user's current date in their LOCAL timezone (not UTC)
+            const now = new Date();
+            const userDate = now.getFullYear() + '-' + 
+                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(now.getDate()).padStart(2, '0');
+            
             const response = await fetch('/api/health-cycle/complete', {
                 method: 'POST',
                 headers: {
@@ -1685,7 +1918,8 @@ class FocusClockUI {
                 body: JSON.stringify({
                     sitting_minutes: settings.sittingTime,
                     standing_minutes: settings.standingTime,
-                    cycle_number: cycleNumber
+                    cycle_number: cycleNumber,
+                    user_date: userDate
                 })
             });
 
@@ -1694,13 +1928,10 @@ class FocusClockUI {
             console.log('📊 API Response data:', data);
 
             if (data.success) {
-                // Update points display
-                this.updatePointsDisplay(data.total_points, data.daily_points);
-
-                // Show feedback notification
+                // Show feedback notification (this will handle all UI updates)
                 this.showPointsFeedback(data);
             } else {
-                // Daily limit reached
+                // Daily limit reached - show feedback notification
                 this.showPointsFeedback(data);
             }
         } catch (error) {
@@ -1711,17 +1942,26 @@ class FocusClockUI {
 
     // Update points display in navbar
     updatePointsDisplay(totalPoints, dailyPoints) {
+        console.log('🔧 updatePointsDisplay called with:', { totalPoints, dailyPoints });
+        
         const totalPointsEl = document.getElementById('totalPoints');
         const dailyPointsEl = document.getElementById('dailyPoints');
 
         if (totalPointsEl) {
             totalPointsEl.textContent = totalPoints.toLocaleString();
+            console.log('✅ Updated totalPoints element to:', totalPoints.toLocaleString());
+        } else {
+            console.warn('⚠️ totalPoints element not found in navbar');
         }
 
         if (dailyPointsEl) {
             const color = dailyPoints >= 100 ? '#FFD700' : 'rgba(255,255,255,0.8)';
-            dailyPointsEl.textContent = `${dailyPoints}/100 today`;
+            const displayText = `${dailyPoints}/100 today`;
+            dailyPointsEl.textContent = displayText;
             dailyPointsEl.style.color = color;
+            console.log('✅ Updated dailyPoints element to:', displayText);
+        } else {
+            console.warn('⚠️ dailyPoints element not found in navbar');
         }
 
         // No more caching - database is the single source of truth
@@ -1730,9 +1970,33 @@ class FocusClockUI {
 
     // Update today's cycles display
     updateTodaysCyclesDisplay(todaysCycles) {
+        console.log('🔧 updateTodaysCyclesDisplay called with:', todaysCycles);
+        console.log('🔧 Type of todaysCycles:', typeof todaysCycles);
+        
         if (this.elements.todaysCycles) {
+            console.log('🔧 Current element content before update:', this.elements.todaysCycles.textContent);
             this.elements.todaysCycles.textContent = todaysCycles;
             console.log('📅 Today\'s cycles updated from database:', todaysCycles);
+            console.log('🔧 Element content after update:', this.elements.todaysCycles.textContent);
+            
+            // Double-check the element exists and has the right content
+            const elementCheck = document.getElementById('todaysCycles');
+            if (elementCheck) {
+                console.log('🔧 Double-check: element found with content:', elementCheck.textContent);
+            }
+        } else {
+            console.log('🔧 this.elements.todaysCycles is null, trying direct DOM access');
+            // If element not bound yet, try to find it directly
+            const todaysCyclesEl = document.getElementById('todaysCycles');
+            if (todaysCyclesEl) {
+                console.log('🔧 Found element directly, current content:', todaysCyclesEl.textContent);
+                todaysCyclesEl.textContent = todaysCycles;
+                console.log('📅 Today\'s cycles updated directly from DOM:', todaysCycles);
+                console.log('🔧 Element content after direct update:', todaysCyclesEl.textContent);
+            } else {
+                console.warn('⚠️ todaysCycles element not found in DOM at all');
+                console.log('🔧 Available elements with id:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+            }
         }
     }
 
@@ -1762,14 +2026,27 @@ class FocusClockUI {
 
     // Show points feedback notification
     showPointsFeedback(data) {
-        // ALWAYS update points display first - this ensures navbar is updated
-        console.log('🎯 Updating points display:', {
+        // Log the data for debugging
+        console.log('🎯 Showing points feedback with data:', {
             total: data.total_points,
             daily: data.daily_points,
-            earned: data.points_earned
+            earned: data.points_earned,
+            cycles: data.todays_cycles
         });
         
+        // IMPORTANT: Log what we're about to pass to updatePointsDisplay
+        console.log('🔍 About to update points display with:', {
+            totalPoints: data.total_points,
+            dailyPoints: data.daily_points
+        });
+        
+        // Update points display with the latest data from API response
         this.updatePointsDisplay(data.total_points, data.daily_points);
+        
+        // Update today's cycles if provided in the response
+        if (data.todays_cycles !== undefined) {
+            this.updateTodaysCyclesDisplay(data.todays_cycles);
+        }
         
         // Show detailed feedback notification
         console.log('🏆 Health Cycle Complete!', {
@@ -1797,35 +2074,66 @@ class FocusClockUI {
                 border-left: 4px solid ${data.color === 'green' ? '#10B981' : data.color === 'yellow' ? '#F59E0B' : data.color === 'orange' ? '#F97316' : '#EF4444'};
             `;
             
-            // Calculate daily progress
-            const dailyProgress = `${data.daily_points}/100 daily`;
-            const isNearLimit = data.daily_points >= 80;
-            const isAtLimit = data.daily_points >= 100;
+            // Simplified notification - show only points earned to avoid stale data
+            const isLimitReached = data.daily_limit_reached || data.daily_points >= 100;
             
             notification.innerHTML = `
-                <div style="font-weight: 600; margin-bottom: 0.5rem;">Cycle Complete!</div>
-                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
-                    Health Score: <strong>${data.health_score}/100</strong>
-                </div>
-                <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
-                    Points Earned: <strong>+${data.points_earned}</strong>
-                </div>
-                <div style="font-size: 0.85rem; margin-bottom: 0.5rem; color: ${isAtLimit ? '#F59E0B' : isNearLimit ? '#F97316' : '#6B7280'};">
-                    Daily Progress: <strong>${dailyProgress}</strong> ${isAtLimit ? '🏆 Daily limit reached!' : isNearLimit ? '⚡ Close to daily limit!' : ''}
-                </div>
-                <div style="font-size: 0.85rem; color: #6B7280;">
-                    ${data.feedback}
+                <div style="position: relative;">
+                    <button class="dismiss-notification" style="
+                        position: absolute;
+                        top: -0.5rem;
+                        right: -0.5rem;
+                        background: #6B7280;
+                        color: white;
+                        border: none;
+                        border-radius: 50%;
+                        width: 24px;
+                        height: 24px;
+                        cursor: pointer;
+                        font-size: 0.8rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: background-color 0.2s;
+                        z-index: 1;
+                    " onmouseover="this.style.background='#374151'" onmouseout="this.style.background='#6B7280'">×</button>
+                    
+                    <div style="font-weight: 600; margin-bottom: 0.5rem;">Cycle Complete!</div>
+                    <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        Health Score: <strong>${data.health_score}/100</strong>
+                    </div>
+                    <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        Points Earned: <strong>+${data.points_earned}</strong> ${isLimitReached ? '🏆 Daily limit reached!' : ''}
+                    </div>
+                    <div style="font-size: 0.85rem; color: #6B7280;">
+                        ${data.feedback}
+                    </div>
                 </div>
             `;
             
             document.body.appendChild(notification);
             
-            // Auto-remove after 6 seconds (longer to read daily progress)
-            setTimeout(() => {
+            // Add click event to dismiss button
+            const dismissBtn = notification.querySelector('.dismiss-notification');
+            let autoRemoveTimeout;
+            
+            if (dismissBtn) {
+                dismissBtn.addEventListener('click', () => {
+                    if (autoRemoveTimeout) {
+                        clearTimeout(autoRemoveTimeout);
+                    }
+                    if (notification && notification.parentNode) {
+                        notification.remove();
+                    }
+                });
+            }
+            
+            // Auto-remove after 8 seconds (increased time so users can read it)
+            autoRemoveTimeout = setTimeout(() => {
                 if (notification && notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 6000);
+            }, 8000);
         }
     }
 
@@ -1838,20 +2146,44 @@ class FocusClockUI {
     async loadPointsStatus() {
         try {
             // Show loading state immediately
-            console.log('� Loading points from database...');
+            console.log('📊 Loading points from database...');
             this.updatePointsDisplay(0, 0);
+            this.updateTodaysCyclesDisplay(0);
 
-            // Fetch fresh data from database (single source of truth)
-            const response = await fetch('/api/health-cycle/points-status');
+            // Get user's current date in their LOCAL timezone (not UTC)
+            const now = new Date();
+            const userDate = now.getFullYear() + '-' + 
+                           String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(now.getDate()).padStart(2, '0');
+            console.log('📅 User LOCAL timezone date:', userDate);
+            console.log('🔧 UTC date would be:', new Date().toISOString().split('T')[0]);
+
+            // Fetch fresh data from database with user's timezone date
+            const url = `/api/health-cycle/points-status?user_date=${userDate}`;
+            console.log('🌐 Fetching from URL:', url);
+            
+            const response = await fetch(url);
             const data = await response.json();
 
-            console.log('� Points loaded from database:', data);
+            console.log('📊 Points loaded from database:', data);
+            console.log('🔧 CRITICAL: todays_cycles value:', data.todays_cycles);
+            console.log('🔧 CRITICAL: About to call updateTodaysCyclesDisplay with:', data.todays_cycles);
+            
             this.updatePointsDisplay(data.total_points, data.daily_points);
+            
+            // Update today's cycles display
+            if (data.todays_cycles !== undefined) {
+                this.updateTodaysCyclesDisplay(data.todays_cycles);
+            } else {
+                console.warn('⚠️ todays_cycles is undefined in API response');
+                this.updateTodaysCyclesDisplay(0);
+            }
         } catch (error) {
-            console.log('Points system unavailable (not logged in or network error)');
+            console.log('❌ Points system unavailable (not logged in or network error):', error);
             
             // If network fails, show default values
             this.updatePointsDisplay(0, 0);
+            this.updateTodaysCyclesDisplay(0);
         }
     }
 
@@ -1912,7 +2244,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!document.hidden && window.focusClockUI.core.isRunning) {
                 // Tab became visible and timer is running - force an immediate update
                 // This ensures the display is accurate even if intervals were throttled
+                console.log('🔄 Tab became visible - checking for missed session completions');
                 window.focusClockUI.core.tick();
+                
+                // Also check if we missed a session completion while in background
+                window.focusClockUI.core.checkForMissedCompletion();
             }
         });
     }
