@@ -456,6 +456,14 @@ class FocusClockCore {
                 modal.remove();
             }
         });
+        
+        // Remove any existing notifications
+        const existingNotifications = document.querySelectorAll('.login-prompt-notification, .points-notification');
+        existingNotifications.forEach(notification => {
+            if (notification && notification.parentNode) {
+                notification.remove();
+            }
+        });
 
         // Clear the reference
         this.currentPopup = null;
@@ -1927,16 +1935,24 @@ class FocusClockUI {
             const data = await response.json();
             console.log('📊 API Response data:', data);
 
-            if (data.success) {
-                // Show feedback notification (this will handle all UI updates)
+            // Check if authentication is required
+            if (data.requires_auth || response.status === 401) {
+                this.showLoginPrompt(data);
+            } else if (data.success) {
+                this.showPointsFeedback(data);
+            } else if (data.health_score !== undefined) {
+                // Handle daily limit reached case
                 this.showPointsFeedback(data);
             } else {
-                // Daily limit reached - show feedback notification
-                this.showPointsFeedback(data);
+                // Fallback to login prompt for any other case
+                this.showLoginPrompt(data);
             }
         } catch (error) {
-            console.log('Points system unavailable (not logged in or network error)');
-            // Silently fail if user is not logged in or backend is unavailable
+            console.log('Points system unavailable (not logged in or network error):', error);
+            // Show login prompt with custom message for errors
+            this.showLoginPrompt({
+                message: 'Please log in to track your desk health cycles and earn points.'
+            });
         }
     }
 
@@ -2026,6 +2042,9 @@ class FocusClockUI {
 
     // Show points feedback notification
     showPointsFeedback(data) {
+        // Remove any existing notifications first
+        this.removeExistingNotifications();
+
         // Log the data for debugging
         console.log('🎯 Showing points feedback with data:', {
             total: data.total_points,
@@ -2048,7 +2067,7 @@ class FocusClockUI {
             this.updateTodaysCyclesDisplay(data.todays_cycles);
         }
         
-        // Show detailed feedback notification
+        // Show detailed feedback notification only if we have valid data
         console.log('🏆 Health Cycle Complete!', {
             healthScore: data.health_score,
             pointsEarned: data.points_earned,
@@ -2057,8 +2076,8 @@ class FocusClockUI {
             dailyPoints: data.daily_points
         });
         
-        // Show visual notification with score details INCLUDING daily points progress
-        if (data.health_score !== undefined) {
+        // Only show feedback if we have valid health score AND points data
+        if (data.health_score !== undefined && data.total_points !== undefined && data.points_earned !== undefined) {
             const notification = document.createElement('div');
             notification.className = 'points-notification';
             notification.style.cssText = `
@@ -2106,7 +2125,7 @@ class FocusClockUI {
                         Points Earned: <strong>+${data.points_earned}</strong> ${isLimitReached ? '🏆 Daily limit reached!' : ''}
                     </div>
                     <div style="font-size: 0.85rem; color: #6B7280;">
-                        ${data.feedback}
+                        ${data.feedback || 'Cycle completed successfully!'}
                     </div>
                 </div>
             `;
@@ -2137,9 +2156,87 @@ class FocusClockUI {
         }
     }
 
-    // Show visual notification when it's time to stand up - Removed
-    showStandUpNotification() {
-        // Removed notification
+    // Remove any existing notifications
+    removeExistingNotifications() {
+        // Remove all existing notifications
+        const existingNotifications = document.querySelectorAll('.login-prompt-notification, .points-notification');
+        existingNotifications.forEach(notification => {
+            if (notification && notification.parentNode) {
+                notification.remove();
+            }
+        });
+    }
+
+    // Show login prompt for users not logged in
+    showLoginPrompt(data) {
+        console.log('🔐 Showing login prompt - user not logged in or test user not found');
+        
+        // Remove any existing notifications first
+        this.removeExistingNotifications();
+
+        // Show persistent notification asking user to log in
+        const notification = document.createElement('div');
+        notification.className = 'login-prompt-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            min-width: 350px;
+            border-left: 4px solid #3B82F6;
+        `;
+
+        notification.innerHTML = `
+            <div style="position: relative;">
+                <button class="dismiss-login-prompt" style="
+                    position: absolute;
+                    top: -0.5rem;
+                    right: -0.5rem;
+                    background: #6B7280;
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 24px;
+                    height: 24px;
+                    cursor: pointer;
+                    font-size: 0.8rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background-color 0.2s;
+                    z-index: 1;
+                " onmouseover="this.style.background='#374151'" onmouseout="this.style.background='#6B7280'">×</button>
+
+                <div style="font-weight: 600; margin-bottom: 0.5rem; color: #3B82F6;">
+                    <i class="fas fa-user-lock" style="margin-right: 0.5rem;"></i>Login Required
+                </div>
+                <div style="font-size: 0.9rem; margin-bottom: 1rem; color: #4B5563;">
+                    Sign in to track your progress and earn points for maintaining a healthy work pattern.
+                </div>
+                <div style="font-size: 0.85rem; color: #DC2626; font-weight: 500;">
+                    Your cycles will not be counted until you log in.
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Add click event to dismiss button
+        const dismissBtn = notification.querySelector('.dismiss-login-prompt');
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', () => {
+                if (notification && notification.parentNode) {
+                    notification.remove();
+                }
+            });
+        }
+
+        // This notification is persistent - NO auto-remove timeout
+        // User must click the X to dismiss it
     }
 
     // Load user's points on page load

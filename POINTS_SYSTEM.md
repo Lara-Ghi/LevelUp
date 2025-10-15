@@ -32,13 +32,13 @@ The algorithm calculates a health score (0-100) for each sit-stand cycle:
 #### Step 1: Ratio Accuracy (70% weight)
 - **Ideal Ratio**: 2:1 (20 min sitting : 10 min standing)
 - Measures how close the user's pattern matches the Cornell research recommendation
-- Formula: `1 - |user_ratio - 2| / 2`
+- Formula: `max(0, 1 - |user_ratio - 2| / 2)`
 
 #### Step 2: Duration Balance (30% weight)
 - **Ideal Total**: ~30 minutes per cycle
 - Rewards cycles that last around 30 minutes
 - Allows flexibility (25-35 minutes gets full points)
-- Formula: `1 - |total_minutes - 30| / 20`
+- Formula: `max(0, 1 - |total_minutes - 30| / 20)`
 
 #### Final Score
 ```
@@ -46,7 +46,9 @@ if (total_time < 15 minutes):
     return 0  # Too short, no points
 
 # Cycles of exactly 15 minutes proceed to scoring
-health_score = (ratio_score × 0.7 + duration_score × 0.3) × 100
+ratio_score = max(0, 1 - |user_ratio - 2| / 2)
+duration_score = max(0, 1 - |total_minutes - 30| / 20)
+health_score = round((ratio_score × 0.7 + duration_score × 0.3) × 100)
 ```
 
 ### Points Conversion
@@ -58,6 +60,8 @@ health_score = (ratio_score × 0.7 + duration_score × 0.3) × 100
 | 50-69 | +4 pts | 🟠 Fair — try adjusting your times a bit | Orange |
 | <50 | 0 pts | 🔴 Too much sitting or too short — no points | Red |
 
+**Note**: Both ratio_score and duration_score are clamped to a minimum of 0 using `max(0, ...)` to prevent negative scores. This means extreme imbalances (like 50:1 sitting ratio or 5-minute cycles) get 0 points for that component.
+
 ## 📊 Examples
 
 | Sitting | Standing | Ratio | Total | Score | Points | Interpretation |
@@ -68,6 +72,7 @@ health_score = (ratio_score × 0.7 + duration_score × 0.3) × 100
 | 15 min | 15 min | 1.0 | 30 min | 70 | +7 | 🟡 Balanced but too much standing |
 | 10 min | 5 min | 2.0 | 15 min | 78 | +7 | 🟡 Good — minimum cycle time, perfect ratio |
 | 2 min | 1 min | 2.0 | 3 min | 0 | 0 | 🔴 Too short — cycle incomplete (< 15 min) |
+| 50 min | 5 min | 10.0 | 55 min | 0 | 0 | 🔴 Extreme sitting ratio (ratio_score = 0) |
 
 **Note**: Any cycle under 15 minutes total automatically scores 0. Cycles of exactly 15 minutes are allowed and will be scored normally.
 

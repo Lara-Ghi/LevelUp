@@ -125,12 +125,9 @@ class HealthCycleController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Test user not found. Please run: php artisan db:seed',
-                    'health_score' => 0,
-                    'points_earned' => 0,
-                    'daily_points' => 0,
-                    'total_points' => 0,
-                ], 404);
+                    'message' => 'Authentication required',
+                    'requires_auth' => true
+                ], 401);
             }
         }
         
