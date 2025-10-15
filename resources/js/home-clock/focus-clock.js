@@ -949,6 +949,8 @@ class FocusClockUI {
         this.storage = new FocusClockStorage();
         this.elements = {};
         this.isInitialized = false;
+        this.lastCheckedDate = this.getCurrentDateString(); // Track current date for daily reset
+        this.dailyCheckIntervalId = null; // Interval for daily reset checks
 
         this.init();
         console.log('✅ FocusClockUI initialization completed');
@@ -969,6 +971,9 @@ class FocusClockUI {
         }
 
         this.isInitialized = true;
+        
+        // Start daily reset check (every 60 seconds)
+        this.startDailyResetCheck();
     }
 
     // Create HTML structure
@@ -2308,6 +2313,45 @@ class FocusClockUI {
             const isEnabled = this.elements.editEnableAudioAlerts.checked;
             audioControls.style.opacity = isEnabled ? '1' : '0.5';
             audioControls.style.pointerEvents = isEnabled ? 'auto' : 'none';
+        }
+    }
+
+    // Get current date as string (YYYY-MM-DD) in user's local timezone
+    getCurrentDateString() {
+        const now = new Date();
+        return now.getFullYear() + '-' + 
+               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(now.getDate()).padStart(2, '0');
+    }
+
+    // Start checking for daily reset (every 60 seconds)
+    startDailyResetCheck() {
+        console.log('⏰ Starting daily reset check (every 60 seconds)');
+        
+        this.dailyCheckIntervalId = setInterval(() => {
+            this.checkAndRefreshForNewDay();
+        }, 60000); // Check every 60 seconds (1 minute)
+    }
+
+    // Stop daily reset check
+    stopDailyResetCheck() {
+        if (this.dailyCheckIntervalId) {
+            clearInterval(this.dailyCheckIntervalId);
+            this.dailyCheckIntervalId = null;
+            console.log('⏹️ Stopped daily reset check');
+        }
+    }
+
+    // Check if day has changed and refresh UI if needed
+    checkAndRefreshForNewDay() {
+        const currentDateString = this.getCurrentDateString();
+        
+        if (currentDateString !== this.lastCheckedDate) {
+            console.log(`🌅 Day changed from ${this.lastCheckedDate} to ${currentDateString} - Refreshing UI`);
+            this.lastCheckedDate = currentDateString;
+            
+            // Reload points and cycles from database (triggers daily reset on backend)
+            this.loadPointsStatus();
         }
     }
 
