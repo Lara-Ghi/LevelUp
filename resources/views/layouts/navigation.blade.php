@@ -1,6 +1,6 @@
 <header>
     <nav class="modern-nav">
-        <!-- Enhanced Volcanic Bubble Effects - More Blue Circles -->
+        <!-- NAVBAR for all the pages -->
         <div class="nav-bubble-container">
             <div class="nav-gradient-container">
                 <div class="nav-g1"></div>

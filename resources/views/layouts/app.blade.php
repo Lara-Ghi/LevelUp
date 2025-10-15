@@ -15,6 +15,7 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬆️</text></svg>">
 
+    @vite('resources/css/app.css')
     @vite('resources/css/home-clock/focus-clock.css')
 
     @yield('additional_css')
@@ -27,6 +28,8 @@
     <main>
         @yield('content')
     </main>
+
+    @include('layouts.desk-setup')
 
     <footer class="glass-footer">
         <div class="footer-container">
@@ -83,7 +86,7 @@
                 if (welcomeSubtitle) welcomeSubtitle.style.opacity = '1';
             }, 300);
             
-            console.log('🚀 LevelUp Enhanced Volcanic Navbar - Ready!');
+            console.log('⬆️ LevelUp - Ready!');
         });
     </script>
 </body>

@@ -1,5 +1,5 @@
 // ===========================================
-// 🚀 LEVELUP - INTERACTIVE FUNCTIONALITY 🚀 
+//     LEVELUP - GENERAL FUNCTIONALITIES
 // ===========================================
 
 /**
@@ -399,8 +399,7 @@ document.addEventListener('keydown', function(e) {
 
 // Console welcome message
 console.log(`
-🚀 Welcome to LevelUp!
-Built with passion for growth and learning.
+⬆️ Welcome to LevelUp!
 Theme Colors: #171738, #2E1760, #3423A6, #7180B9, #DFF3E4
 `);
 
