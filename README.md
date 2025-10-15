@@ -5,61 +5,7 @@ A focus timer application that helps you maintain healthy work habits by alterna
 📖 **Points system with cycles - Thursday (Mats)**: See `POINTS_SYSTEM.md`  
 📝 **For project changes and updates**: See `CHANGELOG.md`
 
-## About Laravel
-
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-
-
-## 🚀 Team Setup Guide
+## Setup Guide
 
 ### Prerequisites
 Make sure you have installed:
@@ -84,7 +30,6 @@ npm install
 ### Step 2: Windows PowerShell Fix (Windows Users Only)
 If you get PowerShell execution policy errors:
 ```powershell
-# Run this ONCE in PowerShell as Administrator:
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
 ```
 
@@ -99,13 +44,13 @@ php artisan key:generate
 
 ### Step 4: Database Setup
 
-#### Option A: Using XAMPP
+#### Option A: Using XAMPP - This is my case (Manish), because I have XAMPP installed
 1. **Start XAMPP** - Open XAMPP Control Panel
 2. **Start Apache** - Click "Start" next to Apache
 3. **Start MySQL** - Click "Start" next to MySQL  
 4. **Keep XAMPP running** in the background while developing
 
-#### Option B: Using Local Database
+#### Option B: Using Local Database - Maybe Lara u need to do this, but I am not sure
 Edit `.env` file with your database credentials:
 ```env
 DB_CONNECTION=mysql
@@ -121,7 +66,7 @@ DB_PASSWORD=your_password
 # Create database tables
 php artisan migrate
 
-# Create test user for points system
+# Create test user for points system and see that it works
 php artisan db:seed
 ```
 
@@ -165,26 +110,18 @@ Visit: **http://127.0.0.1:8000**
 
 **❌ "Points not working"**
 - Make sure test user exists: `php artisan db:seed`
-- Check browser console for API errors
+- Check browser console for API errors (Right-click "Inspect" and head to Console to see workflow and errors)
 
 **❌ "Server not starting"**
 - Check if port 8000 is already in use
 - Try `php artisan serve --port=8001`
-
-## 📁 Key Files for Development
-
-- **Focus Clock**: `resources/js/home-clock/focus-clock.js`
-- **Styling**: `resources/css/home-clock/`  
-- **Backend API**: `app/Http/Controllers/HealthCycleController.php`
-- **Routes**: `routes/web.php`
-- **Database**: `database/migrations/`
 
 ## 🎮 Testing the Points System
 
 1. Start a focus cycle (click the timer)
 2. Let it run through sitting → standing phases  
 3. Complete a full cycle
-4. Check browser console for point calculations
+4. Check browser console for point calculations (By inspecting the website "right-click" and click the console tab)
 5. Try different timing combinations to see scoring
 
 **Pro tip**: For testing, try 20 min sitting + 10 min standing for maximum points!

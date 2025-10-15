@@ -7,9 +7,16 @@ The Health Cycle Scoring System rewards users for maintaining healthy alternatio
 
 ### Daily Points Limit
 - Users can earn a **maximum of 100 points per day**
-- Points reset at midnight
+- Points reset at midnight based on user's timezone (`last_daily_reset` field)
 - Total lifetime points accumulate indefinitely
 - Daily progress is displayed in the navbar
+
+### Timezone-Aware Daily Reset
+The system uses timezone-aware daily resets to ensure points reset at the correct time for each user:
+- `last_daily_reset` field tracks when the user's daily points were last reset
+- API accepts `user_date` parameter to handle timezone differences
+- Prevents users from gaming the system by changing timezones
+- Ensures fair daily limits regardless of user's location
 
 ### Scoring Algorithm (LINAK 20:10)
 
@@ -18,6 +25,7 @@ The algorithm calculates a health score (0-100) for each sit-stand cycle:
 #### Step 0: Minimum Cycle Check (Anti-Gaming Protection)
 - **Minimum Total Duration**: 15 minutes
 - Any cycle shorter than 15 minutes total automatically gets **0 points**
+- Cycles of **exactly 15 minutes ARE allowed** and will be scored normally
 - Prevents gaming the system with tiny cycles (e.g., 2 min sit + 1 min stand)
 - Ensures users complete meaningful work periods
 
@@ -37,6 +45,7 @@ The algorithm calculates a health score (0-100) for each sit-stand cycle:
 if (total_time < 15 minutes):
     return 0  # Too short, no points
 
+# Cycles of exactly 15 minutes proceed to scoring
 health_score = (ratio_score × 0.7 + duration_score × 0.3) × 100
 ```
 
@@ -55,12 +64,12 @@ health_score = (ratio_score × 0.7 + duration_score × 0.3) × 100
 |---------|----------|-------|-------|-------|--------|----------------|
 | 20 min | 10 min | 2.0 | 30 min | 100 | +10 | 🟢 Perfect balance |
 | 25 min | 10 min | 2.5 | 35 min | 85 | +7 | 🟡 Good — slightly long sitting |
-| 30 min | 5 min | 6.0 | 35 min | 40 | 0 | 🟠 Too much sitting |
+| 30 min | 5 min | 6.0 | 35 min | 40 | 0 | 🔴 Too much sitting |
 | 15 min | 15 min | 1.0 | 30 min | 70 | +7 | 🟡 Balanced but too much standing |
-| 10 min | 5 min | 2.0 | 15 min | 0 | 0 | � Cycle exactly at minimum (barely qualifies) |
+| 10 min | 5 min | 2.0 | 15 min | 78 | +7 | 🟡 Good — minimum cycle time, perfect ratio |
 | 2 min | 1 min | 2.0 | 3 min | 0 | 0 | 🔴 Too short — cycle incomplete (< 15 min) |
 
-**Note**: Any cycle under 15 minutes total automatically scores 0, preventing gaming the system with tiny cycles.
+**Note**: Any cycle under 15 minutes total automatically scores 0. Cycles of exactly 15 minutes are allowed and will be scored normally.
 
 ## 🔧 API Endpoints
 
@@ -73,7 +82,8 @@ POST /api/health-cycle/complete
 {
   "sitting_minutes": 20,
   "standing_minutes": 10,
-  "cycle_number": 5
+  "cycle_number": 5,
+  "user_date": "2025-10-15"
 }
 ```
 
@@ -86,15 +96,17 @@ POST /api/health-cycle/complete
   "points_earned": 10,
   "daily_points": 45,
   "total_points": 1250,
+  "todays_cycles": 3,
   "feedback": "🟢 Perfect! Excellent sit–stand balance.",
   "color": "green",
-  "daily_limit_reached": false
+  "daily_limit_reached": false,
+  "user_date": "2025-10-15"
 }
 ```
 
 ### Get Points Status
 ```
-GET /api/health-cycle/points-status
+GET /api/health-cycle/points-status?user_date=2025-10-15
 ```
 
 **Response:**
@@ -102,8 +114,10 @@ GET /api/health-cycle/points-status
 {
   "total_points": 1250,
   "daily_points": 45,
+  "todays_cycles": 3,
   "can_earn_more": true,
-  "points_remaining_today": 55
+  "points_remaining_today": 55,
+  "user_date": "2025-10-15"
 }
 ```
 
@@ -114,12 +128,13 @@ GET /api/health-cycle/history?limit=10
 
 ## 💾 Database Tables
 
-### users table (modified)
-- `total_points` - Lifetime total points
-- `daily_points` - Points earned today
-- `last_points_date` - Last date points were earned
+### users table
+- `total_points` - Lifetime total points accumulated
+- `daily_points` - Points earned today (resets daily)
+- `last_points_date` - Last date when points were earned (for legacy daily reset)
+- `last_daily_reset` - Date when daily points were last reset (timezone-aware)
 
-### health_cycles table (new)
+### health_cycles table
 - `user_id` - Foreign key to users
 - `sitting_minutes` - Duration of sitting session
 - `standing_minutes` - Duration of standing session
@@ -127,25 +142,6 @@ GET /api/health-cycle/history?limit=10
 - `health_score` - Calculated score (0-100)
 - `points_earned` - Points awarded for this cycle
 - `completed_at` - Timestamp of completion
-
-## 🚀 Setup
-
-1. Run migrations:
-```bash
-php artisan migrate
-```
-
-2. The system automatically integrates with the Desk Timer
-3. Points are awarded automatically when a cycle completes
-4. No user action required - just use the timer!
-
-## 📱 Frontend Integration
-
-The points system is integrated into the Desk Timer:
-- **Navbar**: Displays total points and daily progress
-- **Auto-submission**: Cycles are automatically submitted when completed
-- **Notifications**: Real-time feedback shows score, points, and health tips
-- **Graceful degradation**: Works without authentication (doesn't break for guests)
 
 ## 🔐 Authentication
 
@@ -156,15 +152,3 @@ All API endpoints require authentication via Laravel's `auth` middleware. Guests
 This system is based on:
 - **Cornell University** ergonomics research
 - **LINAK** 20:10 sit-stand pattern
-- Focus on sustainable desk work habits
-- Evidence-based health recommendations
-
-## 📈 Future Enhancements
-
-Potential additions:
-- Streak bonuses (5+ perfect cycles in a row)
-- Leaderboards
-- Weekly/monthly statistics
-- Custom health goals
-- Achievement badges
-- Social sharing features

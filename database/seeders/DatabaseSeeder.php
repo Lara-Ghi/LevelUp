@@ -13,15 +13,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create a test user with default points
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password'), // password: password
-            'total_points' => 0,
-            'daily_points' => 0,
-            'last_points_date' => now()->toDateString(),
-        ]);
+        // Create or update test user with default points
+        User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => bcrypt('password'), // password: password
+                'total_points' => 0,
+                'daily_points' => 0,
+                'last_points_date' => now()->toDateString(),
+            ]
+        );
         
         // Optionally create more test users
         // User::factory(5)->create();
