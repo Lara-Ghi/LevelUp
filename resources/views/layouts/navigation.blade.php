@@ -1,0 +1,66 @@
+<header>
+    <nav class="modern-nav">
+        <!-- Enhanced Volcanic Bubble Effects - More Blue Circles -->
+        <div class="nav-bubble-container">
+            <div class="nav-gradient-container">
+                <div class="nav-g1"></div>
+                <div class="nav-g2"></div>
+                <div class="nav-g3"></div>
+                <div class="nav-g4"></div>
+                <div class="nav-g5"></div>
+                <div class="nav-g6"></div>
+                <div class="nav-g7"></div>
+                <div class="nav-g8"></div>
+                <div class="nav-g9"></div>
+                <div class="nav-g10"></div>
+                <div class="nav-g11"></div>
+                <div class="nav-g12"></div>
+                <div class="nav-g13"></div>
+                <div class="nav-g14"></div>
+                <div class="nav-g15"></div>
+            </div>
+        </div>
+        
+        <div class="nav-container">
+            <!-- Logo -->
+            <div class="nav-logo">
+                <a href="{{ url('/') }}" aria-label="Home">
+                    <img src="{{ asset('nav-logo.png') }}" alt="LevelUp Logo" class="nav-logo-img">
+                </a>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="nav-links">
+                <a href="{{ url('/') }}" class="nav-link active">
+                    <i class="fa-solid fa-house"></i>
+                    Home
+                </a>
+                <a href="{{ url('/statistics') }}" class="nav-link">
+                    <i class="fas fa-chart-bar"></i>
+                    Statistics
+                </a>
+                <a href="{{ url('/rewards') }}" class="nav-link">
+                    <i class="fas fa-trophy"></i>
+                    Rewards
+                </a>
+            </div>
+
+            <!-- Enhanced User Actions -->
+            <div class="nav-actions">
+                <!-- Simple Blue Points Display -->
+                <div class="points-display">
+                    <div>
+                        <i class="fas fa-star"></i>
+                        <span class="points-number" id="totalPoints">0</span>
+                        <span class="points-label">Points</span>
+                    </div>
+                    <span class="points-daily" id="dailyPoints" style="font-size: 0.75rem; color: rgba(255,255,255,0.8);">0/100 today</span>
+                </div>
+                <a href="{{ url('/profile') }}" class="profile-link">
+                    <i class="fa-solid fa-user"></i>
+                    Profile
+                </a>
+            </div>
+        </div>
+    </nav>
+</header>
