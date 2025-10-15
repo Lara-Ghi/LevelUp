@@ -104,6 +104,37 @@ class FocusClockCore {
             // Schedule stopping of current alarm if it would overlap
             this.scheduleAlarmStop(timeUntilAlarm);
             
+            // Use RequestAnimationFrame for more reliable timing in background
+            // Store the target time for the alarm
+            const alarmTargetTime = Date.now() + timeUntilAlarm;
+            
+            const checkAlarmTiming = () => {
+                const now = Date.now();
+                const timeRemaining = alarmTargetTime - now;
+                
+                // If we're within 500ms of target or past it, trigger alarm
+                if (timeRemaining <= 500) {
+                    if (this.isRunning && !this.warningShown) {
+                        console.log('⏰ Scheduled 30-second alarm triggered (RAF check)');
+                        this.warningShown = true;
+                        
+                        // Play the MAIN alarm 30 seconds before session ends
+                        if (this.isSittingSession) {
+                            this.playAlarmAndShowPopup('standUp');
+                        } else {
+                            this.playAlarmAndShowPopup('backToWork');
+                        }
+                    }
+                    return; // Stop checking
+                }
+                
+                // If still waiting, check again with RAF (more reliable than setTimeout)
+                if (this.isRunning && !this.warningShown) {
+                    requestAnimationFrame(checkAlarmTiming);
+                }
+            };
+            
+            // Start with a setTimeout as primary trigger, but RAF as backup
             this.alarmTimeoutId = setTimeout(() => {
                 if (this.isRunning && !this.warningShown) {
                     console.log('⏰ Scheduled 30-second alarm triggered at exact timing');
@@ -118,7 +149,10 @@ class FocusClockCore {
                 }
             }, timeUntilAlarm);
             
-            console.log(`⏰ Scheduled 30-second alarm to trigger in ${timeUntilAlarm}ms`);
+            // Also use RAF as backup in case setTimeout is throttled
+            requestAnimationFrame(checkAlarmTiming);
+            
+            console.log(`⏰ Scheduled 30-second alarm to trigger in ${timeUntilAlarm}ms (with RAF backup)`);
         } else {
             console.log('⏰ Session too short for 30-second warning');
         }
@@ -300,6 +334,36 @@ class FocusClockCore {
             // Schedule stopping of current alarm if it would overlap
             this.scheduleAlarmStop(timeUntilAlarm);
             
+            // Use RequestAnimationFrame for more reliable timing in background
+            const alarmTargetTime = Date.now() + timeUntilAlarm;
+            
+            const checkAlarmTiming = () => {
+                const now = Date.now();
+                const timeRemaining = alarmTargetTime - now;
+                
+                // If we're within 500ms of target or past it, trigger alarm
+                if (timeRemaining <= 500) {
+                    if (this.isRunning && !this.warningShown) {
+                        console.log('⏰ Scheduled 30-second alarm triggered for new session (RAF check)');
+                        this.warningShown = true;
+                        
+                        // Play the MAIN alarm 30 seconds before session ends
+                        if (this.isSittingSession) {
+                            this.playAlarmAndShowPopup('standUp');
+                        } else {
+                            this.playAlarmAndShowPopup('backToWork');
+                        }
+                    }
+                    return;
+                }
+                
+                // If still waiting, check again with RAF
+                if (this.isRunning && !this.warningShown) {
+                    requestAnimationFrame(checkAlarmTiming);
+                }
+            };
+            
+            // Start with a setTimeout as primary trigger, but RAF as backup
             this.alarmTimeoutId = setTimeout(() => {
                 if (this.isRunning && !this.warningShown) {
                     console.log('⏰ Scheduled 30-second alarm triggered for new session at exact timing');
@@ -314,7 +378,10 @@ class FocusClockCore {
                 }
             }, timeUntilAlarm);
             
-            console.log(`⏰ Scheduled 30-second alarm for new session to trigger in ${timeUntilAlarm}ms`);
+            // Also use RAF as backup in case setTimeout is throttled
+            requestAnimationFrame(checkAlarmTiming);
+            
+            console.log(`⏰ Scheduled 30-second alarm for new session to trigger in ${timeUntilAlarm}ms (with RAF backup)`);
         }
         
         // Start new intervals with enhanced background support
@@ -364,14 +431,40 @@ class FocusClockCore {
             const stopTime = Math.max(0, nextAlarmDelay - (15 * 1000)); // 15 seconds before next alarm
             
             if (stopTime > 0) {
+                // Use both setTimeout and RAF for reliability in background
+                const stopTargetTime = Date.now() + stopTime;
+                
+                const checkStopTiming = () => {
+                    const now = Date.now();
+                    const timeRemaining = stopTargetTime - now;
+                    
+                    // If we're within 500ms of target or past it, stop alarm
+                    if (timeRemaining <= 500) {
+                        if (this.currentAlarm && !this.currentAlarm.paused) {
+                            console.log('🔇 Stopping current alarm 15 seconds before next alarm (RAF check)');
+                            this.cleanupAlarmAndPopup();
+                        }
+                        return;
+                    }
+                    
+                    // Keep checking with RAF
+                    if (this.currentAlarm && !this.currentAlarm.paused) {
+                        requestAnimationFrame(checkStopTiming);
+                    }
+                };
+                
+                // Primary: setTimeout
                 setTimeout(() => {
                     if (this.currentAlarm && !this.currentAlarm.paused) {
-                        console.log('� Stopping current alarm 15 seconds before next alarm');
+                        console.log('🔇 Stopping current alarm 15 seconds before next alarm');
                         this.cleanupAlarmAndPopup();
                     }
                 }, stopTime);
                 
-                console.log(`🔇 Scheduled current alarm to stop in ${stopTime / 1000}s (15s before next alarm)`);
+                // Backup: RAF for background reliability
+                requestAnimationFrame(checkStopTiming);
+                
+                console.log(`🔇 Scheduled current alarm to stop in ${stopTime / 1000}s (15s before next alarm) with RAF backup`);
             } else {
                 // If next alarm is very soon, stop current alarm immediately
                 console.log('🔇 Stopping current alarm immediately - next alarm starting soon');
@@ -555,12 +648,41 @@ class FocusClockCore {
                 } else {
                     // For timed alerts, auto-stop and dismiss after specified duration
                     autoDismissDelay = parseInt(settings.alertDuration) * 1000;
+                    
+                    // Use both setTimeout and RAF for reliable background stopping
+                    const stopTargetTime = Date.now() + autoDismissDelay;
+                    
+                    const checkAutoStopTiming = () => {
+                        const now = Date.now();
+                        const timeRemaining = stopTargetTime - now;
+                        
+                        // If we're within 500ms of target or past it, stop alarm
+                        if (timeRemaining <= 500) {
+                            if (this.currentAlarm && !this.currentAlarm.paused) {
+                                console.log(`⏰ Auto-stopping audio after ${settings.alertDuration} seconds (RAF check)`);
+                                this.cleanupAlarmAndPopup();
+                            }
+                            return;
+                        }
+                        
+                        // Keep checking with RAF
+                        if (this.currentAlarm && !this.currentAlarm.paused) {
+                            requestAnimationFrame(checkAutoStopTiming);
+                        }
+                    };
+                    
+                    // Primary: setTimeout
                     setTimeout(() => {
                         if (this.currentAlarm && !this.currentAlarm.paused) {
                             console.log(`⏰ Auto-stopping and dismissing after ${settings.alertDuration} seconds`);
                             this.cleanupAlarmAndPopup();
                         }
                     }, autoDismissDelay);
+                    
+                    // Backup: RAF for background reliability
+                    requestAnimationFrame(checkAutoStopTiming);
+                    
+                    console.log(`⏰ Scheduled auto-stop after ${settings.alertDuration}s (with RAF backup)`);
                 }
             }
         }
@@ -2383,9 +2505,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!window.focusClockUI || !window.focusClockUI.core) return;
 
             if (!document.hidden && window.focusClockUI.core.isRunning) {
-                // Tab became visible and timer is running - force an immediate update
-                // This ensures the display is accurate even if intervals were throttled
-                console.log('🔄 Tab became visible - checking for missed session completions');
+                // Tab became visible and timer is running
+                console.log('🔄 Tab became visible - checking for missed session completions and alarms');
+                
+                // Check if alarm should have fired while tab was hidden
+                const timeLeft = window.focusClockUI.core.currentTime;
+                const warningTime = 30; // 30 seconds warning
+                
+                // If we're at or past the 30-second mark and alarm hasn't shown yet, trigger it
+                if (timeLeft <= warningTime && !window.focusClockUI.core.warningShown) {
+                    console.log('⚠️ Alarm was delayed while tab was hidden - playing now!');
+                    window.focusClockUI.core.warningShown = true;
+                    const sessionType = window.focusClockUI.core.isSittingSession ? 'standUp' : 'backToWork';
+                    window.focusClockUI.core.playAlarmAndShowPopup(sessionType);
+                }
+                
+                // Force an immediate update to catch up
                 window.focusClockUI.core.tick();
                 
                 // Also check if we missed a session completion while in background
