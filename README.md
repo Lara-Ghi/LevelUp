@@ -70,6 +70,11 @@ php artisan migrate
 php artisan db:seed
 ```
 
+**Or, to reset the database with fresh migrations and seed (In case you want to reset the data and put everything to 0 "cycles, points ...". If not just do the two commands above and skip this one)**
+```bash
+php artisan migrate:fresh --seed
+```
+
 ### Step 6: Start Development Servers
 
 **You need TWO terminals running simultaneously:**
