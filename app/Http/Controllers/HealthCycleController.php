@@ -17,17 +17,19 @@ class HealthCycleController extends Controller
      */
     /**
      * Reset daily points if user's date changed (using timezone-aware date)
+     * IMPORTANT: This must match the User model's resetDailyPointsIfNeeded() to avoid double resets
      */
     private function resetDailyPointsForUserDate($user, $userDate)
     {
-        // Check if this is a new day for the user
-        $lastResetDate = $user->last_daily_reset ? 
-            \Carbon\Carbon::parse($user->last_daily_reset)->toDateString() : null;
+        // Check if this is a new day for the user using the SAME field as User model
+        $lastResetDate = $user->last_points_date ? 
+            \Carbon\Carbon::parse($user->last_points_date)->toDateString() : null;
             
         if ($lastResetDate !== $userDate) {
             // Reset daily points for new day
             $user->daily_points = 0;
-            $user->last_daily_reset = $userDate;
+            $user->last_points_date = $userDate;
+            $user->last_daily_reset = $userDate; // Keep both in sync for backward compatibility
             $user->save();
         }
     }
@@ -149,11 +151,11 @@ class HealthCycleController extends Controller
 
         // Check if user can earn points today (use cached daily_points for consistency)
         $actualPointsEarned = 0;
-        $dailyLimitReached = !$user->canEarnPoints();
+        $dailyLimitReached = !$user->canEarnPoints($userDate);
         
         if (!$dailyLimitReached) {
-            // Add points to user (respecting daily limit)
-            $actualPointsEarned = $user->addPoints($pointsEarned);
+            // Add points to user (respecting daily limit), passing userDate for consistency
+            $actualPointsEarned = $user->addPoints($pointsEarned, $userDate);
         }
 
         // Save the health cycle REGARDLESS of whether points are awarded

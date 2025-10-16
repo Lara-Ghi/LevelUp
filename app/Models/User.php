@@ -61,14 +61,18 @@ class User extends Authenticatable
 
     /**
      * Reset daily points if it's a new day
+     * @param string|null $userDate - Optional user's timezone date (Y-m-d format). If null, uses server date.
      */
-    public function resetDailyPointsIfNeeded()
+    public function resetDailyPointsIfNeeded($userDate = null)
     {
-        $today = now()->toDateString();
+        // Use provided user date or fallback to server date
+        $today = $userDate ? \Carbon\Carbon::parse($userDate)->toDateString() : now()->toDateString();
         
-        if ($this->last_points_date !== $today) {
+        $lastResetDate = $this->last_points_date ? 
+            \Carbon\Carbon::parse($this->last_points_date)->toDateString() : null;
+        
+        if ($lastResetDate !== $today) {
             // New day detected - reset daily points to 0
-            // Any existing cycles for today will be from a timezone mismatch and should not count
             $this->daily_points = 0;
             $this->last_points_date = $today;
             $this->save();
@@ -79,19 +83,23 @@ class User extends Authenticatable
 
     /**
      * Check if user can earn more points today
+     * @param string|null $userDate - Optional user's timezone date (Y-m-d format)
      */
-    public function canEarnPoints()
+    public function canEarnPoints($userDate = null)
     {
-        $this->resetDailyPointsIfNeeded();
+        $this->resetDailyPointsIfNeeded($userDate);
         return $this->daily_points < 100;
     }
 
     /**
      * Add points to user (respecting daily limit)
+     * @param int $points - Points to add
+     * @param string|null $userDate - Optional user's timezone date (Y-m-d format)
+     * @return int - Actual points added (may be less if daily limit reached)
      */
-    public function addPoints($points)
+    public function addPoints($points, $userDate = null)
     {
-        $this->resetDailyPointsIfNeeded();
+        $this->resetDailyPointsIfNeeded($userDate);
         
         if ($this->daily_points >= 100) {
             return 0; // Already at daily limit
