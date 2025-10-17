@@ -31,15 +31,15 @@
             
             <!-- Navigation Links -->
             <div class="nav-links">
-                <a href="{{ url('/') }}" class="nav-link active">
+                <a href="{{ url('/') }}" class="nav-link {{ request()->is('/') ? 'active' : '' }}">
                     <i class="fa-solid fa-house"></i>
                     Home
                 </a>
-                <a href="{{ url('/statistics') }}" class="nav-link">
+                <a href="{{ url('/statistics') }}" class="nav-link {{ request()->is('statistics*') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar"></i>
                     Statistics
                 </a>
-                <a href="{{ url('/rewards') }}" class="nav-link">
+                <a href="{{ url('/rewards') }}" class="nav-link {{ request()->is('rewards*') ? 'active' : '' }}">
                     <i class="fas fa-trophy"></i>
                     Rewards
                 </a>
@@ -56,7 +56,7 @@
                     </div>
                     <span class="points-daily" id="dailyPoints" style="font-size: 0.75rem; color: rgba(255,255,255,0.8);">0/100 today</span>
                 </div>
-                <a href="{{ url('/profile') }}" class="profile-link">
+                <a href="{{ url('/profile') }}" class="nav-link {{ request()->is('profile*') ? 'active' : '' }}">
                     <i class="fa-solid fa-user"></i>
                     Profile
                 </a>
