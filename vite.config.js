@@ -8,7 +8,8 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/css/home-clock/focus-clock.css',
-                'resources/js/home-clock/focus-clock.js'
+                'resources/js/home-clock/focus-clock.js',
+                'resources/css/rewards.css'
             ],
             refresh: true,
         }),

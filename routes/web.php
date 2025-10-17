@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HealthCycleController;
+use App\Http\Controllers\RewardsController;
 
 Route::get('/', function () {
     return view('home');
@@ -17,3 +18,4 @@ Route::get('/profile', function () {
 Route::post('/api/health-cycle/complete', [HealthCycleController::class, 'completeHealthCycle']);
 Route::get('/api/health-cycle/points-status', [HealthCycleController::class, 'getPointsStatus']);
 Route::get('/api/health-cycle/history', [HealthCycleController::class, 'getHistory']);
+Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards');
