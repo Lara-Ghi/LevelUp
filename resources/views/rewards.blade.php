@@ -7,31 +7,31 @@
 @section('title', 'Rewards')
 
 @section('content')
-    <main class="content">
-        <!-- Rewards Sub-Navigation -->
-        <div class="rewards-nav">
-            <a href="{{ url('/rewards?tab=available') }}"
-                class="rewards-nav-link {{ request()->query('tab', 'available') === 'available' ? 'active' : '' }}">
-                <i class="fas fa-gift"></i>
-                Available
-            </a>
-            <a href="{{ url('/rewards?tab=saved') }}"
-                class="rewards-nav-link {{ request()->query('tab') === 'saved' ? 'active' : '' }}">
-                <i class="fas fa-bookmark"></i>
-                Saved
-            </a>
-            <a href="{{ url('/rewards?tab=all') }}"
-                class="rewards-nav-link {{ request()->query('tab') === 'all' ? 'active' : '' }}">
-                <i class="fas fa-list"></i>
-                All
-            </a>
-            <a href="{{ url('/rewards?tab=history') }}"
-                class="rewards-nav-link {{ request()->query('tab') === 'history' ? 'active' : '' }}">
-                <i class="fas fa-history"></i>
-                History
-            </a>
-        </div>
+    <!-- Rewards Sub-Navigation -->
+    <div class="rewards-nav">
+        <a href="{{ url('/rewards?tab=available') }}"
+            class="rewards-nav-link {{ request()->query('tab', 'available') === 'available' ? 'active' : '' }}">
+            <i class="fas fa-gift"></i>
+            Available
+        </a>
+        <a href="{{ url('/rewards?tab=saved') }}"
+            class="rewards-nav-link {{ request()->query('tab') === 'saved' ? 'active' : '' }}">
+            <i class="fas fa-bookmark"></i>
+            Saved
+        </a>
+        <a href="{{ url('/rewards?tab=all') }}"
+            class="rewards-nav-link {{ request()->query('tab') === 'all' ? 'active' : '' }}">
+            <i class="fas fa-list"></i>
+            All
+        </a>
+        <a href="{{ url('/rewards?tab=history') }}"
+            class="rewards-nav-link {{ request()->query('tab') === 'history' ? 'active' : '' }}">
+            <i class="fas fa-history"></i>
+            History
+        </a>
+    </div>
 
+    <main class="content">
         <!-- Content Area -->
         <div class="rewards-content">
             @if(request()->query('tab', 'available') === 'available')
