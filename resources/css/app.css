@@ -384,11 +384,10 @@ body {
     height: 200px;
     width: auto;
     object-fit: contain;
-    position: absolute;
-    top: -55px;
-    left: -280px;
-    transform: none;
+    position: relative;
+    transform: translateY(40px); /* Move it down by 10px */
     z-index: 1000;
+    padding-top: 5px;
 }
 
 .nav-links {
