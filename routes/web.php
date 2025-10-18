@@ -12,6 +12,10 @@ Route::get('/profile', function () {
     return view('profile');
 });
 
+Route::get('/statistics', function() {
+    return view('statistics');
+});
+
 // Health Cycle API routes
 // TODO: Add authentication middleware when auth system is ready
 // For now, these work without auth but require a logged-in user to earn points
