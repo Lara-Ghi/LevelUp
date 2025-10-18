@@ -700,6 +700,10 @@ body {
     .welcome-text {
         font-size: 3.2rem;
     }
+
+    .icons {
+        top: 130px;
+    }
 }
 
 /* Tablet and Surface adjustments */
