@@ -565,7 +565,13 @@ body {
     }
 
     .nav-container {
-        padding-left: 4rem;
+        padding-left: 0rem;
+        justify-content: flex-start;
+    }
+
+    .nav-logo {
+        margin-right: auto;
+        margin-left: -6rem;
     }
 
     .content {
