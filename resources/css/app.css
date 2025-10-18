@@ -677,7 +677,13 @@ body {
     }
 
     .nav-container {
-        padding-left: 3rem;
+        padding-left: 0rem;
+        justify-content: flex-start;
+    }
+
+    .nav-logo {
+        margin-right: auto;
+        margin-left: -2rem;
     }
 
     .content h1 {
