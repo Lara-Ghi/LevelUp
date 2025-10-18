@@ -53,3 +53,58 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+
+/* ===========================================
+               RESPONSIVE DESIGN
+   =========================================== */
+
+@media (max-width: 768px) {
+    .rewards-nav {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        padding: 0.5rem;
+    }
+
+    .rewards-nav-link {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .rewards-nav-link i {
+        font-size: 1rem;
+    }
+
+    .rewards-content {
+        padding: 1.5rem 1rem;
+    }
+
+    .rewards-content h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .rewards-nav {
+        gap: 0.2rem;
+        padding: 0.4rem;
+    }
+
+    .rewards-nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .rewards-nav-link i {
+        font-size: 0.9rem;
+    }
+
+    .rewards-content {
+        padding: 1.25rem 0.75rem;
+    }
+
+    .rewards-content h2 {
+        font-size: 1.6rem;
+        margin-bottom: 1rem;
+    }
+}

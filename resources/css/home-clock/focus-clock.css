@@ -569,6 +569,72 @@
 }
 
 /* Responsive Design */
+@media (min-width: 1440px) {
+    .timer-progress {
+        width: 400px;
+        height: 400px;
+    }
+
+    .time-left {
+        font-size: 6rem;
+    }
+
+    .clock-title {
+        font-size: 2.5rem;
+    }
+
+    .timer-side-image {
+        width: 200px;
+    }
+
+    .timer-side-image.left {
+        left: -240px;
+    }
+
+    .timer-side-image.right {
+        right: -240px;
+    }
+}
+
+@media (max-width: 1400px) and (min-width: 1025px) {
+    .timer-progress {
+        width: 380px;
+        height: 380px;
+    }
+
+    .time-left {
+        font-size: 5.8rem;
+    }
+
+    .timer-side-image {
+        width: 190px;
+    }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+    .clock-main-content {
+        gap: 2rem;
+    }
+
+    .timer-progress {
+        width: 320px;
+        height: 320px;
+    }
+
+    .time-left {
+        font-size: 4.5rem;
+    }
+
+    .clock-controls {
+        min-width: 140px;
+    }
+
+    .btn-clock {
+        padding: 0.9rem 1.5rem;
+        font-size: 0.95rem;
+    }
+}
+
 @media (max-width: 1200px) {
     .timer-side-image {
         display: none;
@@ -719,5 +785,25 @@
 
     .clock-stats {
         padding: 1rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .timer-progress {
+        width: 220px;
+        height: 220px;
+    }
+
+    .time-left {
+        font-size: 2.8rem;
+    }
+
+    .clock-title {
+        font-size: 1.3rem;
+    }
+
+    .btn-clock {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.875rem;
     }
 }
