@@ -607,7 +607,7 @@ body {
         max-width: 90%;
         margin: 0 auto;
         position: relative;
-        top: -15px;
+        top: 130px;
     }
 
     .laptop {
@@ -1136,9 +1136,9 @@ html {
     bottom: 35px;
     left: 0;
     right: 0;
-    height: 80px;
-    overflow: hidden;
-    z-index: 101;
+    height: 250px;
+    overflow: visible;
+    z-index: 99;
     width: 100%;
 }
 
@@ -1269,6 +1269,11 @@ html {
     .icons {
         grid-template-columns: 180px 100px auto 90px 180px;
         max-width: 95%;
+        top: 130px;
+    }
+
+    .desk-setup {
+        height: 250px;
     }
 
     .laptop {
@@ -1284,6 +1289,7 @@ html {
     .icons {
         grid-template-columns: 120px 80px auto 70px 120px;
         max-width: 100%;
+        top: 130px;
     }
 
     .footer-info span {
@@ -1302,7 +1308,7 @@ html {
     }
 
     .desk-setup {
-        height: 100px;
+        height: 220px;
     }
 }
 
@@ -1315,10 +1321,11 @@ html {
 
     .icons {
         grid-template-columns: 100px 60px auto 50px 100px;
+        top: 100px;
     }
 
     .desk-setup {
-        height: 90px;
+        height: 200px;
     }
 
     .laptop, .mug, .notebook, .pens, .calendar {
