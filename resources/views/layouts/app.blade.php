@@ -29,8 +29,6 @@
         @yield('content')
     </main>
 
-    @include('layouts.desk-setup')
-
     <footer class="glass-footer">
         <div class="footer-container">
             <div class="footer-content">

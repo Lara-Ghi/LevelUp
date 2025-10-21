@@ -2088,7 +2088,6 @@ class FocusClockUI {
         console.log('🔧 updatePointsDisplay called with:', { totalPoints, dailyPoints });
         
         const totalPointsEl = document.getElementById('totalPoints');
-        const dailyPointsEl = document.getElementById('dailyPoints');
 
         if (totalPointsEl) {
             totalPointsEl.textContent = totalPoints.toLocaleString();
@@ -2097,17 +2096,7 @@ class FocusClockUI {
             console.warn('⚠️ totalPoints element not found in navbar');
         }
 
-        if (dailyPointsEl) {
-            const color = dailyPoints >= 100 ? '#FFD700' : 'rgba(255,255,255,0.8)';
-            const displayText = `${dailyPoints}/100 today`;
-            dailyPointsEl.textContent = displayText;
-            dailyPointsEl.style.color = color;
-            console.log('✅ Updated dailyPoints element to:', displayText);
-        } else {
-            console.warn('⚠️ dailyPoints element not found in navbar');
-        }
-
-        // No more caching - database is the single source of truth
+        // Daily points display has been removed from UI
         console.log('📊 Points display updated from database:', { totalPoints, dailyPoints });
     }
 

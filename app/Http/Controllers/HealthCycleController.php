@@ -180,13 +180,13 @@ class HealthCycleController extends Controller
         if ($dailyLimitReached) {
             return response()->json([
                 'success' => false,
-                'message' => 'Daily limit reached! You\'ve earned 100 points today. Come back tomorrow!',
+                'message' => 'Daily limit reached! You\'ve earned 160 points today. Come back tomorrow!',
                 'health_score' => $healthScore,
                 'points_earned' => 0,
-                'daily_points' => 100, // Use the limit, not database sum
+                'daily_points' => 160, // Use the limit, not database sum
                 'total_points' => $user->total_points,
                 'todays_cycles' => $todaysCycles, // This will now be incremented!
-                'feedback' => 'Daily limit reached (100 points)',
+                'feedback' => 'Daily limit reached (160 points)',
                 'color' => 'blue',
                 'user_date' => $userDate, // Include for debugging
             ]);
@@ -211,7 +211,7 @@ class HealthCycleController extends Controller
             'todays_cycles' => $todaysCycles,
             'feedback' => $result['feedback'],
             'color' => $result['color'],
-            'daily_limit_reached' => $dailyPoints >= 100,
+            'daily_limit_reached' => $dailyPoints >= 160,
             'user_date' => $userDate, // Include for debugging
         ]);
     }

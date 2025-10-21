@@ -1,8 +1,28 @@
 # 🔧 System Updates Summary
 
-## Changes Made (October 12, 2025)
+## Changes Made (October 21, 2025)
 
-### ✅ 1. Default Values Updated: 30:5 → 20:10
+160 points daily cap, removed daily limit UI display on hover, removed SVG footer icons
+
+### ✅ 1. Daily Cap Increased from 100 to 160
+- Updated `app/Models/User.php`: `canEarnPoints()` and `addPoints()` methods
+- Updated `app/Http/Controllers/HealthCycleController.php`: Daily limit check
+- Updated error messages to reflect new 160 point limit
+
+### ✅ 2. Daily Limit UI Display Removed
+- Removed `<span class="points-daily">` from `resources/views/layouts/navigation.blade.php`
+- Removed CSS hover effects for daily points display (`.points-daily` classes)
+- Updated `resources/js/home-clock/focus-clock.js` to only show total points
+
+### ✅ 3. SVG Footer Icons Removed
+- Deleted all SVG desk setup icons from `resources/views/layouts/desk-setup.blade.php`
+- Removed all associated CSS from `resources/css/app.css`:
+  - `.desk-setup`, `.icons`, `.spring` classes
+  - `.laptop`, `.mug`, `.notebook`, `.pens`, `.calendar` grid layout styles
+  - Removed responsive CSS for desk-setup in all media queries (1200px, 768px, 480px)
+- HTML, CSS, and JS completely cleaned up
+
+### ✅ 4. Default Values Updated: 30:5 → 20:10
 
 Changed all hardcoded default values to match the LINAK 20:10 pattern:
 

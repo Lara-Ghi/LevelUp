@@ -464,21 +464,6 @@ body {
     transform: translateY(-1px);
 }
 
-.points-display .points-daily {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.8);
-    font-weight: 500;
-    opacity: 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: opacity 0.3s ease, max-height 0.3s ease;
-}
-
-.points-display:hover .points-daily {
-    opacity: 1;
-    max-height: 20px;
-}
-
 .points-display i {
     font-size: 1rem;
     color: #ffffff;
@@ -601,73 +586,6 @@ body {
     .glass-footer {
         height: 30px;
     }
-
-    .desk-setup {
-        bottom: 30px;
-        height: 60px;
-    }
-
-    .icons {
-        grid-template-rows: 20px 40px 30px;
-        grid-template-columns: 240px 120px auto 100px 240px;
-        max-width: 90%;
-        margin: 0 auto;
-        position: relative;
-        top: 130px;
-    }
-
-    .laptop {
-        margin-left: 20px;
-    }
-
-    .laptop {
-        grid-column-start: 1;
-        grid-column-end: 2;
-        grid-row-start: 1;
-        grid-row-end: 3;
-        align-self: start;
-        justify-self: start;
-        margin-left: 15px;
-    }
-
-    .mug {
-        grid-column-start: 2;
-        grid-column-end: 3;
-        grid-row-start: 2;
-        grid-row-end: 4;
-        align-self: end;
-        justify-self: center;
-        margin-left: -15px;
-    }
-
-    .notebook {
-        grid-column-start: 3;
-        grid-column-end: 4;
-        grid-row-start: 2;
-        grid-row-end: 4;
-        align-self: end;
-        justify-self: center;
-    }
-
-    .pens {
-        grid-column-start: 4;
-        grid-column-end: 5;
-        grid-row-start: 1;
-        grid-row-end: 3;
-        align-self: start;
-        justify-self: end;
-        margin-right: -20px;
-    }
-
-    .calendar {
-        grid-column-start: 5;
-        grid-column-end: 6;
-        grid-row-start: 1;
-        grid-row-end: 3;
-        align-self: start;
-        justify-self: end;
-        margin-right: 20px;
-    }
 }
 
 /* Surface Pro and similar devices (broader range) */
@@ -711,10 +629,6 @@ body {
 
     .welcome-text {
         font-size: 3.2rem;
-    }
-
-    .icons {
-        top: 130px;
     }
 }
 
@@ -1147,95 +1061,6 @@ html {
     letter-spacing: 0.02em;
 }
 
-.desk-setup {
-    position: fixed;
-    bottom: 35px;
-    left: 0;
-    right: 0;
-    height: 250px;
-    overflow: visible;
-    z-index: 99;
-    width: 100%;
-}
-
-.spring {
-    fill: none;
-}
-
-.laptop .screen:hover ~ .logo {
-    fill: var(--color-primary);
-}
-
-.icons {
-    position: relative;
-    display: grid;
-    grid-template-rows: 30px 125px 50px;
-    grid-template-columns: 240px 120px auto 100px 240px;
-    z-index: 5;
-    max-width: 90%;
-    margin: 0 auto;
-}
-
-.desk-setup path {
-    stroke-width: 2;
-    fill: rgba(255, 255, 255, 0.6);
-    stroke: var(--color-primary);
-    transition: all 0.3s ease;
-}
-
-.desk-setup path:hover {
-    fill: rgba(141, 114, 225, 0.2);
-}
-
-.laptop {
-    grid-column-start: 1;
-    grid-column-end: 2;
-    grid-row-start: 1;
-    grid-row-end: 4;
-    align-self: start;
-    justify-self: start; /* Move more to the left */
-    margin-left: 15px;
-}
-
-.mug {
-    grid-column-start: 2;
-    grid-column-end: 3;
-    grid-row-start: 3;
-    grid-row-end: 4;
-    align-self: end;
-    justify-self: center; /* Center in its column */
-    margin-left: -15px; /* Adjust position */
-}
-
-.notebook {
-    grid-column-start: 3;
-    grid-column-end: 4;
-    grid-row-start: 3;
-    grid-row-end: 4;
-    align-self: end;
-    justify-self: center; /* Center in its column */
-}
-
-.pens {
-    grid-column-start: 4;
-    grid-column-end: 5;
-    grid-row-start: 2;
-    grid-row-end: 3;
-    align-self: end;
-    justify-self: end; /* Move more to the right */
-    margin-right: -20px; /* Adjust position */
-}
-
-.calendar {
-    grid-column-start: 5;
-    grid-column-end: 6;
-    grid-row-start: 2;
-    grid-row-end: 3;
-    align-self: start;
-    justify-self: end; /* Move more to the right */
-    margin-right: 20px;
-}
-
 .footer-info strong {
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -1282,49 +1107,12 @@ html {
 }
 
 @media (max-width: 1200px) {
-    .icons {
-        grid-template-columns: 180px 100px auto 90px 180px;
-        max-width: 95%;
-        top: 130px;
-    }
-
-    .desk-setup {
-        height: 250px;
-    }
-
-    .laptop {
-        margin-left: 0;
-    }
-
-    .calendar {
-        margin-right: 0;
-    }
 }
 
 @media (max-width: 768px) {
-    .icons {
-        grid-template-columns: 120px 80px auto 70px 120px;
-        max-width: 100%;
-        top: 130px;
-    }
-
     .footer-info span {
         font-size: 0.7rem;
         max-width: 90%;
-    }
-
-    .laptop {
-        transform: scale(0.85);
-        transform-origin: bottom left;
-    }
-
-    .calendar {
-        transform: scale(0.85);
-        transform-origin: bottom right;
-    }
-
-    .desk-setup {
-        height: 220px;
     }
 }
 
@@ -1333,19 +1121,6 @@ html {
         font-size: 0.65rem;
         letter-spacing: 0.01em;
         max-width: 95%;
-    }
-
-    .icons {
-        grid-template-columns: 100px 60px auto 50px 100px;
-        top: 100px;
-    }
-
-    .desk-setup {
-        height: 200px;
-    }
-
-    .laptop, .mug, .notebook, .pens, .calendar {
-        transform: scale(0.75);
     }
 }
 

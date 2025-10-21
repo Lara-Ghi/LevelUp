@@ -134,7 +134,7 @@ GET /api/health-cycle/history?limit=10
 ## 💾 Database Tables
 
 ### users table
-- `total_points` - Lifetime total points accumulated
+- `total_points` - Total points accumulated
 - `daily_points` - Points earned today (resets daily)
 - `last_points_date` - Last date when points were earned (for legacy daily reset)
 - `last_daily_reset` - Date when daily points were last reset (timezone-aware)
@@ -144,8 +144,8 @@ GET /api/health-cycle/history?limit=10
 - `sitting_minutes` - Duration of sitting session
 - `standing_minutes` - Duration of standing session
 - `cycle_number` - Sequential cycle number
-- `health_score` - Calculated score (0-100)
-- `points_earned` - Points awarded for this cycle
+- `health_score` - Calculated score (0-100) Percentage wise
+- `points_earned` - Points awarded for this cycle (0-10) Points based
 - `completed_at` - Timestamp of completion
 
 ## 🔐 Authentication

@@ -88,7 +88,7 @@ class User extends Authenticatable
     public function canEarnPoints($userDate = null)
     {
         $this->resetDailyPointsIfNeeded($userDate);
-        return $this->daily_points < 100;
+        return $this->daily_points < 160;
     }
 
     /**
@@ -101,11 +101,11 @@ class User extends Authenticatable
     {
         $this->resetDailyPointsIfNeeded($userDate);
         
-        if ($this->daily_points >= 100) {
+        if ($this->daily_points >= 160) {
             return 0; // Already at daily limit
         }
         
-        $pointsToAdd = min($points, 100 - $this->daily_points);
+        $pointsToAdd = min($points, 160 - $this->daily_points);
         
         $this->daily_points += $pointsToAdd;
         $this->total_points += $pointsToAdd;

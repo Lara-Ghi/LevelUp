@@ -54,7 +54,6 @@
                         <span class="points-number" id="totalPoints">0</span>
                         <span class="points-label">Points</span>
                     </div>
-                    <span class="points-daily" id="dailyPoints" style="font-size: 0.75rem; color: rgba(255,255,255,0.8);">0/100 today</span>
                 </div>
                 <a href="{{ url('/profile') }}" class="nav-link {{ request()->is('profile*') ? 'active' : '' }}">
                     <i class="fa-solid fa-user"></i>
