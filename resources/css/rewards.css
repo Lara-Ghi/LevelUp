@@ -55,6 +55,167 @@
 }
 
 /* ===========================================
+                REWARD CARDS
+   =========================================== */
+
+.rewards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.reward-card {
+    position: relative;
+    background: linear-gradient(135deg, white 0%, #BCC7E8 100%);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.reward-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 15px rgba(108, 74, 182, 0.2);
+}
+
+.save-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.save-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.save-btn .heart-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.reward-image {
+    width: 100%;
+    height: 100px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.reward-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reward-content {
+    padding: 0.75rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.reward-content h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-secondary);
+}
+
+.content .reward-description {
+    color: #666;
+    font-size: 0.8rem !important;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    flex-grow: 1;
+}
+
+.content .reward-points {
+    color: #6C4AB6;
+    font-size: 0.8rem !important;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+.redeem-btn {
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+    color: #6C4AB6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    margin-top: auto;
+}
+
+.redeem-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(108, 74, 182, 0.3);
+}
+
+.redeem-btn.can-redeem {
+    background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+}
+
+.redeem-btn.can-redeem:hover {
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.btn-text {
+    font-size: 1rem;
+}
+
+.points-required {
+    font-size: 0.375rem;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.redeem-btn.can-redeem .btn-text {
+    font-size: 0.5rem;
+}
+
+.redeem-btn.can-redeem .points-required {
+    font-size: 0.35rem;
+}
+
+.no-saved-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #666;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    border: 2px dashed rgba(108, 74, 182, 0.3);
+}
+
+/* ===========================================
                RESPONSIVE DESIGN
    =========================================== */
 
@@ -82,6 +243,15 @@
         font-size: 1.8rem;
         margin-bottom: 1.25rem;
     }
+
+    .rewards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .reward-card h3 {
+        font-size: 0.9rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -106,5 +276,23 @@
     .rewards-content h2 {
         font-size: 1.6rem;
         margin-bottom: 1rem;
+    }
+
+    .rewards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .reward-image {
+        height: 90px;
+    }
+
+    .reward-content {
+        padding: 0.625rem;
+    }
+
+    .no-saved-message {
+        font-size: 1rem;
+        padding: 2rem 1rem;
     }
 }

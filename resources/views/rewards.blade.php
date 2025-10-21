@@ -4,6 +4,10 @@
     @vite('resources/css/rewards.css')
 @endsection
 
+@section('additional_js')
+    @vite('resources/js/rewards.js')
+@endsection
+
 @section('title', 'Rewards')
 
 @section('content')
@@ -36,19 +40,144 @@
         <div class="rewards-content">
             @if(request()->query('tab', 'available') === 'available')
                 <!-- Available Rewards Content -->
-                <h2>Available Rewards</h2>
                 <!-- Add your available rewards content here -->
             @elseif(request()->query('tab') === 'saved')
                 <!-- Saved Rewards Content -->
-                <h2>Saved Rewards</h2>
-                <!-- Add your saved rewards content here -->
+                <div class="rewards-grid" id="savedRewardsGrid">
+                    <p class="no-saved-message">You haven't saved any rewards yet. Browse the "All" tab and click the heart icon to save your favorites!</p>
+                </div>
             @elseif(request()->query('tab') === 'all')
                 <!-- All Rewards Content -->
-                <h2>All Rewards</h2>
-                <!-- Add your all rewards content here -->
+                 <!-- TODO: all rewards are hard-coded, they need to be changed and linked to the database, to create new cards, update or erase them -->
+                <div class="rewards-grid">
+                    <!-- Coffee Card -->
+                    <div class="reward-card" data-reward-id="coffee">
+                        <button class="save-btn" data-reward-id="coffee">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_coffee.jpg') }}" alt="10 Coffee Card">
+                        </div>
+                        <div class="reward-content">
+                            <h3>10 Coffee Card</h3>
+                            <p class="reward-description">Fuel your day at the best café in town.</p>
+                            <button class="redeem-btn" data-points="300">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">300 Points</p>
+                        </div>
+                    </div>
+
+                    <!-- Spotify Subscription -->
+                    <div class="reward-card" data-reward-id="spotify">
+                        <button class="save-btn" data-reward-id="spotify">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_spotify.jpg') }}" alt="1 Month Spotify Subscription">
+                        </div>
+                        <div class="reward-content">
+                            <h3>1 Month Spotify Subscription</h3>
+                            <p class="reward-description">Soundtrack your life with unlimited music.</p>
+                            <button class="redeem-btn" data-points="100">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">100 Points</p>
+                        </div>
+                    </div>
+
+                    <!-- PureGym Subscription -->
+                    <div class="reward-card" data-reward-id="puregym">
+                        <button class="save-btn" data-reward-id="puregym">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_gym.png') }}" alt="1 Month PureGym Subscription">
+                        </div>
+                        <div class="reward-content">
+                            <h3>1 Month PureGym Subscription</h3>
+                            <p class="reward-description">Healthy body, healthy mind.</p>
+                            <button class="redeem-btn" data-points="200">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">200 Points</p>
+                        </div>
+                    </div>
+
+                    <!-- Netflix Subscription -->
+                    <div class="reward-card" data-reward-id="netflix">
+                        <button class="save-btn" data-reward-id="netflix">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_netflix.jpg') }}" alt="1 Month Netflix Subscription">
+                        </div>
+                        <div class="reward-content">
+                            <h3>1 Month Netflix Subscription</h3>
+                            <p class="reward-description">Well-deserved chill time.</p>
+                            <button class="redeem-btn" data-points="150">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">150 Points</p>
+                        </div>
+                    </div>
+
+                    <!-- Cinema Tickets -->
+                    <div class="reward-card" data-reward-id="cinema">
+                        <button class="save-btn" data-reward-id="cinema">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_cinema.png') }}" alt="2 Cinema Tickets (Kinorama)">
+                        </div>
+                        <div class="reward-content">
+                            <h3>2 Cinema Tickets (Kinorama)</h3>
+                            <p class="reward-description">Big screen, big moments.</p>
+                            <button class="redeem-btn" data-points="250">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">250 Points</p>
+                        </div>
+                    </div>
+
+                    <!-- Audible Subscription -->
+                    <div class="reward-card" data-reward-id="audible">
+                        <button class="save-btn" data-reward-id="audible">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_audible.png') }}" alt="1 Month Audible Subscription">
+                        </div>
+                        <div class="reward-content">
+                            <h3>1 Month Audible Subscription</h3>
+                            <p class="reward-description">Expand your horizons.</p>
+                            <button class="redeem-btn" data-points="150">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">150 Points</p>
+                        </div>
+                    </div>
+
+                    <!-- Spa Entry -->
+                    <div class="reward-card" data-reward-id="spa">
+                        <button class="save-btn" data-reward-id="spa">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_spa.png') }}" alt="1 Spa Entry at Sønderborg Alsik Spa">
+                        </div>
+                        <div class="reward-content">
+                            <h3>1 Spa Entry at Sønderborg Alsik Spa</h3>
+                            <p class="reward-description">Pure relaxation awaits.</p>
+                            <button class="redeem-btn" data-points="500">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">500 Points</p>
+                        </div>
+                    </div>
+                </div>
             @elseif(request()->query('tab') === 'history')
                 <!-- History Content -->
-                <h2>Redemption History</h2>
                 <!-- Add your history content here -->
             @endif
         </div>
