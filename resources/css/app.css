@@ -1577,3 +1577,11 @@ html {
     text-align: center;
     line-height: 1.1;
 }
+
+.stats-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 20px;
+    margin: auto;
+    text-align: center;
+}
