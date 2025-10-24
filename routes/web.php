@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\HealthCycleController;
 use App\Http\Controllers\RewardsController;
 
@@ -12,9 +13,9 @@ Route::get('/profile', function () {
     return view('profile');
 });
 
-Route::get('/statistics', function() {
-    return view('statistics');
-});
+// Use Controller to get the Statistics Page
+// This is a better practice in MVC framework
+Route::get('/', [StatisticsController::class, 'statistics'])->name('statistics');
 
 // Health Cycle API routes
 // TODO: Add authentication middleware when auth system is ready
