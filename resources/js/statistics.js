@@ -1,75 +1,99 @@
 import Chart from 'chart.js/auto';
 
+// Get data from the database
+const day = healthCycle ? new Date(healthCycle.completed_at).toLocaleDateString() : 'Today';
+const sittingTime = healthCycle ? healthCycle.sitting_minutes : 0;
+const standingTime = healthCycle ? healthCycle.standing_minutes : 0;
+const totalTime = sittingTime + standingTime;
 
-// --- Fake data ---
-const days = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"];
-const sittingTimes = [90, 110, 80, 100, 120, 70, 70];
-const standingTimes = [30, 40, 20, 30, 50, 30, 20];
-const totalTimes = sittingTimes.map((sit, i) => sit + standingTimes[i]);
-
-// --- Bar Chart (Time per Day) ---
-const barCtx = document.getElementById('activityChart').getContext('2d');
+// Bar Chart (Time per Day)
+const barCtx = document.getElementById('barChart').getContext('2d');
 const barChart = new Chart(barCtx, {
     type: 'bar',
     data: {
-        labels: days,
+        labels: [day],
         datasets: [
             {
                 label: 'Total Time',
-                data: totalTimes,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
+                data: [totalTime],
+                backgroundColor: '#6C4AB6'
             },
             {
-                label: 'Sitting',
-                data: sittingTimes,
-                backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
+                label: 'Sitting Time',
+                data: [sittingTime],
+                backgroundColor: '#B9E0FF'
             },
             {
-                label: 'Standing',
-                data: standingTimes,
-                backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
+                label: 'Standing Time',
+                data: [standingTime],
+                backgroundColor: '#8D9EFF'
             }
         ]
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
-            title: { display: true, text: 'Daily Activity Time (minutes)' }
+            title: {
+                display: true,
+                text: 'Daily Activity Time (in minutes)'
+            }
         },
         scales: {
             y: {
                 beginAtZero: true,
-                title: { display: true, text: 'Minutes' }
+                title: {
+                    display: true,
+                    text: 'Minutes'
+                }
             }
         }
     }
 });
 
-// --- Pie Chart (Overall Proportions) ---
-const pieCtx = document.getElementById('summaryPie').getContext('2d');
-const pieChart = new Chart(pieCtx, {
-    type: 'pie',
-    data: {
-        labels: ['Sitting', 'Standing'],
-        datasets: [{
-            data: [640, 310], // Fake totals
-            backgroundColor: [
-                'rgba(255, 99, 132, 0.7)',
-                'rgba(75, 192, 192, 0.7)'
-            ],
-            borderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            title: { display: true, text: 'All-Time Sitting vs Standing' }
-        }
+// Button For Toggling Pie Chart
+const togglePiebtn = document.getElementById("togglePieChart");
+const allTime = document.getElementById("allTimeChart");
+let pieInited = false;
+let pieChart;
+
+togglePiebtn.addEventListener("click", () => {
+    const expanded = allTime.classList.toggle("expanded");
+    togglePiebtn.setAttribute("aria-expanded", expanded);
+    togglePiebtn.textContent = expanded
+    ? "Hide All-Time Statistics"
+    : "Show All-Time Statistics";
+
+    if(expanded && !pieInited) {
+        initPieChart();
+        pieInited = true;
     }
 });
+
+function initPieChart() {
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Sitting', 'Standing'],
+            datasets: [{
+                data: [totalSitting, totalStanding],
+                backgroundColor: [
+                    '#6C4AB6',
+                    '#8D9EFF'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'All-Time Sitting vs Standing'
+                }
+            }
+        }
+    });
+}
