@@ -13,7 +13,7 @@
         <div class="profile-card">
             
             <div class="profile-header">
-                <img src="{{ asset('images/default-avatar.png') }}" class="profile-avatar">
+                <img id= "userPhoto" src="{{ asset('images/users/default.jpg') }}" class="profile-avatar">
                 
                 <div class="profile-ident">
                     <div class="profile-handle">@testusername</div>
