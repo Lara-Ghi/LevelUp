@@ -50,6 +50,24 @@
                 <!-- All Rewards Content -->
                  <!-- TODO: all rewards are hard-coded, they need to be changed and linked to the database, to create new cards, update or erase them -->
                 <div class="rewards-grid">
+                    <!-- Social Meeting-->
+                    <div class="reward-card" data-reward-id="meeting">
+                        <button class="save-btn" data-reward-id="meeting">
+                            <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
+                        </button>
+                        <div class="reward-image">
+                            <img src="{{ asset('images/giftcards/gift_meeting.png') }}" alt="Social Meeting">
+                        </div>
+                        <div class="reward-content">
+                            <h3>Social Meeting</h3>
+                            <p class="reward-description">Your ticket to a casual catch-up with your supervisor.</p>
+                            <button class="redeem-btn" data-points="0">
+                                <span class="btn-text">Not Yet</span>
+                            </button>
+                            <p class="reward-points">0 Points</p>
+                        </div>
+                    </div>
+
                     <!-- Coffee Card -->
                     <div class="reward-card" data-reward-id="coffee">
                         <button class="save-btn" data-reward-id="coffee">

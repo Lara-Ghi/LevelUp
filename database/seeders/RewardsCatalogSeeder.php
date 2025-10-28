@@ -17,6 +17,14 @@ class RewardsCatalogSeeder extends Seeder
         if (DB::table('rewards_catalog')->count() == 0) {
             DB::table('rewards_catalog')->insert([
                 [
+                    'card_name' => 'Social Meeting',
+                    'points_amount' => 0,
+                    'card_description' => 'Your ticket to a casual catch-up with your supervisor.',
+                    'card_image' => 'meeting-card.jpg',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
                     'card_name' => '10 Coffee Card',
                     'points_amount' => 300,
                     'card_description' => 'Fuel your day at the best café in town.',
