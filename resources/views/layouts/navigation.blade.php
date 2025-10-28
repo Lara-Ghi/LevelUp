@@ -35,30 +35,53 @@
                     <i class="fa-solid fa-house"></i>
                     Home
                 </a>
-                <a href="{{ url('/statistics') }}" class="nav-link {{ request()->is('statistics*') ? 'active' : '' }}">
-                    <i class="fas fa-chart-bar"></i>
-                    Statistics
-                </a>
-                <a href="{{ url('/rewards') }}" class="nav-link {{ request()->is('rewards*') ? 'active' : '' }}">
-                    <i class="fas fa-trophy"></i>
-                    Rewards
-                </a>
+                
+                {{-- Only show these links when user is logged in --}}
+                @auth
+                    <a href="{{ url('/statistics') }}" class="nav-link {{ request()->is('statistics*') ? 'active' : '' }}">
+                        <i class="fas fa-chart-bar"></i>
+                        Statistics
+                    </a>
+                    <a href="{{ url('/rewards') }}" class="nav-link {{ request()->is('rewards*') ? 'active' : '' }}">
+                        <i class="fas fa-trophy"></i>
+                        Rewards
+                    </a>
+                @endauth
             </div>
 
             <!-- Enhanced User Actions -->
             <div class="nav-actions">
-                <!-- Simple Blue Points Display -->
-                <div class="points-display">
-                    <div>
-                        <i class="fas fa-star"></i>
-                        <span class="points-number" id="totalPoints">0</span>
-                        <span class="points-label">Points</span>
+                {{-- Only show points for logged-in users --}}
+                @auth
+                    <!-- Simple Blue Points Display -->
+                    <div class="points-display">
+                        <div>
+                            <i class="fas fa-star"></i>
+                            <span class="points-number" id="totalPoints">0</span>
+                            <span class="points-label">Points</span>
+                        </div>
                     </div>
-                </div>
-                <a href="{{ url('/profile') }}" class="nav-link {{ request()->is('profile*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-user"></i>
-                    Profile
-                </a>
+                @endauth
+                @auth
+                    <a href="{{ url('/profile') }}" class="nav-link {{ request()->is('profile*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-user"></i>
+                        Profile
+                    </a>
+
+                    <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="login-btn" style="border:none;">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </button>
+                    </form>
+                @endauth
+
+                {{-- Show only when not logged in --}}
+                @guest
+                    <a href="{{ route('login') }}" class="login-btn {{ request()->routeIs('login') ? 'active' : '' }}">
+                        Log in
+                    </a>
+                @endguest
             </div>
         </div>
     </nav>
