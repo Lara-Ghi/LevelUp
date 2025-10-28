@@ -11,11 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->integer('total_points')->default(0)->after('email');
-            $table->integer('daily_points')->default(0)->after('total_points');
-            $table->date('last_points_date')->nullable()->after('daily_points');
-        });
+        // Only run if users table exists
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                // Only add columns if they don't already exist
+                if (!Schema::hasColumn('users', 'total_points')) {
+                    $table->integer('total_points')->default(0)->after('email');
+                }
+                if (!Schema::hasColumn('users', 'daily_points')) {
+                    $table->integer('daily_points')->default(0)->after('total_points');
+                }
+                if (!Schema::hasColumn('users', 'last_points_date')) {
+                    $table->date('last_points_date')->nullable()->after('daily_points');
+                }
+            });
+        }
     }
 
     /**

@@ -12,28 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->id('user_id')->unique();
+            $table->string('name', 100);
+            $table->string('surname', 100)->nullable();
+            $table->string('username', 60)->unique();
+            $table->date('date_of_birth')->nullable();
+            $table->enum('role', ['admin', 'user'])->default('user');
             $table->string('password');
-            $table->rememberToken();
+            $table->unsignedSmallInteger('sitting_position')->nullable();
+            $table->unsignedSmallInteger('standing_position')->nullable();
+            $table->unsignedSmallInteger('total_points')->default(0);
+            $table->unsignedSmallInteger('daily_points')->default(0);
+            $table->date('last_points_date')->nullable();
+            $table->timestamp('last_daily_reset')->nullable();
+            //$table->unsignedBigInteger('desk_id')->nullable();
+            
             $table->timestamps();
-        });
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
-
-        Schema::create('sessions', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
-            $table->string('ip_address', 45)->nullable();
-            $table->text('user_agent')->nullable();
-            $table->longText('payload');
-            $table->integer('last_activity')->index();
+            
+            // Add foreign key constraint if you have a desks table
+            // $table->foreign('desk_id')->references('id')->on('desks')->onDelete('set null');
         });
     }
 
@@ -43,7 +40,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
     }
 };

@@ -12,12 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_favorite_rewards', function (Blueprint $table) {
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('card_id')->constrained('rewards_catalog')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('card_id');
 
             $table->primary(['user_id','card_id']);
             $table->timestamps();
         });
+        
+        // Add foreign key constraints only if referenced tables exist
+        if (Schema::hasTable('users')) {
+            Schema::table('user_favorite_rewards', function (Blueprint $table) {
+                $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
+            });
+        }
+        
+        if (Schema::hasTable('rewards_catalog')) {
+            Schema::table('user_favorite_rewards', function (Blueprint $table) {
+                $table->foreign('card_id')->references('id')->on('rewards_catalog')->onDelete('cascade');
+            });
+        }
     }
 
     /**

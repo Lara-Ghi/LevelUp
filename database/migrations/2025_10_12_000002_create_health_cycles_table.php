@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('health_cycles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
             $table->integer('sitting_minutes');
             $table->integer('standing_minutes');
             $table->integer('cycle_number');
@@ -24,6 +24,13 @@ return new class extends Migration
             
             $table->index(['user_id', 'completed_at']);
         });
+        
+        // Add foreign key constraint only if users table exists
+        if (Schema::hasTable('users')) {
+            Schema::table('health_cycles', function (Blueprint $table) {
+                $table->foreign('user_id')->references('user_id')->on('users')->onDelete('cascade');
+            });
+        }
     }
 
     /**

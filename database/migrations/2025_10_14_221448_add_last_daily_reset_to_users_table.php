@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->date('last_daily_reset')->nullable()->after('daily_points');
-        });
+        // Only run if users table exists
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                // Only add column if it doesn't already exist
+                if (!Schema::hasColumn('users', 'last_daily_reset')) {
+                    $table->timestamp('last_daily_reset')->nullable()->after('daily_points');
+                }
+            });
+        }
     }
 
     /**
