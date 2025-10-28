@@ -13,18 +13,31 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'user_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
         'name',
-        'email',
+        'surname',
+        'username',
+        'date_of_birth',
+        'role',
         'password',
+        'sitting_position',
+        'standing_position',
         'total_points',
         'daily_points',
         'last_points_date',
         'last_daily_reset',
+        //'desk_id',
     ];
 
     /**
@@ -45,9 +58,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'date_of_birth' => 'date',
             'password' => 'hashed',
             'last_points_date' => 'date',
+            'last_daily_reset' => 'datetime',
         ];
     }
 
