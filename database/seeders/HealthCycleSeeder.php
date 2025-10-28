@@ -14,13 +14,13 @@ class HealthCycleSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get the test user
-        $user = User::where('email', 'test@example.com')->first();
+        // Get the testuser by username
+        $user = User::where('username', 'maxmust123')->first();
 
         if ($user) {
             // Create test health cycle for the user
             HealthCycle::create([
-                'user_id' => $user->id,
+                'user_id' => $user->user_id,
                 'sitting_minutes' => 50,
                 'standing_minutes' => 35,
                 'cycle_number' => 1,

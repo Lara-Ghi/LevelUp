@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -13,16 +13,35 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create or update test user with default points
-        User::updateOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => bcrypt('password'), // password: password
-                'total_points' => 350,
-                'daily_points' => 0,
-                'last_points_date' => now()->toDateString(),
-            ]
-        );
+        // Create a complete admin test user (all fields populated)
+        User::create([
+            'name' => 'Admin',
+            'surname' => 'User',
+            'username' => 'admin',
+            'date_of_birth' => '1990-01-15',
+            'role' => 'admin',
+            'password' => Hash::make('admin123'),
+            'sitting_position' => 73, 
+            'standing_position' => 110, 
+            'total_points' => 1500,
+            'daily_points' => 80,
+            'last_points_date' => now()->toDateString(),
+            'last_daily_reset' => now(),
+            // 'desk_id' => 1, // Uncomment if you have a desks table
+        ]);
+
+        // Create a regular user with some progress
+        User::create([
+            'name' => 'Max',
+            'surname' => 'Mustermann',
+            'username' => 'maxmust123',
+            'date_of_birth' => '1995-05-20',
+            'password' => Hash::make('password'),
+            'sitting_position' => 75,
+            'standing_position' => 105,
+            'total_points' => 320,
+            'daily_points' => 40,
+            'last_points_date' => now()->toDateString(),
+        ]);
     }
 }
