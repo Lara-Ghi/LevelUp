@@ -4,17 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\HealthCycle;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller as BaseController;
 
-class StatisticsController extends Controller
+class StatisticsController extends BaseController
 {
+    // Special method of PHP
+    public function __construct()
+    {
+        $this->middleware("auth");
+    }
     public function statistics()
     {
-        // Correct way to check the user.
-        // Needs log-in implemented in order to work.
-        //$userId = auth()->id();
 
-        // Test user ID
-        $userId = 1;
+        // Get user Id
+        $userId = auth()->id();
 
         // Last 7 days of data for Bar Chart
         $healthCycle = HealthCycle::where('user_id', $userId)
