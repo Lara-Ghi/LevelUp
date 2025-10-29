@@ -71,15 +71,18 @@ togglePiebtn.addEventListener("click", () => {
 });
 
 function initPieChart() {
+    const data = [totalSitting, totalStanding];
+    const sum = data.reduce((s, v) => s + v, 0) || 1;
+
     const pieCtx = document.getElementById('pieChart').getContext('2d');
     pieChart = new Chart(pieCtx, {
         type: 'pie',
         data: {
             labels: ['Sitting', 'Standing'],
             datasets: [{
-                data: [totalSitting, totalStanding],
+                data: data,
                 backgroundColor: [
-                    '#6C4AB6',
+                    '#B9E0FF',
                     '#8D9EFF'
                 ],
                 borderWidth: 2
@@ -92,6 +95,15 @@ function initPieChart() {
                 title: {
                     display: true,
                     text: 'All-Time Sitting vs Standing'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = Number(context.raw || 0);
+                            const percentage = ((value / sum) * 100).toFixed(1);
+                            return `${context.label}: ${percentage}% (${value} minutes)`;
+                        }
+                    }
                 }
             }
         }

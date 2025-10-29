@@ -6,7 +6,7 @@
 @section('content')
     <main class="statistics-content">
         <header class="statistics-container">
-            <h1>📊 Your statistics </h1>
+            <h1>Your statistics </h1>
         </header>
 
         <!-- Bar Chart -->
