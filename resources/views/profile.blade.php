@@ -40,7 +40,7 @@
                     <div class="height-setting">
                         <label>Standing Height</label>
                         <div class="height-input">
-                            <span style="font-size: 1.25rem; font-weight: 700; color: white;">
+                            <span style="font-size: 1.25rem; font-weight: 500; color: black;">
                                 {{ $user->standing_position ?? 'Not set' }}
                             </span>
                             @if($user->standing_position)
@@ -52,7 +52,7 @@
                     <div class="height-setting">
                         <label>Sitting Height</label>
                         <div class="height-input">
-                            <span style="font-size: 1.25rem; font-weight: 700; color: white;">
+                            <span style="font-size: 1.25rem; font-weight: 500; color: black;">
                                 {{ $user->sitting_position ?? 'Not set' }}
                             </span>
                             @if($user->sitting_position)

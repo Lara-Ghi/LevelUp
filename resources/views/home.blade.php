@@ -4,7 +4,7 @@
 
 <!-- Main Content -->
 @section('content')
-    <main class="content">
+    <main class="content @guest guest-background @endguest">
         <div class="welcome-container">
             @auth
                 {{-- Welcome message for logged-in users --}}
@@ -14,13 +14,6 @@
                 {{-- Welcome message for guests --}}
                 <div class="welcome-text"><span class="welcome-purple">Welcome to</span> <span class="user-highlight">LevelUp</span></div>
                 <div class="welcome-subtitle">Stand up for your health! Please log in to start tracking your progress.</div>
-                
-                <div class="github-pill-container" style="margin-top: 2rem;">
-                    <a href="{{ route('login') }}" class="github-pill">
-                        <i class="fa-solid fa-right-to-bracket"></i>
-                        Log In to Get Started
-                    </a>
-                </div>
             @endauth
             
             <div class="github-pill-container">

@@ -1687,3 +1687,18 @@ form .signup-link a:hover {
     box-shadow: var(--shadow-lg);
     border-color: var(--color-primary);
 }
+
+/* ===========================================
+       GUEST BACKGROUND IMAGE
+   =========================================== */
+.guest-background {
+    background: linear-gradient(
+        rgba(255, 255, 255, 0.4), 
+        rgba(255, 255, 255, 0.3)
+    ), url('../../public/images/home-page/level_up_background.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+}
