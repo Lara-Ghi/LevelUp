@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\HealthCycleController;
 use App\Http\Controllers\RewardsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\LoginController;
 
 // Home Routes
@@ -31,9 +32,8 @@ Route::get('/forgot-password', function() {
 // Protected Routes (require authentication)
 Route::middleware('auth')->group(function () {
     // Profile Routes
-    Route::get('/profile', function () {
-        return view('profile');
-    })->name('profile');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Statistics Routes
     Route::get('/statistics', [StatisticsController::class, 'statistics'])->name('statistics');
