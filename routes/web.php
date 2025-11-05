@@ -6,6 +6,8 @@ use App\Http\Controllers\HealthCycleController;
 use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Middleware\IsAdmin;
 
 // Home Routes
 Route::get('/', function () {
@@ -18,6 +20,11 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.perform');
 });
+
+// Admin Dashboard (for admin only)
+Route::middleware(['auth', IsAdmin::class])
+    ->get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+    ->name('admin.dashboard');
 
 // Logout (only accessible when authenticated)
 Route::post('/logout', [LoginController::class, 'logout'])

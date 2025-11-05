@@ -46,6 +46,14 @@
                         <i class="fas fa-trophy"></i>
                         Rewards
                     </a>
+                    {{-- Control Dashboard (solo per admin) --}}
+                    @if(Auth::check() && Auth::user()->role === 'admin')
+                        <a href="{{ route('admin.dashboard') }}" 
+                        class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                            <i class="fa-solid fa-crown"></i>
+                            Control Dashboard
+                        </a>
+                    @endif
                 @endauth
             </div>
 
