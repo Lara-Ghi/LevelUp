@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
         // Create a complete admin test user (all fields populated)
         User::create([
             'name' => 'Admin',
-            'surname' => 'User',
+            'surname' => 'Admin',
             'username' => 'admin',
             'date_of_birth' => '1990-01-15',
             'role' => 'admin',

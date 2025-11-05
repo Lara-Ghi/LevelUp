@@ -1702,3 +1702,131 @@ form .signup-link a:hover {
     background-attachment: fixed;
     min-height: 100vh;
 }
+
+/* ===========================================
+       ADMIN DASHBOARD STYLES
+   =========================================== */
+.admin-dashboard .login-container { max-width: 1300px; }
+
+.admin-dashboard .dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.3fr;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 1200px) {
+  .admin-dashboard .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+.admin-dashboard .login-card { padding: 36px 40px; }
+.admin-dashboard .page-title { margin-bottom: 20px; }
+.admin-dashboard .section-title { font-size: 1.4rem; margin-bottom: 14px; }
+
+.admin-dashboard .form .login-data label {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.admin-dashboard .form .login-data input {
+  font-size: 1.15rem;
+  padding: 15px 18px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.admin-dashboard .loginpage-btn button {
+  font-size: 1.05rem;
+  padding: 13px 20px;
+}
+
+.admin-dashboard .big-search input {
+  font-size: 0.7rem;
+  padding: 16px 18px;
+}
+.admin-dashboard .big-search .loginpage-btn button {
+  font-size: 1.15rem;
+  padding: 15px 20px;
+  width: 100%;
+  font-weight: 600;
+}
+
+.userlist-header {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 8px;
+}
+.userlist-header > div { flex: 1; }
+
+.user-cards { display: flex; flex-direction: column; gap: 18px; }
+
+.user-card {
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease-in-out;
+}
+.user-card:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+.user-info-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 10px;
+}
+.user-info-row > div { flex: 1; }
+
+.user-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn-compact button {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginpage-btn.btn-compact button.demote-btn {
+  background: linear-gradient(90deg, #b84d7a, #6e2343);
+}
+
+.btn-edit button {
+  background: linear-gradient(90deg, #7f4af1, #2b1f69);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  transition: 0.2s ease-in-out;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-edit button:hover { opacity: 0.85; transform: scale(1.05); }
+
+.admin-dashboard .loginpage-btn button:disabled,
+.btn-compact button:disabled,
+.btn-edit button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

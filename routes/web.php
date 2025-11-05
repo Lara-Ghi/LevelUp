@@ -6,8 +6,9 @@ use App\Http\Controllers\HealthCycleController;
 use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminUserController;
 
 // Home Routes
 Route::get('/', function () {
@@ -22,9 +23,18 @@ Route::middleware('guest')->group(function () {
 });
 
 // Admin Dashboard (for admin only)
-Route::middleware(['auth', IsAdmin::class])
-    ->get('/admin/dashboard', [AdminDashboardController::class, 'index'])
-    ->name('admin.dashboard');
+Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/promote', [AdminUserController::class, 'promote'])->name('users.promote');
+        Route::patch('/users/{user}/demote', [AdminUserController::class, 'demote'])->name('users.demote');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+    });
 
 // Logout (only accessible when authenticated)
 Route::post('/logout', [LoginController::class, 'logout'])
