@@ -197,8 +197,8 @@
                       @csrf @method('DELETE')
                       <div class="loginpage-btn btn-compact">
                         <button type="submit"
-                                {{ auth()->id() === $user->id ? 'disabled' : '' }}
-                                title="{{ auth()->id() === $user->id ? 'Cannot delete yourself' : 'Delete user' }}">
+                                {{ auth()->id() === $user->getKey() ? 'disabled' : '' }}
+                                title="{{ auth()->id() === $user->getKey() ? 'Cannot delete yourself' : 'Delete user' }}">
                           Delete
                         </button>
                       </div>
