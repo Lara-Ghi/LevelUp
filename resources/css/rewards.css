@@ -216,6 +216,76 @@
     border: 2px dashed rgba(108, 74, 182, 0.3);
 }
 
+/* Admin Controls */
+.admin-controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 10;
+}
+
+.admin-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.admin-btn.edit-btn {
+    background-color: #3498db;
+    color: white;
+}
+
+.admin-btn.edit-btn:hover {
+    background-color: #2980b9;
+    transform: scale(1.1);
+}
+
+.admin-btn.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.admin-btn.delete-btn:hover {
+    background-color: #c0392b;
+    transform: scale(1.1);
+}
+
+.admin-add-btn {
+    background-color: #27ae60 !important;
+    color: white !important;
+}
+
+.admin-add-btn:hover {
+    background-color: #229954 !important;
+}
+
+.reward-card {
+    position: relative;
+}
+
+.delete-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+.delete-form button {
+    margin: 0;
+    padding: 0;
+}
+
 /* ===========================================
                RESPONSIVE DESIGN
    =========================================== */

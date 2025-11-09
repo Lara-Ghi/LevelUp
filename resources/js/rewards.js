@@ -3,12 +3,15 @@
 
 class RewardsManager {
     constructor() {
-        this.savedRewards = this.loadSavedRewards();
+        this.savedRewards = [];
         this.userPoints = 0;
         this.init();
     }
 
-    init() {
+    async init() {
+        // Load saved rewards from database
+        await this.loadSavedRewards();
+
         // Load user's total points
         this.loadUserPoints();
 
@@ -22,13 +25,15 @@ class RewardsManager {
         this.handleTabSwitching();
     }
 
-    loadSavedRewards() {
-        const saved = localStorage.getItem('savedRewards');
-        return saved ? JSON.parse(saved) : [];
-    }
-
-    saveSavedRewards() {
-        localStorage.setItem('savedRewards', JSON.stringify(this.savedRewards));
+    async loadSavedRewards() {
+        try {
+            const response = await fetch('/rewards/saved');
+            const data = await response.json();
+            this.savedRewards = data.savedRewardIds || [];
+        } catch (error) {
+            console.error('Error loading saved rewards:', error);
+            this.savedRewards = [];
+        }
     }
 
     async loadUserPoints() {
@@ -57,7 +62,7 @@ class RewardsManager {
             const rewardId = button.dataset.rewardId;
 
             // Set initial state based on saved rewards
-            if (this.savedRewards.includes(rewardId)) {
+            if (this.savedRewards.includes(parseInt(rewardId))) {
                 this.setSavedState(button, true);
             }
 
@@ -70,21 +75,33 @@ class RewardsManager {
         });
     }
 
-    toggleSave(rewardId, button) {
-        const isSaved = this.savedRewards.includes(rewardId);
+    async toggleSave(rewardId, button) {
+        try {
+            const response = await fetch('/rewards/toggle-save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ reward_id: rewardId })
+            });
 
-        if (isSaved) {
-            // Remove from saved
-            this.savedRewards = this.savedRewards.filter(id => id !== rewardId);
-            this.setSavedState(button, false);
-        } else {
-            // Add to saved
-            this.savedRewards.push(rewardId);
-            this.setSavedState(button, true);
+            const data = await response.json();
+            
+            if (data.saved) {
+                if (!this.savedRewards.includes(parseInt(rewardId))) {
+                    this.savedRewards.push(parseInt(rewardId));
+                }
+                this.setSavedState(button, true);
+            } else {
+                this.savedRewards = this.savedRewards.filter(id => id !== parseInt(rewardId));
+                this.setSavedState(button, false);
+            }
+
+            this.updateSavedTab();
+        } catch (error) {
+            console.error('Error toggling save:', error);
         }
-
-        this.saveSavedRewards();
-        this.updateSavedTab();
     }
 
     setSavedState(button, isSaved) {
@@ -153,7 +170,18 @@ class RewardsManager {
     handleTabSwitching() {
         // Check if we're on the saved tab
         const urlParams = new URLSearchParams(window.location.search);
-        const currentTab = urlParams.get('tab');
+        const currentTab = urlParams.get('tab') || 'all';
+
+        // Update saved tab when switching tabs
+        const navLinks = document.querySelectorAll('.rewards-nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                    const newTab = new URLSearchParams(window.location.search).get('tab');
+                    if (newTab === 'saved') {
+                        this.updateSavedTab();
+                    }
+            });
+        });
 
         if (currentTab === 'saved') {
             this.updateSavedTab();
@@ -172,9 +200,11 @@ class RewardsManager {
             return;
         }
 
-        // Clone saved reward cards from the "All" tab
+        // Clone saved reward cards from the template
         this.savedRewards.forEach(rewardId => {
-            const originalCard = document.querySelector(`.reward-card[data-reward-id="${rewardId}"]`);
+            const templateContainer = document.getElementById('rewardsTemplate');
+            const originalCard = templateContainer.querySelector(`.reward-card[data-reward-id="${rewardId}"]`);
+            
             if (originalCard) {
                 const clonedCard = originalCard.cloneNode(true);
 

@@ -56,7 +56,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/statistics', [StatisticsController::class, 'statistics'])->name('statistics');
     
     // Rewards Routes
-    Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards');
+    Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
+    Route::post('/rewards/toggle-save', [RewardsController::class, 'toggleSave'])->name('rewards.toggleSave');
+    Route::get('/rewards/saved', [RewardsController::class, 'getSavedRewards'])->name('rewards.getSaved');
+
+    // Admin Rewards Management Routes (admin only)
+    Route::middleware(IsAdmin::class)->prefix('admin/rewards')->name('rewards.')->group(function () {
+        Route::get('create', [RewardsController::class, 'create'])->name('create');
+        Route::post('store', [RewardsController::class, 'store'])->name('store');
+        Route::get('{reward}/edit', [RewardsController::class, 'edit'])->name('edit');
+        Route::put('{reward}', [RewardsController::class, 'update'])->name('update');
+        Route::delete('{reward}', [RewardsController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Health Cycle API routes (require authentication)

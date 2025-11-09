@@ -75,6 +75,12 @@ class User extends Authenticatable
         return $this->hasMany(HealthCycle::class);
     }
 
+    // Relationship for saved rewards
+    public function favoriteRewards()
+    {
+        return $this->belongsToMany(Reward::class, 'user_favorite_rewards', 'user_id', 'card_id');
+    }
+
     /**
      * Reset daily points if it's a new day
      * @param string|null $userDate - Optional user's timezone date (Y-m-d format). If null, uses server date.
