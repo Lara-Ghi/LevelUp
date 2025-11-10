@@ -13,6 +13,7 @@ Make sure you have installed:
 - **Composer** (PHP package manager)
 - **Node.js & NPM** 
 - **XAMPP** (if you don't have MySQL/MariaDB installed separately)
+- **Docker Desktop** (optional, required if you want to run the full stack with containers)
 
 ### Step 1: Clone and Install
 ```bash
@@ -60,6 +61,32 @@ DB_DATABASE=levelup
 DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
+
+#### Option C: Using Docker (Laravel + MySQL + wifi2ble simulator)
+1. Install Docker Desktop and ensure it is running.
+2. Copy the Docker environment template and adjust values if needed:
+
+   ```powershell
+   cd LevelUp_App
+   Copy-Item .env.docker.example .env.docker -Force
+   ```
+
+3. Build and start the stack (PHP-FPM, Nginx, MySQL, and the wifi2ble simulator API):
+
+   ```powershell
+   docker compose up --build
+   ```
+
+4. Once the containers are running, install dependencies and run migrations inside the PHP container:
+
+   ```powershell
+   docker compose exec app composer install
+   docker compose exec app npm install
+   docker compose exec app php artisan key:generate
+   docker compose exec app php artisan migrate --seed
+   ```
+
+5. Visit the app at [http://localhost:8080](http://localhost:8080). The simulator API is exposed at [http://localhost:8000/api/v2/<api_key>/desks](http://localhost:8000/api/v2/<api_key>/desks) from your host, while Laravel uses the internal `http://simulator:8000` address.
 
 ### Step 5: Run Database Migrations
 ```bash

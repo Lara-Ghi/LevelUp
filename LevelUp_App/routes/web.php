@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\DeskSimulatorController;
 
 // Home Routes
 Route::get('/', function () {
@@ -59,6 +60,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
     Route::post('/rewards/toggle-save', [RewardsController::class, 'toggleSave'])->name('rewards.toggleSave');
     Route::get('/rewards/saved', [RewardsController::class, 'getSavedRewards'])->name('rewards.getSaved');
+
+    Route::prefix('api/simulator')->name('simulator.')->group(function () {
+        Route::get('desks', [DeskSimulatorController::class, 'index'])->name('desks.index');
+        Route::get('desks/{desk}', [DeskSimulatorController::class, 'show'])->name('desks.show');
+        Route::get('desks/{desk}/{category}', [DeskSimulatorController::class, 'showCategory'])->name('desks.category');
+        Route::put('desks/{desk}/state', [DeskSimulatorController::class, 'updateState'])->name('desks.state');
+    });
 
     // Admin Rewards Management Routes (admin only)
     Route::middleware(IsAdmin::class)->prefix('admin/rewards')->name('rewards.')->group(function () {
