@@ -72,7 +72,7 @@ class User extends Authenticatable
      */
     public function healthCycles()
     {
-        return $this->hasMany(HealthCycle::class);
+        return $this->hasMany(HealthCycle::class, 'user_id', 'user_id');
     }
 
     // Relationship for saved rewards

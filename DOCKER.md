@@ -29,8 +29,11 @@ docker compose -f docker-compose.yml exec app php artisan migrate --seed
 # start services (from LevelUp_App)
 docker compose up -d
 
-# start Vite hot reload (leave running)
+# start Vite hot reload for live changes (leave running)
 docker compose -f docker-compose.yml exec app npm run dev -- --host 0.0.0.0
+
+# Faster reload (only if assets were modified in advanced)
+docker compose -f docker-compose.yml exec app npm run build
 
 # stop everything
 docker compose down
