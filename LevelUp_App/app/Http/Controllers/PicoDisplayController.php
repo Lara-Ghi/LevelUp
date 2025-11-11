@@ -35,4 +35,24 @@ class PicoDisplayController extends Controller
             'time_remaining' => $timeRemaining
         ]);
     }
+
+    public function toggleTimerPause(Request $request): JsonResponse
+    {
+        \Log::info('Pause request received', ['data' => $request->all()]);
+        
+        $validated = $request->validate([
+            'paused' => 'required|boolean',
+        ]);
+
+        $paused = $validated['paused'];
+        $this->picoDisplayService->setTimerPaused($paused);
+        
+        \Log::info('Pause state updated', ['paused' => $paused]);
+
+        return response()->json([
+            'success' => true,
+            'paused' => $paused,
+            'message' => $paused ? 'Timer paused' : 'Timer resumed'
+        ]);
+    }
 }

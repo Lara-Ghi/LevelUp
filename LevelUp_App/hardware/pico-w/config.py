@@ -36,3 +36,7 @@ OFF_COLOR = (0, 0, 0)  # LED off
 # Potentiometer settings (for brightness control)
 POT_PIN = 26  # GPIO 26 (ADC0)
 BRIGHTNESS_MIN = 0.0  # Minimum brightness (0.0 = off, 1.0 = full)
+
+# Button and pause LED settings
+PAUSE_BUTTON_PIN = 10  # GPIO 10 (pause/resume button)
+PAUSE_LED_PIN = 7      # GPIO 7 (pause indicator LED)

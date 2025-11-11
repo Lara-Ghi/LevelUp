@@ -17,7 +17,8 @@ from config import (
     OLED_WIDTH, OLED_HEIGHT, OLED_ADDR,
     RGB_LED_PIN, RGB_LED_COUNT,
     SITTING_COLOR, STANDING_COLOR, OFF_COLOR,
-    POT_PIN, BRIGHTNESS_MIN
+    POT_PIN, BRIGHTNESS_MIN,
+    PAUSE_BUTTON_PIN, PAUSE_LED_PIN
 )
 
 # Try to import neopixel (might not be available on all boards)
@@ -41,6 +42,11 @@ last_led_phase = None
 current_led_color = OFF_COLOR  # Track current LED base color
 last_brightness = None  # Track last brightness value
 in_warning_mode = False  # Track if we're in warning mode
+pause_button = None  # Pause button on GP10
+pause_led = None  # Pause indicator LED on GP7
+is_paused = False  # Track pause state
+last_button_time = 0  # For button debouncing
+last_button_state = 1  # Track previous button state (1 = not pressed)
 
 
 def log(message):
@@ -232,6 +238,35 @@ def init_potentiometer():
         return False
 
 
+def init_pause_button():
+    """Initialize pause button on GP10"""
+    global pause_button
+    
+    try:
+        log(f"Initializing pause button on GP{PAUSE_BUTTON_PIN}...")
+        pause_button = Pin(PAUSE_BUTTON_PIN, Pin.IN, Pin.PULL_UP)
+        log("Pause button initialized")
+        return True
+    except Exception as e:
+        log(f"Failed to initialize pause button: {e}")
+        return False
+
+
+def init_pause_led():
+    """Initialize pause indicator LED on GP7"""
+    global pause_led
+    
+    try:
+        log(f"Initializing pause LED on GP{PAUSE_LED_PIN}...")
+        pause_led = Pin(PAUSE_LED_PIN, Pin.OUT)
+        pause_led.value(0)  # Start with LED off
+        log("Pause LED initialized")
+        return True
+    except Exception as e:
+        log(f"Failed to initialize pause LED: {e}")
+        return False
+
+
 def read_brightness():
     """Read brightness level from potentiometer (0.0 to 1.0)"""
     if not potentiometer:
@@ -243,7 +278,11 @@ def read_brightness():
         # Convert to 0.0-1.0 range
         brightness = raw_value / 65535.0
         # Apply minimum brightness
-        brightness = max(BRIGHTNESS_MIN, brightness)
+        brightness = max(0.0, brightness)
+        return brightness
+    except Exception as e:
+        log(f"Error reading potentiometer: {e}")
+        return 1.0
         return brightness
     except Exception as e:
         log(f"Error reading potentiometer: {e}")
@@ -325,6 +364,67 @@ def update_led_brightness():
         rgb_led[0] = color
         rgb_led.write()
         last_brightness = brightness
+
+
+def check_pause_button():
+    """Check if pause button is pressed and toggle pause state (edge-triggered)"""
+    global is_paused, last_button_time, last_button_state
+    
+    if not pause_button or not pause_led:
+        return
+    
+    # Read button (active low - pressed = 0)
+    button_state = pause_button.value()
+    current_time = time.time()
+    
+    # Edge detection: trigger only on button press (transition from 1 to 0)
+    if button_state == 0 and last_button_state == 1:
+        # Debounce: only register press if 0.5 seconds have passed since last press
+        if (current_time - last_button_time) > 0.5:
+            last_button_time = current_time
+            
+            # Toggle pause state
+            is_paused = not is_paused
+            
+            # Update pause LED
+            pause_led.value(1 if is_paused else 0)
+            
+            # Send pause/resume command to backend
+            toggle_timer_pause(is_paused)
+            
+            log(f"Button pressed - Timer {'PAUSED' if is_paused else 'RESUMED'}")
+    
+    # Update last button state
+    last_button_state = button_state
+
+
+def toggle_timer_pause(pause):
+    """Send pause/resume command to backend API"""
+    try:
+        url = API_URL.replace('/display', '/timer-pause')
+        # Convert Python bool to JSON bool (lowercase true/false)
+        payload = json.dumps({'paused': bool(pause)})
+        
+        log(f"Sending {'pause' if pause else 'resume'} request to {url}")
+        log(f"Payload: {payload}")
+        
+        response = urequests.post(
+            url,
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+            timeout=API_TIMEOUT_SECONDS
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            log(f"Timer {'paused' if pause else 'resumed'} successfully: {data}")
+        else:
+            log(f"Failed to toggle pause: HTTP {response.status_code}")
+        
+        response.close()
+        
+    except Exception as e:
+        log(f"Error toggling pause: {e}")
 
 
 def display_message(data):
@@ -469,6 +569,16 @@ def main():
     init_rgb_led()
     init_potentiometer()
     
+    # Initialize pause button and LED
+    init_pause_button()
+    init_pause_led()
+    
+    # Make sure we start with correct button state
+    if pause_button:
+        global last_button_state
+        last_button_state = pause_button.value()
+        log(f"Initial button state: {last_button_state}")
+    
     # Show connecting message (centered)
     oled.fill(0)
     connecting_text = "Connecting..."
@@ -502,6 +612,9 @@ def main():
     
     while True:
         try:
+            # Check pause button
+            check_pause_button()
+            
             # Update LED brightness from potentiometer (fast, non-blocking)
             update_led_brightness()
             

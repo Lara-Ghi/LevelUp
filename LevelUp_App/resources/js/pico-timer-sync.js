@@ -107,9 +107,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 updatePicoTimerPhase(null, 0);
                 lastPhase = null;
             };
+            
+            // Poll for pause state from Pico button
+            checkPicoPauseState();
         }
     }, 100);
     
     // Give up after 10 seconds
     setTimeout(() => clearInterval(checkFocusClock), 10000);
 });
+
+// Check if Pico button triggered pause/resume
+let lastPauseState = null;
+let pauseCheckInterval = null;
+
+function checkPicoPauseState() {
+    // Don't create multiple intervals
+    if (pauseCheckInterval) {
+        console.log('⚠️ Pause monitoring already active');
+        return;
+    }
+    
+    console.log('🔄 Starting Pico pause state monitoring');
+    
+    pauseCheckInterval = setInterval(() => {
+        if (!window.focusClockUI || !window.focusClockUI.core) {
+            console.log('⚠️ Timer not initialized yet');
+            return;
+        }
+        
+        fetch('/api/pico/display')
+            .then(response => response.json())
+            .then(data => {
+                const isPaused = data.is_paused;
+                console.log(`📊 Pause state check: isPaused=${isPaused}, lastPauseState=${lastPauseState}, isRunning=${window.focusClockUI.core.isRunning}`);
+                
+                // Initialize lastPauseState on first check
+                if (lastPauseState === null) {
+                    lastPauseState = isPaused;
+                    console.log(`🎬 Initial pause state set to: ${isPaused}`);
+                    return;
+                }
+                
+                // Only act if pause state changed
+                if (isPaused !== lastPauseState) {
+                    console.log(`🔄 Pause state changed: ${lastPauseState} -> ${isPaused}`);
+                    
+                    if (isPaused && window.focusClockUI.core.isRunning) {
+                        console.log('⏸️ Pico button pressed - Pausing timer');
+                        window.focusClockUI.core.pause();
+                    } else if (!isPaused && !window.focusClockUI.core.isRunning) {
+                        console.log('▶️ Pico button pressed - Resuming timer');
+                        window.focusClockUI.core.start();
+                    }
+                    
+                    lastPauseState = isPaused;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Failed to check pause state:', error);
+            });
+    }, 1000); // Check every second
+}

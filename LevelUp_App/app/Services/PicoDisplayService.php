@@ -21,6 +21,7 @@ class PicoDisplayService
         'timer_phase' => null, // 'sitting' or 'standing'
         'time_remaining' => null, // seconds left
         'warning_message' => null, // 'Get ready to stand up!' or 'Get ready to sit down!'
+        'is_paused' => false, // timer pause state
     ];
 
     /**
@@ -75,6 +76,16 @@ class PicoDisplayService
     }
 
     /**
+     * Set the timer pause state.
+     */
+    public function setTimerPaused(bool $paused): void
+    {
+        $currentState = $this->getState();
+        $currentState['is_paused'] = $paused;
+        $this->storeState($currentState);
+    }
+
+    /**
      * Fetch the current display state for the Pico W.
      *
      * @return array<string, mixed>
@@ -98,7 +109,10 @@ class PicoDisplayService
      */
     private function storeState(array $values): void
     {
-        $state = array_merge(self::DEFAULT_STATE, $values);
+        // Get current state first, then merge with defaults, then apply new values
+        // This preserves existing state values that aren't being updated
+        $currentState = Cache::get(self::CACHE_KEY, self::DEFAULT_STATE);
+        $state = array_merge(self::DEFAULT_STATE, $currentState, $values);
         $state['updated_at'] = Carbon::now()->toIso8601String();
 
         Cache::forever(self::CACHE_KEY, $state);
