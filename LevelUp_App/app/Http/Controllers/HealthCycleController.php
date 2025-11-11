@@ -163,7 +163,7 @@ class HealthCycleController extends Controller
         $userDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $userDate . ' ' . now()->format('H:i:s'));
         
         $healthCycle = HealthCycle::create([
-            'user_id' => $user->id,
+            'user_id' => $user->getKey(),
             'sitting_minutes' => $request->sitting_minutes,
             'standing_minutes' => $request->standing_minutes,
             'cycle_number' => $request->cycle_number,

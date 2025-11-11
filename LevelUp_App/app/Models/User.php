@@ -99,7 +99,7 @@ class User extends Authenticatable
             $this->last_points_date = $today;
             $this->save();
             
-            \Log::info("Daily points reset for user {$this->id}: new day {$today}");
+            \Log::info("Daily points reset for user {$this->getKey()}: new day {$today}");
         }
     }
 
