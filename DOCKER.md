@@ -21,6 +21,8 @@ docker compose -f docker-compose.yml exec app php artisan key:generate
 
 # migrate and seed the database
 docker compose -f docker-compose.yml exec app php artisan migrate --seed
+
+# do not leave the key field blank (in the env file that gets automatically edited) ==> discard the change
 ```
 
 ## Commands After First Day SET-UP (copy & paste)

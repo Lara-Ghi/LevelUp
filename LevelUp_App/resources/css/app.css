@@ -889,11 +889,11 @@ body {
 
 html, body {
     height: 100%;
-    overflow: hidden;
+    overflow: scroll;
     scroll-behavior: smooth;
 }
 .guest-background {
-    overflow: hidden;
+    overflow: scroll;
 }
 
 /* ===========================================
