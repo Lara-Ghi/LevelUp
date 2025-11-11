@@ -5,16 +5,19 @@
 160 points daily cap, removed daily limit UI display on hover, removed SVG footer icons
 
 ### ✅ 1. Daily Cap Increased from 100 to 160
+
 - Updated `app/Models/User.php`: `canEarnPoints()` and `addPoints()` methods
 - Updated `app/Http/Controllers/HealthCycleController.php`: Daily limit check
 - Updated error messages to reflect new 160 point limit
 
 ### ✅ 2. Daily Limit UI Display Removed
+
 - Removed `<span class="points-daily">` from `resources/views/layouts/navigation.blade.php`
 - Removed CSS hover effects for daily points display (`.points-daily` classes)
 - Updated `resources/js/home-clock/focus-clock.js` to only show total points
 
 ### ✅ 3. SVG Footer Icons Removed
+
 - Deleted all SVG desk setup icons from `resources/views/layouts/desk-setup.blade.php`
 - Removed all associated CSS from `resources/css/app.css`:
   - `.desk-setup`, `.icons`, `.spring` classes
@@ -27,6 +30,7 @@
 Changed all hardcoded default values to match the LINAK 20:10 pattern:
 
 **Files Updated:**
+
 - `resources/views/home.blade.php`
   - FocusClockCore constructor: `sittingTime: 20, standingTime: 10`
   - FocusClockStorage defaultSettings: `sittingTime: 20, standingTime: 10`
@@ -44,6 +48,7 @@ Changed all hardcoded default values to match the LINAK 20:10 pattern:
 Added minimum 15-minute cycle requirement to prevent users from gaming the system with tiny cycles.
 
 **Backend (`HealthCycleController.php`):**
+
 ```php
 $minCycleTime = 15; // minutes
 if ($sit + $stand < $minCycleTime) {
@@ -52,6 +57,7 @@ if ($sit + $stand < $minCycleTime) {
 ```
 
 **Examples:**
+
 - 2 min sit + 1 min stand = 3 min total → **0 points** ❌
 - 10 min sit + 5 min stand = 15 min total → **0 points** (barely qualifies)
 - 20 min sit + 10 min stand = 30 min total → **100 score = 10 points** ✅
@@ -61,12 +67,14 @@ if ($sit + $stand < $minCycleTime) {
 ### ✅ 3. Points Display Enhancement
 
 **Added Daily Progress Indicator:**
+
 - Shows "X/100 today" below total points
 - Turns gold when daily limit (100) is reached
 - Always visible, updates in real-time
 - Responsive design
 
-**Location:** 
+**Location:**
+
 - Navbar points display (`home.blade.php`)
 - CSS styling added for `.points-daily`
 
@@ -77,15 +85,18 @@ if ($sit + $stand < $minCycleTime) {
 Made the points system work gracefully without authentication:
 
 **Controller Updates (`HealthCycleController.php`):**
+
 - `completeHealthCycle()`: Returns 401 with message "Please log in to earn points"
 - `getPointsStatus()`: Returns default values (0 points) for guests
 - `getHistory()`: Returns empty array for guests
 
 **Routes (`web.php`):**
+
 - Removed `auth` middleware temporarily
 - Added TODO comment to re-enable when auth system is ready
 
 **Frontend (`home.blade.php`):**
+
 - Silently handles failed API calls (try/catch)
 - Shows 0 points by default for guests
 - Timer still works fully for non-authenticated users
@@ -95,12 +106,14 @@ Made the points system work gracefully without authentication:
 ### ✅ 5. Documentation Updated
 
 **POINTS_SYSTEM.md:**
+
 - Added "Step 0: Minimum Cycle Check" section
 - Updated algorithm explanation with anti-gaming protection
 - Added examples showing rejected short cycles
 - Updated formula to show minimum time check first
 
 **Examples Table Updated:**
+
 | Sitting | Standing | Total | Score | Points | Interpretation |
 |---------|----------|-------|-------|--------|----------------|
 | 2 min | 1 min | 3 min | 0 | 0 | 🔴 Too short |
@@ -112,12 +125,14 @@ Made the points system work gracefully without authentication:
 ### ✅ 6. Database Seeder Enhanced
 
 **DatabaseSeeder.php:**
+
 - Creates test user with email `test@example.com`
 - Password: `password`
 - Initializes with 0 points
 - Sets `last_points_date` to today
 
 **To create test user:**
+
 ```bash
 php artisan db:seed
 ```
@@ -126,13 +141,15 @@ php artisan db:seed
 
 ## 🎯 How It All Works Now
 
-### For Guests (Not Logged In):
+### For Guests (Not Logged In)
+
 1. ✅ Timer works perfectly
 2. ✅ Can set custom times
 3. ✅ Sees 0 points in navbar
 4. ❌ Cannot earn points (gets friendly message)
 
-### For Authenticated Users:
+### For Authenticated Users
+
 1. ✅ Timer works perfectly
 2. ✅ Earns points based on Cornell algorithm
 3. ✅ 15-minute minimum enforced
@@ -140,7 +157,8 @@ php artisan db:seed
 5. ✅ Real-time feedback with notifications
 6. ✅ Points persist in database
 
-### Default Behavior:
+### Default Behavior
+
 - **First-time users** see setup modal with 20:10 defaults
 - **Returning users** see their last saved times
 - **All calculations** now based on 20:10 ideal ratio
@@ -164,19 +182,22 @@ php artisan db:seed
 ## 📝 Notes
 
 ### Why 15-minute minimum?
+
 - Prevents gaming with micro-cycles (2+1, 3+2, etc.)
 - Encourages meaningful work periods
 - Aligns with ergonomic research
 - 15 min = 50% of ideal 30 min cycle
 
-### Points Distribution:
+### Points Distribution
+
 - **90-100 score** → 10 points
 - **70-89 score** → 7 points
 - **50-69 score** → 4 points
 - **0-49 score** → 0 points
 - **< 15 min total** → 0 points (automatic)
 
-### Authentication Status:
+### Authentication Status
+
 - Currently **NO AUTH REQUIRED** for API calls
 - Points system checks for logged-in user
 - Gracefully degrades for guests

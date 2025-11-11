@@ -19,6 +19,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/home-clock/focus-clock.css',
                 'resources/js/home-clock/focus-clock.js',
+                'resources/js/pico-timer-sync.js',
                 'resources/css/rewards.css',
                 'resources/js/rewards.js',
                 'resources/js/statistics.js'

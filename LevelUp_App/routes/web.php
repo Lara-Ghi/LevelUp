@@ -6,6 +6,7 @@ use App\Http\Controllers\HealthCycleController;
 use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\PicoDisplayController;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -15,6 +16,10 @@ use App\Http\Controllers\DeskSimulatorController;
 Route::get('/', function () {
     return view('home');
 })->name('home');
+
+// Pico W display API endpoints
+Route::get('/api/pico/display', [PicoDisplayController::class, 'getState'])->name('api.pico.display');
+Route::post('/api/pico/timer-phase', [PicoDisplayController::class, 'updateTimerPhase'])->middleware('auth')->name('api.pico.timer-phase');
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {

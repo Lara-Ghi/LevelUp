@@ -1,18 +1,22 @@
 # 🏆 LevelUp Health Cycle Scoring System
 
 ## Overview
+
 The Health Cycle Scoring System rewards users for maintaining healthy alternation between sitting and standing based on Cornell University research and the LINAK 20:10 pattern (20 minutes sitting, 10 minutes standing).
 
 ## 🎯 Key Features
 
 ### Daily Points Limit
+
 - Users can earn a **maximum of 100 points per day**
 - Points reset at midnight based on user's timezone (`last_daily_reset` field)
 - Total lifetime points accumulate indefinitely
 - Daily progress is displayed in the navbar
 
 ### Timezone-Aware Daily Reset
+
 The system uses timezone-aware daily resets to ensure points reset at the correct time for each user:
+
 - `last_daily_reset` field tracks when the user's daily points were last reset
 - API accepts `user_date` parameter to handle timezone differences
 - Prevents users from gaming the system by changing timezones
@@ -23,6 +27,7 @@ The system uses timezone-aware daily resets to ensure points reset at the correc
 The algorithm calculates a health score (0-100) for each sit-stand cycle:
 
 #### Step 0: Minimum Cycle Check (Anti-Gaming Protection)
+
 - **Minimum Total Duration**: 15 minutes
 - Any cycle shorter than 15 minutes total automatically gets **0 points**
 - Cycles of **exactly 15 minutes ARE allowed** and will be scored normally
@@ -30,18 +35,21 @@ The algorithm calculates a health score (0-100) for each sit-stand cycle:
 - Ensures users complete meaningful work periods
 
 #### Step 1: Ratio Accuracy (70% weight)
+
 - **Ideal Ratio**: 2:1 (20 min sitting : 10 min standing)
 - Measures how close the user's pattern matches the Cornell research recommendation
 - Formula: `max(0, 1 - |user_ratio - 2| / 2)`
 
 #### Step 2: Duration Balance (30% weight)
+
 - **Ideal Total**: ~30 minutes per cycle
 - Rewards cycles that last around 30 minutes
 - Allows flexibility (25-35 minutes gets full points)
 - Formula: `max(0, 1 - |total_minutes - 30| / 20)`
 
 #### Final Score
-```
+
+```Time
 if (total_time < 15 minutes):
     return 0  # Too short, no points
 
@@ -79,10 +87,13 @@ health_score = round((ratio_score × 0.7 + duration_score × 0.3) × 100)
 ## 🔧 API Endpoints
 
 ### Complete a Health Cycle
-```
+
+```POST
 POST /api/health-cycle/complete
 ```
+
 **Body:**
+
 ```json
 {
   "sitting_minutes": 20,
@@ -93,6 +104,7 @@ POST /api/health-cycle/complete
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -110,11 +122,13 @@ POST /api/health-cycle/complete
 ```
 
 ### Get Points Status
-```
+
+```API
 GET /api/health-cycle/points-status?user_date=2025-10-15
 ```
 
 **Response:**
+
 ```json
 {
   "total_points": 1250,
@@ -127,19 +141,22 @@ GET /api/health-cycle/points-status?user_date=2025-10-15
 ```
 
 ### Get Cycle History
-```
+
+```CycleHistory
 GET /api/health-cycle/history?limit=10
 ```
 
 ## 💾 Database Tables
 
 ### users table
+
 - `total_points` - Total points accumulated
 - `daily_points` - Points earned today (resets daily)
 - `last_points_date` - Last date when points were earned (for legacy daily reset)
 - `last_daily_reset` - Date when daily points were last reset (timezone-aware)
 
 ### health_cycles table
+
 - `user_id` - Foreign key to users
 - `sitting_minutes` - Duration of sitting session
 - `standing_minutes` - Duration of standing session
@@ -155,5 +172,6 @@ All API endpoints require authentication via Laravel's `auth` middleware. Guests
 ## 🎓 Research Reference
 
 This system is based on:
+
 - **Cornell University** ergonomics research
 - **LINAK** 20:10 sit-stand pattern

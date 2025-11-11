@@ -30,5 +30,6 @@
     <!-- Focus Clock JavaScript - Only for authenticated users -->
     @section('scripts')
       @vite('resources/js/home-clock/focus-clock.js')
+      @vite('resources/js/pico-timer-sync.js')
     @endsection
 @endauth

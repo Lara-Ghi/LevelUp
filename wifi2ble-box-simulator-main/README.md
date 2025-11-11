@@ -8,7 +8,8 @@ The API server can be started in either HTTP or HTTPS mode.
 
 ### Starting the Server
 
-#### 1. **HTTP Mode** (default):  
+#### 1. **HTTP Mode** (default)  
+
 To start the server in HTTP mode on the default port (8000), run:
 
 ```bash
@@ -16,9 +17,10 @@ python simulator/main.py --port 8000
 ```
 
 - Options:
-   - __--port__: (Optional) Specify the port to use for the server. The default is 8000
+  - **--port**: (Optional) Specify the port to use for the server. The default is 8000
 
-#### 2. **HTTPS Mode**:
+#### 2. **HTTPS Mode**
+
 To enable HTTPS, you need to provide paths to the SSL certificate and key files. Here’s an example of starting the server on port 8443 in HTTPS mode:
 
 ```bash
@@ -26,36 +28,39 @@ python simulator/main.py --port 8443 --https --certfile config/cert.pem --keyfil
 ```
 
 - Options:
-   - __--https__: Enable HTTPS. Requires --certfile and --keyfile
-   - __--certfile__: Path to the SSL certificate file (required for HTTPS)
-   - __--keyfile__: Path to the SSL private key file (required for HTTPS)
-   - __--port__: (Optional) Specify the port to use for the server. The default is 8000
+  - **--https**: Enable HTTPS. Requires --certfile and --keyfile
+  - **--certfile**: Path to the SSL certificate file (required for HTTPS)
+  - **--keyfile**: Path to the SSL private key file (required for HTTPS)
+  - **--port**: (Optional) Specify the port to use for the server. The default is 8000
 
-#### 3. **Other Options**:
+#### 3. **Other Options**
+
 **Desks:** to generate the minimum required amount of desks:
 
 ```bash
 python simulator/main.py --desks 100
 ```
+
 - Option:
-   - __--desks__: Minimum number of desks to simulate (default: 2)
+  - **--desks**: Minimum number of desks to simulate (default: 2)
 
 **Speed:** To control speed of the clock simulation of the attached desks:
 
 ```bash
 python simulator/main.py --speed 60
 ```
+
 - Option:
-   - __--speed__: Simulation speed (default: 60)
+  - **--speed**: Simulation speed (default: 60)
 
 **Log Level**: To control logging level of the simulator modules:
 
 ```bash
 python simulator/main.py --log-level INFO
 ```
-- Option:
-   - __--log-level__: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
+- Option:
+  - **--log-level**: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
 ## Data Persistence
 
@@ -71,8 +76,9 @@ This feature allows for seamless persistence of desk data, enabling the server t
 
 ## Base URL
 
-All endpoints are based on the following format: 
-```
+All endpoints are based on the following format:
+
+```API-KEY-DESKS
 /api/v2/<api_key>/desks
 ```
 
@@ -87,9 +93,11 @@ Replace `<api_key>` with a valid API key from `api_keys.json`.
 - **Response**:
   - **Status**: `200 OK`
   - **Body**: Array of desk IDs.
+
     ```json
     ["cd:fb:1a:53:fb:e6", "ee:62:5b:b8:73:1d"]
     ```
+
 - **Errors**:
   - `401 Unauthorized`: Invalid API key.
   - `400 Bad Request`: Incorrect endpoint format or version mismatch.
@@ -103,6 +111,7 @@ Replace `<api_key>` with a valid API key from `api_keys.json`.
 - **Response**:
   - **Status**: `200 OK`
   - **Body**: JSON object with desk configuration, state, usage, and errors.
+
     ```json
     {
       "config": {
@@ -130,6 +139,7 @@ Replace `<api_key>` with a valid API key from `api_keys.json`.
       ]
     }
     ```
+
 - **Errors**:
   - `404 Not Found`: Desk not found.
   - `401 Unauthorized`: Invalid API key.
@@ -160,19 +170,23 @@ Replace `<api_key>` with a valid API key from `api_keys.json`.
 - **Request Body**:
   - **Content-Type**: `application/json`
   - **Body**: JSON object with the data to update. Example for updating position:
+
     ```json
     {
       "position_mm": 1000
     }
     ```
+
 - **Response**:
   - **Status**: `200 OK`
   - **Body**: JSON object indicating the allowed position after the update.
+
     ```json
     {
         "position_mm": 1000
     }
     ```
+
 - **Errors**:
   - `404 Not Found`: Desk or category not found.
   - `401 Unauthorized`: Invalid API key.
@@ -184,6 +198,7 @@ For all endpoints, the API may return the following standard error responses:
 
 - **400 Bad Request**: Returned if the request path or parameters are incorrect.
   - **Example**:
+
     ```json
     {
       "error": "Invalid endpoint"
@@ -192,6 +207,7 @@ For all endpoints, the API may return the following standard error responses:
 
 - **401 Unauthorized**: Returned if an invalid API key is provided.
   - **Example**:
+
     ```json
     {
       "error": "Unauthorized"
@@ -200,6 +216,7 @@ For all endpoints, the API may return the following standard error responses:
 
 - **404 Not Found**: Returned if a specified desk or category is not found.
   - **Example**:
+
     ```json
     {
       "error": "Desk not found"
@@ -208,6 +225,7 @@ For all endpoints, the API may return the following standard error responses:
 
 - **405 Method Not Allowed**: Returned if an unsupported HTTP method is used (e.g., `POST`, `DELETE`, `PATCH`).
   - **Example**:
+
     ```json
     {
       "error": "Method Not Allowed"
