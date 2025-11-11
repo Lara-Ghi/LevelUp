@@ -1,8 +1,8 @@
 # MicroPython SSD1306 OLED driver, I2C and SPI interfaces
 # https://github.com/micropython/micropython/blob/master/drivers/display/ssd1306.py
 
-from micropython import const
-import framebuf
+from micropython import const # type: ignore
+import framebuf # type: ignore
 
 
 # register definitions

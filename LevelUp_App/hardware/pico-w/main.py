@@ -4,11 +4,11 @@ Connects to phone hotspot, fetches current user from Laravel backend,
 and displays personalized greeting on OLED screen.
 """
 
-import network
-import urequests
+import network # type: ignore
+import urequests # type: ignore
 import json
 import time
-from machine import Pin, SoftI2C, ADC
+from machine import Pin, SoftI2C, ADC # type: ignore
 from ssd1306 import SSD1306_I2C
 from config import (
     WIFI_SSID, WIFI_PASSWORD, API_URL,
@@ -22,7 +22,7 @@ from config import (
 
 # Try to import neopixel (might not be available on all boards)
 try:
-    import neopixel
+    import neopixel # type: ignore
     NEOPIXEL_AVAILABLE = True
 except ImportError:
     NEOPIXEL_AVAILABLE = False
