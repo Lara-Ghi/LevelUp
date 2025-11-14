@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
             'daily_points' => 80,
             'last_points_date' => now()->toDateString(),
             'last_daily_reset' => now(),
-            // 'desk_id' => 1, // Uncomment if you have a desks table
+            'desk_id' => 1, 
         ]);
 
         // Create a regular user with some progress
@@ -42,6 +42,7 @@ class UserSeeder extends Seeder
             'total_points' => 320,
             'daily_points' => 40,
             'last_points_date' => now()->toDateString(),
+            'desk_id' => 2,
         ]);
     }
 }

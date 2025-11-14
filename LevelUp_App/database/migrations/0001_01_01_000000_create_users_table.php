@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id('user_id')->unique();
+            $table->unsignedBigInteger('desk_id')->nullable();
             $table->string('name', 100);
             $table->string('surname', 100);
             $table->string('username', 60)->unique();
@@ -25,13 +25,20 @@ return new class extends Migration
             $table->unsignedSmallInteger('daily_points')->default(0);
             $table->date('last_points_date')->nullable();
             $table->timestamp('last_daily_reset')->nullable();
-            //$table->unsignedBigInteger('desk_id')->nullable();
-            
+
             $table->timestamps();
-            
-            // Add foreign key constraint if you have a desks table
-            // $table->foreign('desk_id')->references('id')->on('desks')->onDelete('set null');
         });
+
+        // Add foreign key if desks table exists
+        if (Schema::hasTable('desks')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->foreign('desk_id')
+                    ->references('id')
+                    ->on('desks')
+                    ->onDelete('set null');
+
+            });
+        }
     }
 
     /**

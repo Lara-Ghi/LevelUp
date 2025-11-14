@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     {
         // Call all seeders in order
         $this->call([
+            DesksSeeder::class,             // Create 10 desks
             UserSeeder::class,              // Create test user first
             HealthCycleSeeder::class,       // Create test health cycles (needs user to exist)
             RewardsCatalogSeeder::class,    // Create reward cards
