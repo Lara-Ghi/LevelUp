@@ -21,7 +21,7 @@ class RewardsController extends Controller
             $user = \App\Models\User::where('email', 'test@example.com')->first();
         }
 
-        $rewards = Reward::all();
+        $rewards = Reward::where('archived', false)->get();
         $savedRewardIds = $user ? $user->favoriteRewards()->pluck('card_id')->toArray() : [];
 
         return view('rewards.rewards', [
