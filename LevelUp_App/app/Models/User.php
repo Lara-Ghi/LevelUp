@@ -71,7 +71,7 @@ class User extends Authenticatable
     // user-desk relationship
     public function desk()
     {
-        return $this->belongsTo(Desk::class, 'desk_id', 'desk_id');
+        return $this->belongsTo(Desk::class, 'desk_id', 'id');
     }
 
     /**

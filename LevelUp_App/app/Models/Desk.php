@@ -16,7 +16,7 @@ class Desk extends Model
     // user-desk relationship
     public function user()
     {
-        return $this->hasOne(User::class, 'desk_id', 'desk_id');
+        return $this->hasOne(User::class, 'desk_id', 'id');
     }
 }
 
