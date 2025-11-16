@@ -2,26 +2,28 @@
 
 @section('title', 'Control Dashboard')
 
+@section('additional_css')
+    @vite('resources/css/rewards.css')
+@endsection
+
 @section('content')
+  <!-- Dashboard Sub-Navigation -->
+  <div class="rewards-nav">
+    <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}"
+      class="rewards-nav-link {{ request()->query('tab', 'users') === 'users' ? 'active' : '' }}">
+      <i class="fas fa-users"></i>
+      Manage Users
+    </a>
+    <a href="{{ route('admin.dashboard', ['tab' => 'rewards']) }}"
+      class="rewards-nav-link {{ request()->query('tab') === 'rewards' ? 'active' : '' }}">
+      <i class="fas fa-gift"></i>
+      Manage Rewards
+    </a>
+  </div>
+
   <div class="auth-page admin-dashboard">
     <div class="auth-content">
       <div class="login-container">
-
-        <h1 class="text page-title">Control Dashboard</h1>
-
-        <!-- Dashboard Sub-Navigation -->
-        <div class="rewards-nav" style="margin-bottom: 2rem;">
-          <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}"
-            class="rewards-nav-link {{ request()->query('tab', 'users') === 'users' ? 'active' : '' }}">
-            <i class="fas fa-users"></i>
-            Manage Users
-          </a>
-          <a href="{{ route('admin.dashboard', ['tab' => 'rewards']) }}"
-            class="rewards-nav-link {{ request()->query('tab') === 'rewards' ? 'active' : '' }}">
-            <i class="fas fa-gift"></i>
-            Manage Rewards
-          </a>
-        </div>
 
         @foreach (['success', 'error', 'info'] as $msg)
           @if (session($msg))
@@ -249,37 +251,29 @@
             </div>
 
             <!-- Active Rewards Grid -->
-            <div class="rewards-grid"
-              style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div class="rewards-grid">
               @forelse($rewards as $reward)
-                        <div class="reward-card" style="position: relative; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background:
-                white;">
-                          <div class="admin-controls"
-                            style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.5rem;">
-                            <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit" style="padding: 0.25rem
-                0.5rem; background: #007bff; color: white; border-radius: 4px; text-decoration: none;">
-                              <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="admin-btn archive-btn" data-reward-id="{{ $reward->id }}" title="Archive"
-                              style="padding:
-                0.25rem 0.5rem; background: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">
-                              <i class="fas fa-archive"></i>
-                            </button>
-                          </div>
+                <div class="reward-card" data-reward-id="{{ $reward->id }}">
+                  <div class="admin-controls">
+                    <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit">
+                      <i class="fas fa-edit"></i>
+                    </a>
+                    <button type="button" class="admin-btn archive-btn" data-reward-id="{{ $reward->id }}" title="Archive">
+                      <i class="fas fa-archive"></i>
+                    </button>
+                  </div>
 
-                          <div class="reward-image" style="margin-top: 2rem; text-align: center;">
-                            <img
-                              src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}"
-                              alt="{{ $reward->card_name }}" style="max-width: 100%; height: 150px; object-fit: contain;">
-                          </div>
+                  <div class="reward-image">
+                    <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}"
+                         alt="{{ $reward->card_name }}">
+                  </div>
 
-                          <div class="reward-content" style="margin-top: 1rem;">
-                            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem;">{{ $reward->card_name }}</h3>
-                            <p style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">
-                              {{ Str::limit($reward->card_description, 80) }}</p>
-                            <p style="font-weight: bold; color: #007bff;">{{ $reward->points_amount }} Points</p>
-                          </div>
-                        </div>
+                  <div class="reward-content">
+                    <h3>{{ $reward->card_name }}</h3>
+                    <p class="reward-description">{{ $reward->card_description }}</p>
+                    <p class="reward-points">{{ $reward->points_amount }} Points</p>
+                  </div>
+                </div>
               @empty
                 <p style="grid-column: 1 / -1; text-align: center; color: #999;">No rewards yet. Click "Add Reward" to create
                   one!</p>
@@ -287,11 +281,9 @@
             </div>
 
             <!-- Archived Rewards Section (hidden by default) -->
-            <div id="archivedRewardsSection"
-              style="display: none; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #ddd;">
+            <div id="archivedRewardsSection" style="display: none; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #ddd;">
               <h2 style="margin-bottom: 1.5rem;">Archived Rewards</h2>
-              <div class="rewards-grid"
-                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+              <div class="rewards-grid">
                 <p style="grid-column: 1 / -1; text-align: center; color: #999;">No archived rewards yet.</p>
               </div>
             </div>
