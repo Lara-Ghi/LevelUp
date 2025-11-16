@@ -13,6 +13,7 @@ class Reward extends Model
         'points_amount',
         'card_description',
         'card_image',
+        'archived',
     ];
 
     // Users who favorited this reward (inverse of User->favoriteRewards)
