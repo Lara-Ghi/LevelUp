@@ -34,13 +34,6 @@
             History
         </a>
         
-        <!-- Admin Add Button -->
-        @can('admin')
-            <a href="{{ route('rewards.create') }}" class="rewards-nav-link admin-add-btn">
-                <i class="fas fa-plus"></i>
-                Add Reward
-            </a>
-        @endcan
     </div>
 
     <main class="content">
@@ -62,22 +55,6 @@
                             <button class="save-btn" data-reward-id="{{ $reward->id }}" type="button">
                                 <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
                             </button>
-                            
-                            <!-- Admin Edit/Delete Buttons -->
-                            @can('admin')
-                                <div class="admin-controls">
-                                    <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('rewards.destroy', $reward->id) }}" method="POST" class="delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="admin-btn delete-btn" title="Delete" onclick="return confirm('Are you sure?');">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            @endcan
                             
                             <div class="reward-image">
                                 <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" alt="{{ $reward->card_name }}">
@@ -103,21 +80,6 @@
                     <button class="save-btn" data-reward-id="{{ $reward->id }}" type="button">
                         <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
                     </button>
-                    
-                    @can('admin')
-                        <div class="admin-controls">
-                            <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form action="{{ route('rewards.destroy', $reward->id) }}" method="POST" class="delete-form">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="admin-btn delete-btn" title="Delete" onclick="return confirm('Are you sure?');">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    @endcan
                     
                     <div class="reward-image">
                         <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" alt="{{ $reward->card_name }}">
