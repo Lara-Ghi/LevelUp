@@ -14,7 +14,7 @@
     <!-- Rewards Sub-Navigation -->
     <div class="rewards-nav">
         <a href="{{ url('/rewards?tab=available') }}"
-            class="rewards-nav-link {{ request()->query('tab', 'available') === 'available' ? 'active' : '' }}">
+            class="rewards-nav-link {{ request()->query('tab', 'all') === 'available' ? 'active' : '' }}">
             <i class="fas fa-gift"></i>
             Available
         </a>
@@ -24,7 +24,7 @@
             Saved
         </a>
         <a href="{{ url('/rewards?tab=all') }}"
-            class="rewards-nav-link {{ request()->query('tab') === 'all' ? 'active' : '' }}">
+            class="rewards-nav-link {{ request()->query('tab', 'all') === 'all' ? 'active' : '' }}">
             <i class="fas fa-list"></i>
             All
         </a>
@@ -47,7 +47,7 @@
                 <div class="rewards-grid" id="savedRewardsGrid">
                     <p class="no-saved-message">You haven't saved any rewards yet. Browse the "All" tab and click the heart icon to save your favorites!</p>
                 </div>
-            @elseif(request()->query('tab') === 'all')
+            @elseif(request()->query('tab', 'all') === 'all')
                 <!-- All Rewards Content -->
                 <div class="rewards-grid" id="allRewardsGrid">
                     @foreach($rewards as $reward)
