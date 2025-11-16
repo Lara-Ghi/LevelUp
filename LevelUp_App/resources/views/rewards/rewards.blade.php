@@ -48,8 +48,8 @@
         <div class="rewards-content">
             @if(request()->query('tab') === 'available')
                 <!-- Available Rewards Content -->
-                <!-- Add your available rewards content here -->
-            @elseif(request()->query('tab') === 'saved')
+                    <p class="no-saved-message">You don't have enough points yet!</p>
+                @elseif(request()->query('tab') === 'saved')
                 <!-- Saved Rewards Content -->
                 <div class="rewards-grid" id="savedRewardsGrid">
                     <p class="no-saved-message">You haven't saved any rewards yet. Browse the "All" tab and click the heart icon to save your favorites!</p>
