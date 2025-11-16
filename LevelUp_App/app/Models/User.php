@@ -33,13 +33,14 @@ class User extends Authenticatable
         'date_of_birth',
         'role',
         'password',
+        'desk_id',
         'sitting_position',
         'standing_position',
         'total_points',
         'daily_points',
         'last_points_date',
         'last_daily_reset',
-        //'desk_id',
+        
     ];
 
     /**

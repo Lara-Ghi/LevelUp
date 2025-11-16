@@ -12,13 +12,13 @@ return new class extends Migration {
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id('user_id')->unique();
-            $table->unsignedBigInteger('desk_id')->nullable();
             $table->string('name', 100);
             $table->string('surname', 100);
             $table->string('username', 60)->unique();
             $table->date('date_of_birth')->nullable();
             $table->enum('role', ['admin', 'user'])->default('user');
             $table->string('password');
+            $table->unsignedBigInteger('desk_id')->nullable();
             $table->unsignedSmallInteger('sitting_position')->nullable();
             $table->unsignedSmallInteger('standing_position')->nullable();
             $table->unsignedSmallInteger('total_points')->default(0);
