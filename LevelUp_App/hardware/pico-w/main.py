@@ -4,10 +4,12 @@ Connects to phone hotspot, fetches current user from Laravel backend,
 and displays personalized greeting on OLED screen.
 """
 
+# === Imports ===
 import network # type: ignore
 import urequests # type: ignore
 import json
 import time
+import framebuf # type: ignore
 from machine import Pin, SoftI2C, ADC # type: ignore
 from ssd1306 import SSD1306_I2C
 from config import (
@@ -21,6 +23,7 @@ from config import (
     PAUSE_BUTTON_PIN, PAUSE_LED_PIN
 )
 
+# === Optional Modules ===
 # Try to import neopixel (might not be available on all boards)
 try:
     import neopixel # type: ignore
@@ -29,6 +32,7 @@ except ImportError:
     NEOPIXEL_AVAILABLE = False
     print("Warning: neopixel module not available")
 
+# === Global State ===
 # Cache file for offline fallback
 CACHE_FILE = "user_cache.json"
 
@@ -47,13 +51,78 @@ pause_led = None  # Pause indicator LED on GP7
 is_paused = False  # Track pause state
 last_button_time = 0  # For button debouncing
 last_button_state = 1  # Track previous button state (1 = not pressed)
+warning_animation_frame = 0  # Track animation frame for warning screens
+
+# === Block Font Glyphs ===
+# Minimal block font for bold OLED headings (5x7 base grid)
+BLOCK_FONT_WIDTH = 5
+BLOCK_FONT_HEIGHT = 7
+BLOCK_FONT_SPACING = 1
+BLOCK_FONT = {
+    "L": (
+        "1....",
+        "1....",
+        "1....",
+        "1....",
+        "1....",
+        "1....",
+        "11111",
+    ),
+    "E": (
+        "11111",
+        "1....",
+        "1....",
+        "11111",
+        "1....",
+        "1....",
+        "11111",
+    ),
+    "V": (
+        "1...1",
+        "1...1",
+        "1...1",
+        "1...1",
+        "1...1",
+        ".1.1.",
+        "..1..",
+    ),
+    "U": (
+        "1...1",
+        "1...1",
+        "1...1",
+        "1...1",
+        "1...1",
+        "1...1",
+        "11111",
+    ),
+    "P": (
+        "11110",
+        "1...1",
+        "1...1",
+        "11110",
+        "1....",
+        "1....",
+        "1....",
+    ),
+    "!": (
+        "..1..",
+        "..1..",
+        "..1..",
+        "..1..",
+        "..1..",
+        ".....",
+        "..1..",
+    ),
+}
 
 
+# === Logging Utilities ===
 def log(message):
     """Print timestamped log message"""
     print(f"[{time.time()}] {message}")
 
 
+# === WiFi Management ===
 def connect_wifi():
     """Connect to WiFi hotspot"""
     global wlan
@@ -100,6 +169,7 @@ def check_wifi():
     return True
 
 
+# === Cache Handling ===
 def load_cached_user():
     """Load user data from cache file"""
     try:
@@ -122,6 +192,7 @@ def save_cached_user(data):
         log(f"Failed to save cache: {e}")
 
 
+# === Backend Fetching ===
 def fetch_user_data():
     """Fetch current user data from Laravel API"""
     try:
@@ -173,6 +244,7 @@ def get_display_data():
     }
 
 
+# === Text Layout Helpers ===
 def wrap_text(text, width=16):
     """
     Break text into lines that fit the OLED display
@@ -204,6 +276,173 @@ def center_text(text, width=16):
     return (width * 8 - len(text) * 8) // 2  # 8 pixels per character
 
 
+# === Display Rendering Helpers ===
+def draw_scaled_text(oled_display, text, x, y, scale=1):
+    """Render text with optional scaling factor on the OLED display."""
+    if scale <= 1:
+        oled_display.text(text, x, y)
+        return
+
+    width = len(text) * 8
+    if width == 0:
+        return
+
+    buffer = bytearray(width * 8 // 8)
+    temp_fb = framebuf.FrameBuffer(buffer, width, 8, framebuf.MONO_VLSB)
+    temp_fb.fill(0)
+    temp_fb.text(text, 0, 0, 1)
+
+    for src_y in range(8):
+        for src_x in range(width):
+            if temp_fb.pixel(src_x, src_y):
+                oled_display.fill_rect(
+                    x + src_x * scale,
+                    y + src_y * scale,
+                    scale,
+                    scale,
+                    1,
+                )
+
+
+def draw_centered_scaled_text(oled_display, text, y, scale=1):
+    """Draw scaled text centered horizontally."""
+    if scale <= 1:
+        x_pos = center_text(text, OLED_WIDTH // 8)
+        oled_display.text(text, x_pos, y)
+        return
+
+    text_width = len(text) * 8 * scale
+    x_pos = max(0, (OLED_WIDTH - text_width) // 2)
+    draw_scaled_text(oled_display, text, x_pos, y, scale)
+
+
+def get_block_text_dimensions(text, scale=1, letter_spacing=None):
+    """Compute pixel width/height for block font text."""
+    if scale <= 0:
+        scale = 1
+    spacing = BLOCK_FONT_SPACING if letter_spacing is None else letter_spacing
+    width = 0
+    length = len(text)
+    for index, char in enumerate(text):
+        glyph = BLOCK_FONT.get(char.upper())
+        if glyph:
+            width += BLOCK_FONT_WIDTH * scale
+        else:
+            width += 5 * scale
+        if index < length - 1:
+            width += spacing * scale
+    height = BLOCK_FONT_HEIGHT * scale
+    return width, height
+
+
+def draw_block_text(oled_display, text, x, y, scale=1, letter_spacing=None):
+    """Render text using the custom block font for bold headings."""
+    if scale <= 0:
+        scale = 1
+    spacing = BLOCK_FONT_SPACING if letter_spacing is None else letter_spacing
+    cursor_x = x
+    for index, char in enumerate(text):
+        glyph = BLOCK_FONT.get(char.upper())
+        if not glyph:
+            draw_scaled_text(oled_display, char, cursor_x, y, scale)
+            cursor_x += 6 * scale
+        else:
+            for row, pattern in enumerate(glyph):
+                for col, pixel in enumerate(pattern):
+                    if pixel == "1":
+                        oled_display.fill_rect(
+                            cursor_x + col * scale,
+                            y + row * scale,
+                            scale,
+                            scale,
+                            1,
+                        )
+            cursor_x += BLOCK_FONT_WIDTH * scale
+        if index < len(text) - 1:
+            cursor_x += spacing * scale
+
+
+def draw_block_logo(oled_display, text, x, y, scale=1, outline=1, letter_spacing=None):
+    """Draw block text with an optional outline for a logo-style look."""
+    if scale <= 0:
+        scale = 1
+
+    if outline and outline > 0:
+        width, height = get_block_text_dimensions(text, scale, letter_spacing=letter_spacing)
+        stroke_offsets = []
+        for dx in range(-outline, outline + 1):
+            for dy in range(-outline, outline + 1):
+                if dx == 0 and dy == 0:
+                    continue
+                if abs(dx) + abs(dy) != outline:
+                    continue
+                if x + dx < 0 or y + dy < 0:
+                    continue
+                if x + dx + width > OLED_WIDTH or y + dy + height > OLED_HEIGHT:
+                    continue
+                stroke_offsets.append((dx, dy))
+
+        for dx, dy in stroke_offsets:
+            draw_block_text(oled_display, text, x + dx, y + dy, scale, letter_spacing=letter_spacing)
+
+    draw_block_text(oled_display, text, x, y, scale, letter_spacing=letter_spacing)
+
+
+def _safe_pixel(oled_display, x, y):
+    if 0 <= x < OLED_WIDTH and 0 <= y < OLED_HEIGHT:
+        oled_display.pixel(x, y, 1)
+
+
+def draw_corner_icons(oled_display, margin=2, size=2):
+    """Render small corner icons for subtle decoration."""
+    size = max(1, size)
+    corners = [
+        (margin, margin),
+        (OLED_WIDTH - margin - 1, margin),
+        (margin, OLED_HEIGHT - margin - 1),
+        (OLED_WIDTH - margin - 1, OLED_HEIGHT - margin - 1),
+    ]
+
+    for center_x, center_y in corners:
+        _safe_pixel(oled_display, center_x, center_y)
+        for offset in range(1, size + 1):
+            _safe_pixel(oled_display, center_x + offset, center_y)
+            _safe_pixel(oled_display, center_x - offset, center_y)
+            _safe_pixel(oled_display, center_x, center_y + offset)
+            _safe_pixel(oled_display, center_x, center_y - offset)
+
+
+# === Warning Display Helpers ===
+WARNING_ANIMATION_CYCLE = 2
+
+
+def draw_warning_border(oled_display, frame):
+    """Blink a simple rectangular border to draw attention."""
+    if frame % 2 == 0:
+        oled_display.rect(0, 0, OLED_WIDTH, OLED_HEIGHT, 1)
+
+
+def draw_warning_screen(oled_display, action_text, time_remaining, frame):
+    """Render the animated warning screen prompting the next action."""
+    draw_warning_border(oled_display, frame)
+
+    header_text = "Get Ready To"
+    action_text = action_text.upper()
+
+    header_scale = 1
+    action_scale = 2 if OLED_HEIGHT >= 48 and len(action_text) * 16 <= OLED_WIDTH else 1
+
+    header_height = 8 * header_scale
+    action_height = 8 * action_scale
+    gap = 4 if action_scale > 1 else 2
+    total_height = header_height + gap + action_height
+    top = max(0, (OLED_HEIGHT - total_height) // 2)
+
+    draw_centered_scaled_text(oled_display, header_text, top, scale=header_scale)
+    draw_centered_scaled_text(oled_display, action_text, top + header_height + gap, scale=action_scale)
+
+
+# === Hardware Initialization ===
 def init_rgb_led():
     """Initialize RGB LED (WS2812) on GP6"""
     global rgb_led
@@ -267,6 +506,7 @@ def init_pause_led():
         return False
 
 
+# === RGB LED Control ===
 def read_brightness():
     """Read brightness level from potentiometer (0.0 to 1.0)"""
     if not potentiometer:
@@ -366,6 +606,7 @@ def update_led_brightness():
         last_brightness = brightness
 
 
+# === Pause Controls ===
 def check_pause_button():
     """Check if pause button is pressed and toggle pause state (edge-triggered)"""
     global is_paused, last_button_time, last_button_state
@@ -398,6 +639,7 @@ def check_pause_button():
     last_button_state = button_state
 
 
+# === Backend Commands ===
 def toggle_timer_pause(pause):
     """Send pause/resume command to backend API"""
     try:
@@ -427,9 +669,10 @@ def toggle_timer_pause(pause):
         log(f"Error toggling pause: {e}")
 
 
+# === Main Display Logic ===
 def display_message(data):
     """Display message on OLED screen"""
-    global last_displayed_message, in_warning_mode
+    global last_displayed_message, in_warning_mode, warning_animation_frame
     
     if not oled:
         log("OLED not initialized")
@@ -448,11 +691,9 @@ def display_message(data):
     # Determine what message to display
     # Priority: warning_message > greeting (but keep warning if still in warning mode)
     if warning_message or (in_warning_mode and time_remaining is not None and time_remaining <= 30):
-        # Show warning message if backend provides it OR if we're still in warning mode
         if warning_message:
             display_text = warning_message
         else:
-            # Generate warning message locally if backend hasn't sent it yet
             if timer_phase == 'sitting':
                 display_text = 'Get ready to stand up!'
             else:
@@ -465,30 +706,168 @@ def display_message(data):
         display_text = data.get('message', DEFAULT_MESSAGE)
     
     # Don't update if message hasn't changed
-    if display_text == last_displayed_message:
+    if display_text == last_displayed_message and not display_text.lower().startswith('get ready'):
         return
     
     log(f"Displaying: {display_text}")
+    is_warning_display = display_text.lower().startswith('get ready')
+    if not is_warning_display:
+        warning_animation_frame = 0
     
     try:
         # Clear display
         oled.fill(0)
         
-        # Special handling for "Welcome to LevelUp!" - split into 2 centered lines
+        # Special handling for "Welcome to LevelUp!" with logo treatment
         if display_text == "Welcome to LevelUp!":
-            line1 = "Welcome to"
-            line2 = "LevelUp!"
-            
-            # Center both lines
-            x1 = center_text(line1, 16)
-            x2 = center_text(line2, 16)
-            
-            if OLED_HEIGHT == 32:
-                oled.text(line1, x1, 8)
-                oled.text(line2, x2, 20)
+            logo_text = "LEVELUP!"
+            footnote_text = "by Group 3"
+            block_scale = 2 if OLED_HEIGHT >= 32 else 1
+            letter_spacing = 2 if block_scale >= 2 else 1
+
+            logo_width, logo_height = get_block_text_dimensions(logo_text, block_scale, letter_spacing=letter_spacing)
+            footnote_height = 8
+            spacing = 3 if OLED_HEIGHT >= 32 else 1
+            total_height = logo_height + spacing + footnote_height
+            top_padding = max(0, (OLED_HEIGHT - total_height) // 2)
+
+            logo_y = top_padding
+            footnote_y = min(OLED_HEIGHT - footnote_height, logo_y + logo_height + spacing)
+            logo_x = max(0, (OLED_WIDTH - logo_width) // 2)
+
+            draw_corner_icons(oled, margin=1 if OLED_HEIGHT < 32 else 2, size=1)
+
+            tagline = "Welcome to"
+            if logo_y >= 10:
+                tagline_x = center_text(tagline, OLED_WIDTH // 8)
+                oled.text(tagline, tagline_x, logo_y - 10)
+
+            outline = 1 if block_scale >= 2 else 0
+            draw_block_logo(
+                oled,
+                logo_text,
+                logo_x,
+                logo_y,
+                scale=block_scale,
+                outline=outline,
+                letter_spacing=letter_spacing,
+            )
+
+            footnote_x = center_text(footnote_text, OLED_WIDTH // 8)
+            oled.text(footnote_text, footnote_x, footnote_y)
+        elif display_text.startswith("Hello, ") and display_text.endswith("!"):
+            name_text = display_text[7:-1].strip()
+
+            if name_text:
+                points_value = data.get('points')
+                points_line = None
+                if points_value is not None:
+                    if isinstance(points_value, float) and points_value.is_integer():
+                        points_display = str(int(points_value))
+                    else:
+                        points_display = str(points_value)
+                    points_line = "Points: {}".format(points_display)
+
+                max_scale = 2 if OLED_HEIGHT >= 32 else 1
+                scale = max_scale
+
+                while scale > 1:
+                    name_height_candidate = 8 * scale
+                    points_height = 8 if points_line else 0
+                    required_height = 8 + name_height_candidate + points_height
+                    if required_height <= OLED_HEIGHT and len(name_text) * 8 * scale <= OLED_WIDTH:
+                        break
+                    scale -= 1
+
+                if len(name_text) * 8 * scale > OLED_WIDTH:
+                    scale = 1
+
+                if scale > 1:
+                    name_display = name_text.upper()
+                else:
+                    name_display = name_text
+
+                if len(name_display) * 8 * scale <= OLED_WIDTH:
+                    greeting_height = 8
+                    name_height = 8 * scale
+                    points_height = 8 if points_line else 0
+
+                    gap1 = 1
+                    gap2 = 1 if points_line else 0
+
+                    while (
+                        greeting_height
+                        + gap1
+                        + name_height
+                        + gap2
+                        + points_height
+                        > OLED_HEIGHT
+                    ):
+                        if gap2 > 0:
+                            gap2 -= 1
+                        elif gap1 > 0:
+                            gap1 -= 1
+                        else:
+                            break
+
+                    total_height = (
+                        greeting_height
+                        + gap1
+                        + name_height
+                        + gap2
+                        + points_height
+                    )
+
+                    available_extra = max(0, OLED_HEIGHT - total_height)
+                    top_padding = available_extra // 2
+
+                    greeting_y = top_padding
+                    name_y = greeting_y + greeting_height + gap1
+
+                    greeting_text = "Hello"
+                    draw_centered_scaled_text(oled, greeting_text, greeting_y, scale=1)
+                    draw_centered_scaled_text(oled, name_display, name_y, scale=scale)
+
+                    if points_line:
+                        points_y = name_y + name_height + gap2
+                        if points_y + 8 > OLED_HEIGHT:
+                            points_y = OLED_HEIGHT - 8
+                        draw_centered_scaled_text(oled, points_line, points_y, scale=1)
+                else:
+                    lines = wrap_text(display_text, width=16)
+                    max_lines = 3 if OLED_HEIGHT == 32 else 7
+                    if points_line and max_lines > 1:
+                        max_lines -= 1
+                    lines = lines[:max_lines]
+                    line_height = 10
+                    total_height = len(lines) * line_height
+                    start_y = max(0, (OLED_HEIGHT - total_height) // 2)
+                    for i, line in enumerate(lines):
+                        y_pos = start_y + (i * line_height)
+                        x_pos = center_text(line, 16)
+                        oled.text(line, x_pos, y_pos)
+
+                    if points_line:
+                        points_y = min(OLED_HEIGHT - 8, start_y + total_height + 2)
+                        draw_centered_scaled_text(oled, points_line, points_y, scale=1)
             else:
-                oled.text(line1, x1, 24)
-                oled.text(line2, x2, 36)
+                # Fallback to generic rendering if name is missing
+                lines = wrap_text(display_text, width=16)
+                max_lines = 3 if OLED_HEIGHT == 32 else 7
+                lines = lines[:max_lines]
+                line_height = 10
+                total_height = len(lines) * line_height
+                start_y = max(0, (OLED_HEIGHT - total_height) // 2)
+                for i, line in enumerate(lines):
+                    y_pos = start_y + (i * line_height)
+                    x_pos = center_text(line, 16)
+                    oled.text(line, x_pos, y_pos)
+        elif display_text.lower().startswith('get ready'):
+            action_text = 'Stand Up'
+            if 'sit' in display_text.lower():
+                action_text = 'Sit Down'
+            draw_warning_screen(oled, action_text, time_remaining, warning_animation_frame)
+            warning_animation_frame = (warning_animation_frame + 1) % WARNING_ANIMATION_CYCLE
         else:
             # Wrap text to fit display
             lines = wrap_text(display_text, width=16)
@@ -507,6 +886,7 @@ def display_message(data):
                 y_pos = start_y + (i * line_height)
                 x_pos = center_text(line, 16)
                 oled.text(line, x_pos, y_pos)
+            warning_animation_frame = 0
         
         # Update display
         oled.show()
@@ -518,6 +898,7 @@ def display_message(data):
         log(f"Display error: {e}")
 
 
+    # === Display Initialization ===
 def init_display():
     """Initialize I2C OLED display"""
     global oled
@@ -556,6 +937,7 @@ def init_display():
         return False
 
 
+    # === Program Entry Point ===
 def main():
     """Main program loop"""
     log("=== LevelUp Pico W Starting ===")

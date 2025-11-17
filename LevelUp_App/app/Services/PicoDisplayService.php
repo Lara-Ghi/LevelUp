@@ -17,6 +17,8 @@ class PicoDisplayService
         'message' => 'Welcome to LevelUp!',
         'username' => null,
         'logged_in' => false,
+        'points' => null,
+        'daily_points' => null,
         'updated_at' => null,
         'timer_phase' => null, // 'sitting' or 'standing'
         'time_remaining' => null, // seconds left
@@ -38,6 +40,8 @@ class PicoDisplayService
             'username' => $username,
             'name' => $name,
             'logged_in' => true,
+            'points' => $user->total_points ?? 0,
+            'daily_points' => $user->daily_points ?? 0,
             'timer_phase' => null,
             'time_remaining' => null,
             'warning_message' => null,

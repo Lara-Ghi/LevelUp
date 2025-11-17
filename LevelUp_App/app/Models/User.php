@@ -33,13 +33,14 @@ class User extends Authenticatable
         'date_of_birth',
         'role',
         'password',
+        'desk_id',
         'sitting_position',
         'standing_position',
         'total_points',
         'daily_points',
         'last_points_date',
         'last_daily_reset',
-        //'desk_id',
+
     ];
 
     /**
@@ -67,6 +68,12 @@ class User extends Authenticatable
         ];
     }
 
+    // user-desk relationship
+    public function desk()
+    {
+        return $this->belongsTo(Desk::class, 'desk_id', 'id');
+    }
+
     /**
      * Relationship with HealthCycles
      */
@@ -89,16 +96,16 @@ class User extends Authenticatable
     {
         // Use provided user date or fallback to server date
         $today = $userDate ? \Carbon\Carbon::parse($userDate)->toDateString() : now()->toDateString();
-        
-        $lastResetDate = $this->last_points_date ? 
+
+        $lastResetDate = $this->last_points_date ?
             \Carbon\Carbon::parse($this->last_points_date)->toDateString() : null;
-        
+
         if ($lastResetDate !== $today) {
             // New day detected - reset daily points to 0
             $this->daily_points = 0;
             $this->last_points_date = $today;
             $this->save();
-            
+
             \Log::info("Daily points reset for user {$this->getKey()}: new day {$today}");
         }
     }
@@ -122,17 +129,17 @@ class User extends Authenticatable
     public function addPoints($points, $userDate = null)
     {
         $this->resetDailyPointsIfNeeded($userDate);
-        
+
         if ($this->daily_points >= 160) {
             return 0; // Already at daily limit
         }
-        
+
         $pointsToAdd = min($points, 160 - $this->daily_points);
-        
+
         $this->daily_points += $pointsToAdd;
         $this->total_points += $pointsToAdd;
         $this->save();
-        
+
         return $pointsToAdd;
     }
 }

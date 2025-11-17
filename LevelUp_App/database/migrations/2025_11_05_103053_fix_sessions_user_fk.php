@@ -9,7 +9,7 @@ return new class extends Migration {
     {
         Schema::table('sessions', function (Blueprint $table) {
             try {
-                $table->dropForeign('sessions_user_id_foreign');
+                $table->dropForeign(['user_id']);
             } catch (\Throwable $e) { /* ignore if it doesn't exist */ }
 
             $table->unsignedBigInteger('user_id')->nullable()->change();
@@ -26,7 +26,7 @@ return new class extends Migration {
     {
         Schema::table('sessions', function (Blueprint $table) {
             try {
-                $table->dropForeign('sessions_user_id_foreign');
+                $table->dropForeign(['user_id']);
             } catch (\Throwable $e) { /* ignore */ }
         });
     }
