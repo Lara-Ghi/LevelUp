@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Reward;
 use Illuminate\Http\Request;
 
 class AdminDashboardController extends Controller
@@ -28,6 +29,7 @@ class AdminDashboardController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.dashboard', compact('users', 'q', 'editUser'));
+        $rewards = Reward::orderBy('card_name')->get();
+        return view('admin.dashboard', compact('users', 'q', 'editUser', 'rewards'));
     }
 }

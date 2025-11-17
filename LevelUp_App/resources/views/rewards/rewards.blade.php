@@ -14,7 +14,7 @@
     <!-- Rewards Sub-Navigation -->
     <div class="rewards-nav">
         <a href="{{ url('/rewards?tab=available') }}"
-            class="rewards-nav-link {{ request()->query('tab', 'available') === 'available' ? 'active' : '' }}">
+            class="rewards-nav-link {{ request()->query('tab', 'all') === 'available' ? 'active' : '' }}">
             <i class="fas fa-gift"></i>
             Available
         </a>
@@ -24,7 +24,7 @@
             Saved
         </a>
         <a href="{{ url('/rewards?tab=all') }}"
-            class="rewards-nav-link {{ request()->query('tab') === 'all' ? 'active' : '' }}">
+            class="rewards-nav-link {{ request()->query('tab', 'all') === 'all' ? 'active' : '' }}">
             <i class="fas fa-list"></i>
             All
         </a>
@@ -34,13 +34,6 @@
             History
         </a>
         
-        <!-- Admin Add Button -->
-        @can('admin')
-            <a href="{{ route('rewards.create') }}" class="rewards-nav-link admin-add-btn">
-                <i class="fas fa-plus"></i>
-                Add Reward
-            </a>
-        @endcan
     </div>
 
     <main class="content">
@@ -48,13 +41,13 @@
         <div class="rewards-content">
             @if(request()->query('tab') === 'available')
                 <!-- Available Rewards Content -->
-                <!-- Add your available rewards content here -->
-            @elseif(request()->query('tab') === 'saved')
+                    <p class="no-saved-message">You don't have enough points yet!</p>
+                @elseif(request()->query('tab') === 'saved')
                 <!-- Saved Rewards Content -->
                 <div class="rewards-grid" id="savedRewardsGrid">
                     <p class="no-saved-message">You haven't saved any rewards yet. Browse the "All" tab and click the heart icon to save your favorites!</p>
                 </div>
-            @elseif(request()->query('tab') === 'all')
+            @elseif(request()->query('tab', 'all') === 'all')
                 <!-- All Rewards Content -->
                 <div class="rewards-grid" id="allRewardsGrid">
                     @foreach($rewards as $reward)
@@ -62,22 +55,6 @@
                             <button class="save-btn" data-reward-id="{{ $reward->id }}" type="button">
                                 <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
                             </button>
-                            
-                            <!-- Admin Edit/Delete Buttons -->
-                            @can('admin')
-                                <div class="admin-controls">
-                                    <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form action="{{ route('rewards.destroy', $reward->id) }}" method="POST" class="delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="admin-btn delete-btn" title="Delete" onclick="return confirm('Are you sure?');">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            @endcan
                             
                             <div class="reward-image">
                                 <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" alt="{{ $reward->card_name }}">
@@ -103,21 +80,6 @@
                     <button class="save-btn" data-reward-id="{{ $reward->id }}" type="button">
                         <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
                     </button>
-                    
-                    @can('admin')
-                        <div class="admin-controls">
-                            <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form action="{{ route('rewards.destroy', $reward->id) }}" method="POST" class="delete-form">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="admin-btn delete-btn" title="Delete" onclick="return confirm('Are you sure?');">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    @endcan
                     
                     <div class="reward-image">
                         <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" alt="{{ $reward->card_name }}">

@@ -11,10 +11,10 @@
         </header>
 
         <div class="profile-card">
-            
+
             <div class="profile-header">
                 <img id="userPhoto" src="{{ asset('images/users/default.jpg') }}" class="profile-avatar">
-                
+
                 <div class="profile-ident">
                     <div class="profile-handle">{{ '@' . ($user->username ?? 'unknown') }}</div>
                 </div>
@@ -31,10 +31,40 @@
                 <dd>{{ $user->date_of_birth ? $user->date_of_birth->format('F j, Y') : 'Not set' }}</dd>
             </dl>
         </div>
-        
+
         <div class="profile-card">
             <div class="table-settings">
-                <h2>🪑 Table Height Preferences</h2>
+                <h2>Desk Info</h2>
+
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="display: inline-flex; gap: 2rem;">
+                        <div>
+                            <span style="color: var(--color-accent); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; 
+      letter-spacing: 0.5px;">Desk ID</span>
+                            <div style="margin-top: 0.25rem; font-size: 1rem; color: black;">
+                                {{ $user->desk_id ?? 'Not assigned' }}
+                            </div>
+                        </div>
+
+                        @if($user->desk)
+                                                <div>
+                                                    <span style="color: var(--color-accent); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; 
+                              letter-spacing: 0.5px;">Desk Model</span>
+                                                    <div style="margin-top: 0.25rem; font-size: 1rem; color: black;">
+                                                        {{ $user->desk->desk_model }}
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <span style="color: var(--color-accent); font-size: 0.875rem; font-weight: 600; text-transform: uppercase; 
+                              letter-spacing: 0.5px;">Serial Number</span>
+                                                    <div style="margin-top: 0.25rem; font-size: 1rem; color: black;">
+                                                        {{ $user->desk->serial_number }}
+                                                    </div>
+                                                </div>
+                        @endif
+                    </div>
+                </div>
 
                 <div class="table-grid">
                     <div class="height-setting">
