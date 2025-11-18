@@ -42,39 +42,6 @@ function initNavbar() {
         }
     });
     
-//TODO: (Lara) commented out to test a different way to flag page as active
-//+ changed in navigation.blade.php "class="nav-link {{ request()->is(...""
-//+ changed app.blade.php (see commented out lines, to erase if okay)
-//if working/approved by the whole team, all this can be deleted
-
-    // // Update active nav link based on scroll position
-    // window.addEventListener('scroll', function() {
-    //     let current = '';
-    //     const sections = document.querySelectorAll('section[id]');
-        
-    //     sections.forEach(section => {
-    //         const sectionTop = section.offsetTop;
-    //         const sectionHeight = section.clientHeight;
-    //         if (window.scrollY >= sectionTop - 200) {
-    //             current = section.getAttribute('id');
-    //         }
-    //     });
-        
-    //     navLinks.forEach(link => {
-    //         link.classList.remove('active');
-    //         if (link.getAttribute('href') === `#${current}`) {
-    //             link.classList.add('active');
-    //         }
-    //     });
-        
-    //     // Handle home link
-    //     if (window.scrollY < 200) {
-    //         navLinks.forEach(link => link.classList.remove('active'));
-    //         const homeLink = document.querySelector('.nav-link[href="/"]');
-    //         if (homeLink) homeLink.classList.add('active');
-    //     }
-    // });
-    
     // Mobile menu toggle (if needed in future)
     const mobileToggle = document.querySelector('.mobile-menu-toggle');
     if (mobileToggle) {
