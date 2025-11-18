@@ -82,25 +82,25 @@ class HealthCycleController extends Controller
         if ($healthScore >= 90) {
             return [
                 'points' => 10,
-                'feedback' => '🟢 Perfect! Excellent sit–stand balance.',
+                'feedback' => '🟢 Perfect! Excellent sit-stand balance.',
                 'color' => 'green'
             ];
         } elseif ($healthScore >= 70) {
             return [
                 'points' => 7,
-                'feedback' => '🟡 Good — keep this rhythm going.',
+                'feedback' => '🟡 Good, keep this rhythm going.',
                 'color' => 'yellow'
             ];
         } elseif ($healthScore >= 50) {
             return [
                 'points' => 4,
-                'feedback' => '🟠 Fair — try adjusting your times a bit.',
+                'feedback' => '🟠 Fair, try adjusting your times a bit.',
                 'color' => 'orange'
             ];
         } else {
             return [
                 'points' => 0,
-                'feedback' => '🔴 Too much sitting or too short — no points this cycle.',
+                'feedback' => '🔴 Too much sitting or too short, no points this cycle.',
                 'color' => 'red'
             ];
         }

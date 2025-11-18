@@ -1,4 +1,93 @@
 // ===========================================
+// 🔔 Alarm Preset Definitions
+// ===========================================
+
+const ALARM_PRESET_LIST = [
+    {
+        id: 'option1',
+        label: 'Dual Alarm Mix',
+        description: 'Alarm 1 to stand up, Alarm 2 to sit back down (current setup).',
+        quickSummary: 'Stand/sit dual alert',
+        files: {
+            standUp: '/alarm_files/alarm_1.mp3',
+            backToWork: '/alarm_files/alarm_2.mp3',
+            focused: '/alarm_files/alarm_1.mp3',
+            gentle: '/alarm_files/alarm_2.mp3'
+        },
+        previewOrder: ['/alarm_files/alarm_1.mp3', '/alarm_files/alarm_2.mp3']
+    },
+    {
+        id: 'option2',
+        label: 'Alarm 1',
+        description: 'Use Alarm 3 for every reminder.',
+        quickSummary: 'Same alert sound',
+        files: {
+            standUp: '/alarm_files/alarm_3.mp3',
+            backToWork: '/alarm_files/alarm_3.mp3',
+            focused: '/alarm_files/alarm_3.mp3',
+            gentle: '/alarm_files/alarm_3.mp3'
+        },
+        previewOrder: ['/alarm_files/alarm_3.mp3']
+    },
+    {
+        id: 'option3',
+        label: 'Alarm 2',
+        description: 'Use Alarm 4 for every reminder.',
+        quickSummary: 'Same alert sound',
+        files: {
+            standUp: '/alarm_files/alarm_4.mp3',
+            backToWork: '/alarm_files/alarm_4.mp3',
+            focused: '/alarm_files/alarm_4.mp3',
+            gentle: '/alarm_files/alarm_4.mp3'
+        },
+        previewOrder: ['/alarm_files/alarm_4.mp3']
+    },
+    {
+        id: 'option4',
+        label: 'Alarm 3',
+        description: 'Use Alarm 5 for every reminder.',
+        quickSummary: 'Same alert sound',
+        files: {
+            standUp: '/alarm_files/alarm_5.mp3',
+            backToWork: '/alarm_files/alarm_5.mp3',
+            focused: '/alarm_files/alarm_5.mp3',
+            gentle: '/alarm_files/alarm_5.mp3'
+        },
+        previewOrder: ['/alarm_files/alarm_5.mp3']
+    }
+];
+
+const ALARM_PRESETS = ALARM_PRESET_LIST.reduce((map, preset) => {
+    map[preset.id] = preset;
+    return map;
+}, {});
+
+const DEFAULT_ALARM_PRESET_ID = ALARM_PRESET_LIST[0].id;
+
+function renderAlarmPresetSelectOptions(selectedId = DEFAULT_ALARM_PRESET_ID) {
+    return ALARM_PRESET_LIST.map((preset, index) => {
+        const isSelected = (selectedId && preset.id === selectedId) || (!selectedId && index === 0);
+        return `<option value="${preset.id}" ${isSelected ? 'selected' : ''}>${preset.label}</option>`;
+    }).join('');
+}
+
+function renderAlarmPresetSummary(presetId = DEFAULT_ALARM_PRESET_ID) {
+    const preset = ALARM_PRESETS[presetId] || ALARM_PRESETS[DEFAULT_ALARM_PRESET_ID];
+    if (!preset) {
+        return '';
+    }
+
+    const summary = `
+        <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: rgba(238, 242, 255, 0.95); padding: 0.35rem 0.9rem; border-radius: 999px; color: #1E293B; font-size: 0.74rem; font-weight: 600; letter-spacing: 0.01em;">
+            <i class="fas fa-music" style="color: #6366F1;"></i>
+            <span>${preset.quickSummary || ''}</span>
+        </div>
+    `;
+
+    return summary.trim();
+}
+
+// ===========================================
 // ⏰ FOCUS CLOCK CORE - TIMER LOGIC
 // ===========================================
 
@@ -392,6 +481,23 @@ class FocusClockCore {
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
     }
     
+    getActiveAlarmPreset() {
+        let presetId = DEFAULT_ALARM_PRESET_ID;
+
+        try {
+            if (window.focusClockUI && window.focusClockUI.storage) {
+                const settings = window.focusClockUI.storage.getSettings();
+                if (settings && settings.alarmPreset && ALARM_PRESETS[settings.alarmPreset]) {
+                    presetId = settings.alarmPreset;
+                }
+            }
+        } catch (error) {
+            console.warn('Unable to resolve alarm preset, falling back to default:', error);
+        }
+
+        return ALARM_PRESETS[presetId] || ALARM_PRESETS[DEFAULT_ALARM_PRESET_ID];
+    }
+
     // Preload alarm audio for instant playback
     preloadAlarmAudio() {
         try {
@@ -400,9 +506,13 @@ class FocusClockCore {
                 this.preloadedAudio = {};
             }
             
-            const alarmFiles = ['/alarm_files/alarm_1.mp3', '/alarm_files/alarm_2.mp3'];
-            
-            alarmFiles.forEach(file => {
+            const audioFiles = new Set();
+            ALARM_PRESET_LIST.forEach(preset => {
+                Object.values(preset.files || {}).forEach(file => audioFiles.add(file));
+                (preset.previewOrder || []).forEach(file => audioFiles.add(file));
+            });
+
+            audioFiles.forEach(file => {
                 if (!this.preloadedAudio[file]) {
                     const audio = new Audio(file);
                     audio.preload = 'auto';
@@ -475,15 +585,9 @@ class FocusClockCore {
     
     // Get alarm sound based on session type
     getAlarmSoundForSession(sessionType = 'standUp') {
-        // Different sounds for different transitions
-        const alarmSounds = {
-            standUp: '/alarm_files/alarm_1.mp3',         // Energetic sound for standing break
-            backToWork: '/alarm_files/alarm_2.mp3',     // Gentler sound for back to work
-            focused: '/alarm_files/alarm_1.mp3',        // Use alarm_1 as fallback
-            gentle: '/alarm_files/alarm_2.mp3'          // Use alarm_2 as fallback
-        };
-
-        return alarmSounds[sessionType] || alarmSounds.standUp;
+        const preset = this.getActiveAlarmPreset();
+        const files = preset?.files || {};
+        return files[sessionType] || files.standUp || files.backToWork || '/alarm_files/alarm_1.mp3';
     }
 
     // Get popup content based on session type
@@ -908,7 +1012,8 @@ class FocusClockStorage {
             alertDuration: 'loop', // 'loop', 'once', '10', '20', '30'
             // Volume settings for each alarm type
             volumeAlarm1: 100, // Volume for sitting to standing transition (alarm_1.mp3)
-            volumeAlarm2: 100  // Volume for standing to sitting transition (alarm_2.mp3)
+            volumeAlarm2: 100,  // Volume for standing to sitting transition (alarm_2.mp3)
+            alarmPreset: DEFAULT_ALARM_PRESET_ID
         };
     }
 
@@ -987,7 +1092,11 @@ class FocusClockStorage {
     getAlarmVolume(alarmType) {
         const settings = this.getSettings();
         const volumeKey = alarmType === 'alarm1' ? 'volumeAlarm1' : 'volumeAlarm2';
-        return settings[volumeKey] || 100;
+        const storedValue = settings[volumeKey];
+        if (typeof storedValue === 'number' && !Number.isNaN(storedValue)) {
+            return Math.max(0, Math.min(100, storedValue));
+        }
+        return 100;
     }
 
     // Timer state removed - cycles now come from database, not localStorage
@@ -1073,6 +1182,11 @@ class FocusClockUI {
         this.isInitialized = false;
         this.lastCheckedDate = this.getCurrentDateString(); // Track current date for daily reset
         this.dailyCheckIntervalId = null; // Interval for daily reset checks
+        this.previewAudio = null;
+        this.previewQueue = [];
+        this.previewIndex = 0;
+        this.previewButton = null;
+        this.activePreviewContext = null;
 
         this.init();
         console.log('✅ FocusClockUI initialization completed');
@@ -1084,6 +1198,7 @@ class FocusClockUI {
         this.bindElements();
         this.setupEventListeners();
         this.setupCoreCallbacks();
+        this.core.preloadAlarmAudio();
 
         // Check if first time user
         if (this.storage.isFirstTimeUser()) {
@@ -1100,6 +1215,13 @@ class FocusClockUI {
 
     // Create HTML structure
     createHTML() {
+        const savedSettings = this.storage ? this.storage.getSettings() : null;
+        const selectedPresetId = savedSettings && savedSettings.alarmPreset ? savedSettings.alarmPreset : DEFAULT_ALARM_PRESET_ID;
+        const setupAlarmOptionsHtml = renderAlarmPresetSelectOptions(selectedPresetId);
+        const settingsAlarmOptionsHtml = renderAlarmPresetSelectOptions(selectedPresetId);
+        const setupAlarmSummaryHtml = renderAlarmPresetSummary(selectedPresetId);
+        const settingsAlarmSummaryHtml = renderAlarmPresetSummary(selectedPresetId);
+
         const clockHTML = `
             <!-- Focus Clock Section -->
             <section class="clock-section">
@@ -1213,37 +1335,67 @@ class FocusClockUI {
                         </div>
 
                         <!-- Audio Settings Section -->
-                        <div class="audio-settings-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
-                            <h4 style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem;">
-                                <i class="fas fa-volume-up" style="color: #3B82F6; margin-right: 0.5rem;"></i>
-                                Audio Settings
-                            </h4>
-                            
-                            <div class="audio-setting-group" style="margin-bottom: 1rem;">
-                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="enableAudioAlerts" checked style="margin-right: 0.5rem;">
-                                    <span style="font-weight: 600;">Enable Audio Alerts</span>
+                        <div class="audio-settings-section" style="margin-top: 1.5rem; padding: 1.35rem 1.45rem; border-radius: 1rem; background: linear-gradient(145deg, #F8FAFC, #EEF2FF); border: 1px solid rgba(99, 102, 241, 0.18);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+                                <h4 style="margin: 0; color: #1E293B; font-size: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 999px; background: rgba(99, 102, 241, 0.12); color: #4F46E5;">
+                                        <i class="fas fa-volume-up"></i>
+                                    </span>
+                                    Audio Settings
+                                </h4>
+                                <span style="font-size: 0.78rem; color: #4338CA; background: rgba(79, 70, 229, 0.14); padding: 0.3rem 0.8rem; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em;">
+                                    Wellness tuned
+                                </span>
+                            </div>
+
+                            <div class="audio-setting-group" style="margin-bottom: 0.95rem; padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer; gap: 0.6rem; font-weight: 600; color: #1E293B;">
+                                    <input type="checkbox" id="enableAudioAlerts" checked style="width: 1.05rem; height: 1.05rem; border-radius: 0.35rem; border: 1px solid #94A3B8;">
+                                    Enable Audio Alerts
                                 </label>
-                                <p style="margin: 0.25rem 0 0 1.5rem; font-size: 0.85rem; color: #6B7280;">
-                                    Play sounds when it's time to sit or stand
+                                <p style="margin: 0.45rem 0 0 1.65rem; font-size: 0.82rem; color: #64748B;">
+                                    Play sounds when it's time to sit or stand.
                                 </p>
                             </div>
 
-                            <div id="audioControls" class="audio-controls">
-                                <div class="audio-setting-group" style="margin-bottom: 1rem;">
-                                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
-                                        Alert Duration
-                                    </label>
-                                    <select id="alertDuration" style="width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white;">
-                                        <option value="loop">Loop until manually stopped (recommended)</option>
-                                        <option value="once">Play once then stop</option>
-                                        <option value="10">Play for 10 seconds</option>
-                                        <option value="20">Play for 20 seconds</option>
-                                        <option value="30">Play for 30 seconds</option>
-                                    </select>
+                            <div id="audioControls" class="audio-controls" style="display: flex; flex-direction: column; gap: 0.9rem;">
+                                <div class="audio-setting-group" style="padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                    <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+                                        <label for="alertDuration" style="margin: 0; min-width: 140px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569;">
+                                            Duration
+                                        </label>
+                                        <select id="alertDuration" style="flex: 1; min-width: 220px; padding: 0.55rem 0.85rem; border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 0.65rem; background: #FFFFFF; font-size: 0.88rem; font-weight: 600; color: #0F172A;">
+                                            <option value="loop">Loop until manually stopped</option>
+                                            <option value="once">Play once then stop</option>
+                                            <option value="10">Play for 10 seconds</option>
+                                            <option value="20">Play for 20 seconds</option>
+                                            <option value="30">Play for 30 seconds</option>
+                                        </select>
+                                    </div>
                                 </div>
 
-
+                                <div class="audio-setting-group" style="padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                    <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+                                        <label for="setupAlarmPreset" style="margin: 0; min-width: 140px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569;">
+                                            Alarm Style
+                                        </label>
+                                        <select id="setupAlarmPreset" style="flex: 1; min-width: 220px; padding: 0.55rem 0.85rem; border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 0.65rem; background: #FFFFFF; font-size: 0.88rem; font-weight: 600; color: #0F172A;">
+                                            ${setupAlarmOptionsHtml}
+                                        </select>
+                                    </div>
+                                    <div style="margin-top: 0.55rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                        <div class="alarm-preset-details" id="setupAlarmPresetDetails" style="display: flex; align-items: center;">
+                                            ${setupAlarmSummaryHtml}
+                                        </div>
+                                        <button type="button" class="btn-modal btn-save" id="setupPreviewAlarm" style="margin: 0; background: linear-gradient(135deg, #2563EB, #1D4ED8); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.95rem; font-size: 0.82rem; font-weight: 600; border-radius: 999px; letter-spacing: 0.01em;">
+                                            <i class="fas fa-headphones"></i>
+                                            Preview Alarm
+                                        </button>
+                                    </div>
+                                    <p style="margin: 0.4rem 0 0; font-size: 0.76rem; color: #64748B;">
+                                        Preview lets you hear the highlighted option before saving.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1291,37 +1443,67 @@ class FocusClockUI {
                         </div>
 
                         <!-- Audio Settings Section -->
-                        <div class="audio-settings-section" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
-                            <h4 style="margin: 0 0 1rem 0; color: #374151; font-size: 1rem;">
-                                <i class="fas fa-volume-up" style="color: #3B82F6; margin-right: 0.5rem;"></i>
-                                Audio Settings
-                            </h4>
-                            
-                            <div class="audio-setting-group" style="margin-bottom: 1rem;">
-                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="editEnableAudioAlerts" checked style="margin-right: 0.5rem;">
-                                    <span style="font-weight: 600;">Enable Audio Alerts</span>
+                        <div class="audio-settings-section" style="margin-top: 1.5rem; padding: 1.35rem 1.45rem; border-radius: 1rem; background: linear-gradient(145deg, #F8FAFC, #EEF2FF); border: 1px solid rgba(99, 102, 241, 0.18);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+                                <h4 style="margin: 0; color: #1E293B; font-size: 1rem; display: flex; align-items: center; gap: 0.6rem;">
+                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 999px; background: rgba(99, 102, 241, 0.12); color: #4F46E5;">
+                                        <i class="fas fa-volume-up"></i>
+                                    </span>
+                                    Audio Settings
+                                </h4>
+                                <span style="font-size: 0.78rem; color: #4338CA; background: rgba(79, 70, 229, 0.14); padding: 0.3rem 0.8rem; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em;">
+                                    Wellness tuned
+                                </span>
+                            </div>
+
+                            <div class="audio-setting-group" style="margin-bottom: 0.95rem; padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer; gap: 0.6rem; font-weight: 600; color: #1E293B;">
+                                    <input type="checkbox" id="editEnableAudioAlerts" checked style="width: 1.05rem; height: 1.05rem; border-radius: 0.35rem; border: 1px solid #94A3B8;">
+                                    Enable Audio Alerts
                                 </label>
-                                <p style="margin: 0.25rem 0 0 1.5rem; font-size: 0.85rem; color: #6B7280;">
-                                    Play sounds when it's time to sit or stand
+                                <p style="margin: 0.45rem 0 0 1.65rem; font-size: 0.82rem; color: #64748B;">
+                                    Play sounds when it's time to sit or stand.
                                 </p>
                             </div>
 
-                            <div id="editAudioControls" class="audio-controls">
-                                <div class="audio-setting-group" style="margin-bottom: 1rem;">
-                                    <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
-                                        Alert Duration
-                                    </label>
-                                    <select id="editAlertDuration" style="width: 100%; padding: 0.5rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white;">
-                                        <option value="loop">Loop until manually stopped (recommended)</option>
-                                        <option value="once">Play once then stop</option>
-                                        <option value="10">Play for 10 seconds</option>
-                                        <option value="20">Play for 20 seconds</option>
-                                        <option value="30">Play for 30 seconds</option>
-                                    </select>
+                            <div id="editAudioControls" class="audio-controls" style="display: flex; flex-direction: column; gap: 0.9rem;">
+                                <div class="audio-setting-group" style="padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                    <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+                                        <label for="editAlertDuration" style="margin: 0; min-width: 140px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569;">
+                                            Duration
+                                        </label>
+                                        <select id="editAlertDuration" style="flex: 1; min-width: 220px; padding: 0.55rem 0.85rem; border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 0.65rem; background: #FFFFFF; font-size: 0.88rem; font-weight: 600; color: #0F172A;">
+                                            <option value="loop">Loop until manually stopped</option>
+                                            <option value="once">Play once then stop</option>
+                                            <option value="10">Play for 10 seconds</option>
+                                            <option value="20">Play for 20 seconds</option>
+                                            <option value="30">Play for 30 seconds</option>
+                                        </select>
+                                    </div>
                                 </div>
 
-
+                                <div class="audio-setting-group" style="padding: 0.85rem 1rem; border-radius: 0.9rem; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                    <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
+                                        <label for="editAlarmPreset" style="margin: 0; min-width: 140px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569;">
+                                            Alarm Style
+                                        </label>
+                                        <select id="editAlarmPreset" style="flex: 1; min-width: 220px; padding: 0.55rem 0.85rem; border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 0.65rem; background: #FFFFFF; font-size: 0.88rem; font-weight: 600; color: #0F172A;">
+                                            ${settingsAlarmOptionsHtml}
+                                        </select>
+                                    </div>
+                                    <div style="margin-top: 0.55rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                        <div class="alarm-preset-details" id="editAlarmPresetDetails" style="display: flex; align-items: center;">
+                                            ${settingsAlarmSummaryHtml}
+                                        </div>
+                                        <button type="button" class="btn-modal btn-save" id="editPreviewAlarm" style="margin: 0; background: linear-gradient(135deg, #2563EB, #1D4ED8); display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.95rem; font-size: 0.82rem; font-weight: 600; border-radius: 999px; letter-spacing: 0.01em;">
+                                            <i class="fas fa-headphones"></i>
+                                            Preview Alarm
+                                        </button>
+                                    </div>
+                                    <p style="margin: 0.4rem 0 0; font-size: 0.76rem; color: #64748B;">
+                                        Preview lets you hear the highlighted option before saving.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
@@ -1382,6 +1564,9 @@ class FocusClockUI {
             saveSettingsBtn: document.getElementById('saveSettingsBtn'),
             enableAudioAlerts: document.getElementById('enableAudioAlerts'),
             alertDuration: document.getElementById('alertDuration'),
+            setupAlarmPresetSelect: document.getElementById('setupAlarmPreset'),
+            setupAlarmPresetDetails: document.getElementById('setupAlarmPresetDetails'),
+            setupPreviewAlarmBtn: document.getElementById('setupPreviewAlarm'),
 
             // Settings modal
             settingsModal: document.getElementById('settingsModal'),
@@ -1394,6 +1579,9 @@ class FocusClockUI {
             resetSettingsBtn: document.getElementById('resetSettingsBtn'),
             editEnableAudioAlerts: document.getElementById('editEnableAudioAlerts'),
             editAlertDuration: document.getElementById('editAlertDuration'),
+            editAlarmPresetSelect: document.getElementById('editAlarmPreset'),
+            editAlarmPresetDetails: document.getElementById('editAlarmPresetDetails'),
+            editPreviewAlarmBtn: document.getElementById('editPreviewAlarm'),
 
 
         };
@@ -1404,7 +1592,9 @@ class FocusClockUI {
             editSittingTimeInput: !!this.elements.editSittingTimeInput,
             editStandingTimeInput: !!this.elements.editStandingTimeInput,
             editEnableAudioAlerts: !!this.elements.editEnableAudioAlerts,
-            editAlertDuration: !!this.elements.editAlertDuration
+            editAlertDuration: !!this.elements.editAlertDuration,
+            setupPreviewAlarmBtn: !!this.elements.setupPreviewAlarmBtn,
+            editPreviewAlarmBtn: !!this.elements.editPreviewAlarmBtn
         });
     }
 
@@ -1452,6 +1642,16 @@ class FocusClockUI {
         this.elements.standingTimeInput.addEventListener('input', () => this.validateSetupInputs());
         this.elements.enableAudioAlerts.addEventListener('change', () => this.toggleAudioControls());
 
+        if (this.elements.setupAlarmPresetSelect) {
+            this.elements.setupAlarmPresetSelect.addEventListener('change', () => {
+                this.stopAlarmPreview();
+                this.updatePresetDetails('setup');
+            });
+        }
+        if (this.elements.setupPreviewAlarmBtn) {
+            this.elements.setupPreviewAlarmBtn.addEventListener('click', () => this.previewSelectedAlarm('setup'));
+        }
+
         // Settings modal
         this.elements.closeSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
         this.elements.cancelSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
@@ -1460,6 +1660,16 @@ class FocusClockUI {
         this.elements.editSittingTimeInput.addEventListener('input', () => this.validateEditInputs());
         this.elements.editStandingTimeInput.addEventListener('input', () => this.validateEditInputs());
         this.elements.editEnableAudioAlerts.addEventListener('change', () => this.toggleEditAudioControls());
+
+        if (this.elements.editAlarmPresetSelect) {
+            this.elements.editAlarmPresetSelect.addEventListener('change', () => {
+                this.stopAlarmPreview();
+                this.updatePresetDetails('edit');
+            });
+        }
+        if (this.elements.editPreviewAlarmBtn) {
+            this.elements.editPreviewAlarmBtn.addEventListener('click', () => this.previewSelectedAlarm('edit'));
+        }
 
 
 
@@ -1475,6 +1685,9 @@ class FocusClockUI {
                 this.hideSettingsModal();
             }
         });
+
+        // Ensure initial preset summaries are accurate
+        this.updatePresetDetails('setup');
     }
 
     // Setup core timer callbacks
@@ -1505,20 +1718,66 @@ class FocusClockUI {
         this.loadPointsStatus();
     }
 
+    getSelectedRadioValue(inputs) {
+        if (!inputs) {
+            return null;
+        }
+        if (typeof Element !== 'undefined' && inputs instanceof Element) {
+            return 'value' in inputs ? inputs.value : null;
+        }
+        if (typeof inputs.length === 'number') {
+            const list = Array.from(inputs);
+            const selected = list.find((input) => input.checked || input.selected);
+            if (selected && 'value' in selected) {
+                return selected.value;
+            }
+        }
+        return null;
+    }
+
+    setRadioGroupValue(inputs, value) {
+        if (!inputs) {
+            return;
+        }
+        if (typeof Element !== 'undefined' && inputs instanceof Element) {
+            if ('value' in inputs) {
+                inputs.value = value;
+            }
+            return;
+        }
+        if (typeof inputs.length === 'number') {
+            Array.from(inputs).forEach((input) => {
+                if ('checked' in input) {
+                    input.checked = input.value === value;
+                }
+                if ('value' in input && input.tagName === 'OPTION') {
+                    input.selected = input.value === value;
+                }
+            });
+        }
+    }
+
     // Show setup modal for first-time users
     showSetupModal() {
+        this.stopAlarmPreview();
+        const settings = this.storage.getSettings();
+        this.setRadioGroupValue(this.elements.setupAlarmPresetSelect, settings.alarmPreset || DEFAULT_ALARM_PRESET_ID);
+        this.updatePresetDetails('setup');
         this.elements.setupModal.style.display = 'flex';
         this.validateSetupInputs();
+        this.toggleAudioControls();
     }
 
     // Hide setup modal
     hideSetupModal() {
+        this.stopAlarmPreview();
         this.elements.setupModal.style.display = 'none';
     }
 
     // Show settings modal
     showSettingsModal() {
         console.log('📝 Opening settings modal...');
+        this.stopAlarmPreview();
         try {
             // Check if elements exist
             console.log('Checking elements:', {
@@ -1557,6 +1816,9 @@ class FocusClockUI {
             this.elements.updateSettingsBtn = document.getElementById('updateSettingsBtn');
             this.elements.cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
             this.elements.resetSettingsBtn = document.getElementById('resetSettingsBtn');
+            this.elements.editAlarmPresetSelect = document.getElementById('editAlarmPreset');
+            this.elements.editAlarmPresetDetails = document.getElementById('editAlarmPresetDetails');
+            this.elements.editPreviewAlarmBtn = document.getElementById('editPreviewAlarm');
             
             if (!this.elements.settingsModal) {
                 console.error('❌ Failed to create settings modal');
@@ -1580,6 +1842,8 @@ class FocusClockUI {
             // Load audio settings
             this.elements.editEnableAudioAlerts.checked = settings.audioEnabled;
             this.elements.editAlertDuration.value = settings.alertDuration;
+            this.setRadioGroupValue(this.elements.editAlarmPresetSelect, settings.alarmPreset || DEFAULT_ALARM_PRESET_ID);
+            this.updatePresetDetails('edit');
             
             // Force show the modal with important styles
             this.elements.settingsModal.style.cssText = 'display: flex !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 10000 !important; background: rgba(0,0,0,0.7) !important; justify-content: center !important; align-items: center !important;';
@@ -1615,6 +1879,10 @@ class FocusClockUI {
     // Create settings modal dynamically if it doesn't exist
     createSettingsModal() {
         console.log('🏗️ Creating settings modal dynamically...');
+        const savedSettings = this.storage ? this.storage.getSettings() : null;
+        const selectedPresetId = savedSettings && savedSettings.alarmPreset ? savedSettings.alarmPreset : DEFAULT_ALARM_PRESET_ID;
+        const settingsAlarmOptionsHtml = renderAlarmPresetSelectOptions(selectedPresetId);
+        const settingsAlarmSummaryHtml = renderAlarmPresetSummary(selectedPresetId);
         
         const modalHtml = `
             <div class="clock-modal" id="settingsModal" style="display: none;">
@@ -1657,34 +1925,66 @@ class FocusClockUI {
                         </div>
 
                         <!-- Audio Settings Section -->
-                        <div class="audio-settings-section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #E5E7EB;">
-                            <h4 style="margin: 0 0 0.75rem 0; color: #374151; font-size: 0.95rem;">
-                                <i class="fas fa-volume-up" style="color: #3B82F6; margin-right: 0.5rem;"></i>
-                                Audio
-                            </h4>
-                            
-                            <div class="audio-setting-group" style="margin-bottom: 0.75rem;">
-                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer;">
-                                    <input type="checkbox" id="editEnableAudioAlerts" checked style="margin-right: 0.5rem;">
-                                    <span style="font-weight: 600;">Enable Alerts</span>
+                        <div class="audio-settings-section" style="margin-top: 1rem; padding: 1rem 1.1rem; border-radius: 0.95rem; background: linear-gradient(150deg, #F8FAFC, #EEF2FF); border: 1px solid rgba(99, 102, 241, 0.18);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.85rem;">
+                                <h4 style="margin: 0; color: #1E293B; font-size: 0.95rem; display: flex; align-items: center; gap: 0.55rem;">
+                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 1.8rem; height: 1.8rem; border-radius: 999px; background: rgba(99, 102, 241, 0.12); color: #4F46E5;">
+                                        <i class="fas fa-volume-up"></i>
+                                    </span>
+                                    Audio
+                                </h4>
+                                <span style="font-size: 0.7rem; color: #4338CA; background: rgba(79, 70, 229, 0.15); padding: 0.28rem 0.75rem; border-radius: 999px; font-weight: 600; letter-spacing: 0.02em;">
+                                    Refined alerts
+                                </span>
+                            </div>
+
+                            <div class="audio-setting-group" style="margin-bottom: 0.8rem; padding: 0.75rem 0.85rem; border-radius: 0.85rem; background: rgba(255, 255, 255, 0.92); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                <label class="checkbox-label" style="display: flex; align-items: center; cursor: pointer; gap: 0.5rem; font-weight: 600; color: #1E293B;">
+                                    <input type="checkbox" id="editEnableAudioAlerts" checked style="width: 1rem; height: 1rem; border-radius: 0.3rem; border: 1px solid #94A3B8;">
+                                    Enable Alerts
                                 </label>
-                                <p style="margin: 0.2rem 0 0 1.5rem; font-size: 0.8rem; color: #6B7280;">
-                                    Play sounds for transitions
+                                <p style="margin: 0.35rem 0 0 1.45rem; font-size: 0.78rem; color: #64748B;">
+                                    Play sounds for transitions.
                                 </p>
                             </div>
 
-                            <div id="editAudioControls" class="audio-controls">
-                                <div class="audio-setting-group">
-                                    <label style="font-weight: 600; margin-bottom: 0.4rem; display: block; font-size: 0.9rem;">
-                                        Duration
-                                    </label>
-                                    <select id="editAlertDuration" style="width: 100%; padding: 0.4rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; background: white; font-size: 0.85rem;">
-                                        <option value="loop">Loop (recommended)</option>
-                                        <option value="once">Once</option>
-                                        <option value="10">10 seconds</option>
-                                        <option value="20">20 seconds</option>
-                                        <option value="30">30 seconds</option>
-                                    </select>
+                            <div id="editAudioControls" class="audio-controls" style="display: flex; flex-direction: column; gap: 0.8rem;">
+                                <div class="audio-setting-group" style="padding: 0.8rem 0.85rem; border-radius: 0.85rem; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                        <label for="editAlertDuration" style="margin: 0; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569;">
+                                            Duration
+                                        </label>
+                                        <select id="editAlertDuration" style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 0.6rem; background: #FFFFFF; font-size: 0.85rem; font-weight: 600; color: #0F172A;">
+                                            <option value="loop">Loop until manually stopped</option>
+                                            <option value="once">Play once then stop</option>
+                                            <option value="10">Play for 10 seconds</option>
+                                            <option value="20">Play for 20 seconds</option>
+                                            <option value="30">Play for 30 seconds</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="audio-setting-group" style="padding: 0.8rem 0.85rem; border-radius: 0.85rem; background: rgba(255, 255, 255, 0.94); border: 1px solid rgba(148, 163, 184, 0.16);">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                        <label for="editAlarmPreset" style="margin: 0; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569;">
+                                            Alarm Style
+                                        </label>
+                                        <select id="editAlarmPreset" style="flex: 1; min-width: 200px; padding: 0.5rem 0.75rem; border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 0.6rem; background: #FFFFFF; font-size: 0.85rem; font-weight: 600; color: #0F172A;">
+                                            ${settingsAlarmOptionsHtml}
+                                        </select>
+                                    </div>
+                                    <div style="margin-top: 0.45rem; display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+                                        <div class="alarm-preset-details" id="editAlarmPresetDetails" style="display: flex; align-items: center;">
+                                            ${settingsAlarmSummaryHtml}
+                                        </div>
+                                        <button type="button" class="btn-modal btn-save" id="editPreviewAlarm" style="margin: 0; background: linear-gradient(135deg, #2563EB, #1D4ED8); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600; border-radius: 999px; letter-spacing: 0.01em;">
+                                            <i class="fas fa-headphones"></i>
+                                            Preview Alarm
+                                        </button>
+                                    </div>
+                                    <p style="margin: 0.35rem 0 0; font-size: 0.74rem; color: #64748B;">
+                                        Preview lets you hear the highlighted option before saving.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -1742,12 +2042,34 @@ class FocusClockUI {
             this.elements.editStandingTimeInput.removeEventListener('input', this.validateEditInputs.bind(this));
             this.elements.editStandingTimeInput.addEventListener('input', this.validateEditInputs.bind(this));
         }
+
+        if (this.elements.editAlarmPresetSelect) {
+            this.elements.editAlarmPresetSelect.addEventListener('change', () => {
+                this.stopAlarmPreview();
+                this.updatePresetDetails('edit');
+            });
+        }
+
+        if (this.elements.editPreviewAlarmBtn) {
+            this.elements.editPreviewAlarmBtn.addEventListener('click', () => this.previewSelectedAlarm('edit'));
+        }
         
+        if (this.elements.settingsModal) {
+            this.elements.settingsModal.addEventListener('click', (e) => {
+                if (e.target === this.elements.settingsModal) {
+                    this.hideSettingsModal();
+                }
+            });
+        }
+
         console.log('✅ Settings modal event listeners attached');
+
+        this.updatePresetDetails('edit');
     }
 
     // Hide settings modal
     hideSettingsModal() {
+        this.stopAlarmPreview();
         if (this.elements.settingsModal) {
             this.elements.settingsModal.style.display = 'none';
             console.log('✅ Settings modal hidden');
@@ -1804,6 +2126,7 @@ class FocusClockUI {
         const standingTime = Math.max(1, parseInt(this.elements.standingTimeInput.value) || 10);
         const audioEnabled = this.elements.enableAudioAlerts.checked;
         const alertDuration = this.elements.alertDuration.value;
+        const alarmPreset = this.getSelectedRadioValue(this.elements.setupAlarmPresetSelect) || DEFAULT_ALARM_PRESET_ID;
 
         // Save timer settings
         this.storage.updateTimes(sittingTime, standingTime);
@@ -1811,12 +2134,14 @@ class FocusClockUI {
         // Save audio settings
         this.storage.saveSettings({
             audioEnabled: audioEnabled,
-            alertDuration: alertDuration
+            alertDuration: alertDuration,
+            alarmPreset: alarmPreset
         });
         
         this.storage.markAsConfigured();
         this.core.initialize(sittingTime, standingTime);
 
+        this.stopAlarmPreview();
         this.hideSetupModal();
         this.updateStatsDisplay();
         this.updateDisplay(sittingTime * 60, true);
@@ -1831,6 +2156,7 @@ class FocusClockUI {
         const standingTime = Math.max(1, parseInt(this.elements.editStandingTimeInput.value) || 10);
         const audioEnabled = this.elements.editEnableAudioAlerts.checked;
         const alertDuration = this.elements.editAlertDuration.value;
+        const alarmPreset = this.getSelectedRadioValue(this.elements.editAlarmPresetSelect) || DEFAULT_ALARM_PRESET_ID;
 
         // Save timer settings
         this.storage.updateTimes(sittingTime, standingTime);
@@ -1838,17 +2164,20 @@ class FocusClockUI {
         // Save audio settings
         this.storage.saveSettings({
             audioEnabled: audioEnabled,
-            alertDuration: alertDuration
+            alertDuration: alertDuration,
+            alarmPreset: alarmPreset
         });
         
         this.core.updateTimes(sittingTime, standingTime);
 
+        this.stopAlarmPreview();
         this.hideSettingsModal();
         this.updateStatsDisplay();
     }
 
     // Reset all settings
     resetSettings() {
+        this.stopAlarmPreview();
         if (confirm('⚠️ Reset Device Settings?\n\nThis will clear:\n• Timer settings (back to 20:10)\n• Volume preferences\n• Audio settings\n\n(Your points and cycles in database will NOT be affected)\n\nAre you sure?')) {
             // Stop any running timer
             this.core.pause();
@@ -2412,9 +2741,20 @@ class FocusClockUI {
     // Toggle audio controls visibility in setup modal
     toggleAudioControls() {
         const audioControls = document.getElementById('audioControls');
-        const isEnabled = this.elements.enableAudioAlerts.checked;
-        audioControls.style.opacity = isEnabled ? '1' : '0.5';
-        audioControls.style.pointerEvents = isEnabled ? 'auto' : 'none';
+        if (audioControls) {
+            const isEnabled = this.elements.enableAudioAlerts.checked;
+            audioControls.style.opacity = isEnabled ? '1' : '0.5';
+            audioControls.style.pointerEvents = isEnabled ? 'auto' : 'none';
+            if (this.elements.setupAlarmPresetSelect) {
+                this.elements.setupAlarmPresetSelect.disabled = !isEnabled;
+            }
+            if (this.elements.setupPreviewAlarmBtn) {
+                this.elements.setupPreviewAlarmBtn.disabled = !isEnabled;
+            }
+            if (!isEnabled) {
+                this.stopAlarmPreview();
+            }
+        }
     }
 
     // Toggle audio controls visibility in edit modal
@@ -2424,7 +2764,172 @@ class FocusClockUI {
             const isEnabled = this.elements.editEnableAudioAlerts.checked;
             audioControls.style.opacity = isEnabled ? '1' : '0.5';
             audioControls.style.pointerEvents = isEnabled ? 'auto' : 'none';
+            if (this.elements.editAlarmPresetSelect) {
+                this.elements.editAlarmPresetSelect.disabled = !isEnabled;
+            }
+            if (this.elements.editPreviewAlarmBtn) {
+                this.elements.editPreviewAlarmBtn.disabled = !isEnabled;
+            }
+            if (!isEnabled) {
+                this.stopAlarmPreview();
+            }
         }
+    }
+
+    updatePresetDetails(context = 'setup') {
+        const isEditContext = context === 'edit';
+        const targetDetails = isEditContext ? this.elements.editAlarmPresetDetails : this.elements.setupAlarmPresetDetails;
+        if (!targetDetails) {
+            return;
+        }
+
+        const control = isEditContext ? this.elements.editAlarmPresetSelect : this.elements.setupAlarmPresetSelect;
+        const selectedId = this.getSelectedRadioValue(control) || DEFAULT_ALARM_PRESET_ID;
+        targetDetails.innerHTML = renderAlarmPresetSummary(selectedId);
+    }
+
+    previewSelectedAlarm(context = 'setup') {
+        const isEditContext = context === 'edit';
+        const audioEnabled = isEditContext
+            ? !!this.elements.editEnableAudioAlerts?.checked
+            : !!this.elements.enableAudioAlerts?.checked;
+
+        if (!audioEnabled) {
+            console.warn('Audio alerts disabled, preview skipped');
+            return;
+        }
+
+        if (this.activePreviewContext === context && this.previewAudio) {
+            this.stopAlarmPreview();
+            return;
+        }
+
+        const inputs = isEditContext ? this.elements.editAlarmPresetSelect : this.elements.setupAlarmPresetSelect;
+        const presetId = this.getSelectedRadioValue(inputs) || DEFAULT_ALARM_PRESET_ID;
+
+        this.playAlarmPreview(presetId, context);
+    }
+
+    playAlarmPreview(presetId, context) {
+        const preset = ALARM_PRESETS[presetId] || ALARM_PRESETS[DEFAULT_ALARM_PRESET_ID];
+        if (!preset) {
+            console.warn('Unknown alarm preset, preview skipped');
+            return;
+        }
+
+        if (this.core && typeof this.core.preloadAlarmAudio === 'function') {
+            this.core.preloadAlarmAudio();
+        }
+
+        // Stop any existing preview before starting a new one
+        this.stopAlarmPreview();
+
+        const previewFiles = (preset.previewOrder && preset.previewOrder.length
+            ? preset.previewOrder
+            : Object.values(preset.files || {}))
+            .filter(Boolean);
+
+        if (!previewFiles.length) {
+            console.warn('No audio files available for preview');
+            return;
+        }
+
+        this.previewQueue = previewFiles;
+        this.previewIndex = 0;
+        this.activePreviewContext = context;
+        this.previewButton = context === 'edit' ? this.elements.editPreviewAlarmBtn : this.elements.setupPreviewAlarmBtn;
+
+        this.updatePreviewButtonState(this.previewButton, true);
+
+        const playNext = () => {
+            if (!this.previewQueue || this.previewIndex >= this.previewQueue.length) {
+                this.stopAlarmPreview();
+                return;
+            }
+
+            const file = this.previewQueue[this.previewIndex];
+            let audio = null;
+
+            if (this.core?.preloadedAudio && this.core.preloadedAudio[file]) {
+                audio = this.core.preloadedAudio[file].cloneNode();
+            }
+
+            if (!audio) {
+                audio = new Audio(file);
+                audio.preload = 'auto';
+            }
+
+            this.previewAudio = audio;
+
+            let alarmType = 'alarm1';
+            if (preset.files?.backToWork && file === preset.files.backToWork) {
+                alarmType = 'alarm2';
+            }
+            const savedVolume = this.storage ? this.storage.getAlarmVolume(alarmType) : 100;
+            this.previewAudio.volume = Math.max(0, Math.min(1, savedVolume / 100));
+
+            this.previewAudio.addEventListener('ended', () => {
+                this.previewIndex += 1;
+                playNext();
+            }, { once: true });
+
+            this.previewAudio.addEventListener('error', () => {
+                console.warn('Preview audio failed to play:', file);
+                this.previewIndex += 1;
+                playNext();
+            }, { once: true });
+
+            const playPromise = this.previewAudio.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch((error) => {
+                    console.warn('Preview playback blocked:', error);
+                    this.stopAlarmPreview();
+                });
+            }
+        };
+
+        playNext();
+    }
+
+    stopAlarmPreview() {
+        if (this.previewAudio) {
+            try {
+                this.previewAudio.pause();
+                this.previewAudio.currentTime = 0;
+            } catch (error) {
+                console.warn('Error stopping preview audio:', error);
+            }
+        }
+
+        if (this.previewButton) {
+            this.updatePreviewButtonState(this.previewButton, false);
+        }
+
+        this.previewAudio = null;
+        this.previewQueue = [];
+        this.previewIndex = 0;
+        this.previewButton = null;
+        this.activePreviewContext = null;
+    }
+
+    updatePreviewButtonState(button, isPlaying) {
+        if (!button) {
+            return;
+        }
+
+        if (!button.dataset.originalContent) {
+            button.dataset.originalContent = button.innerHTML;
+        }
+
+        if (isPlaying) {
+            button.innerHTML = '<i class="fas fa-stop"></i><span style="margin-left: 0.35rem;">Stop Preview</span>';
+            button.classList.add('preview-playing');
+        } else {
+            button.innerHTML = button.dataset.originalContent;
+            button.classList.remove('preview-playing');
+        }
+
+        button.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
     }
 
     // Get current date as string (YYYY-MM-DD) in user's local timezone
