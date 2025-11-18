@@ -65,7 +65,7 @@
                     <div class="points-display">
                         <div>
                             <i class="fas fa-star"></i>
-                            <span class="points-number" id="totalPoints">0</span>
+                            <span class="points-number" id="totalPoints">{{ Auth::user()->total_points ?? 0 }}</span>
                             <span class="points-label">Points</span>
                         </div>
                     </div>
