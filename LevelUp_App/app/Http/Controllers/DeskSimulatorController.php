@@ -7,6 +7,7 @@ use App\Services\Wifi2BleSimulatorClient;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -53,6 +54,49 @@ class DeskSimulatorController extends Controller
             return $this->errorFromSimulator($exception);
         }
     }
+
+    public function moveToSit(string $deskId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user->sitting_position) {
+                return response()->json(
+                    ['error' => 'Sitting position not set'],
+                    Response::HTTP_BAD_REQUEST
+                );
+            }
+
+            // Convert cm to mm
+            $positionMm = $user->sitting_position * 10;
+
+            return response()->json($this->client->updateDeskState($deskId, ['position_mm' => $positionMm]));
+        } catch (Throwable $exception) {
+            return $this->errorFromSimulator($exception);
+        }
+    }
+
+    public function moveToStand(string $deskId): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user->standing_position) {
+                return response()->json(
+                    ['error' => 'Standing position not set'],
+                    Response::HTTP_BAD_REQUEST
+                );
+            }
+
+            // Convert cm to mm
+            $positionMm = $user->standing_position * 10;
+
+            return response()->json($this->client->updateDeskState($deskId, ['position_mm' => $positionMm]));
+        } 
+        catch (Throwable $exception) {
+            return $this->errorFromSimulator($exception);
+        }
+}
 
     private function errorFromSimulator(Throwable $exception): JsonResponse
     {

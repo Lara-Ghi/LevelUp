@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('desks', function (Blueprint $table) {
             $table->id();
             $table->string('desk_model');
-            $table->string('serial_number', 6)->unique();
+            $table->string('serial_number', 17)->unique();
 
             $table->timestamps();
         });

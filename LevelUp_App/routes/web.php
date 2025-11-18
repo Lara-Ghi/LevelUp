@@ -72,6 +72,8 @@ Route::middleware('auth')->group(function () {
         Route::get('desks/{desk}', [DeskSimulatorController::class, 'show'])->name('desks.show');
         Route::get('desks/{desk}/{category}', [DeskSimulatorController::class, 'showCategory'])->name('desks.category');
         Route::put('desks/{desk}/state', [DeskSimulatorController::class, 'updateState'])->name('desks.state');
+        Route::post('desks/{desk}/sit', [DeskSimulatorController::class, 'moveToSit'])->name('desks.sit');
+        Route::post('desks/{desk}/stand', [DeskSimulatorController::class, 'moveToStand'])->name('desks.stand');
     });
 
     // Admin Rewards Management Routes (admin only)
