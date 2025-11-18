@@ -93,8 +93,8 @@ function renderAlarmPresetSummary(presetId = DEFAULT_ALARM_PRESET_ID) {
 
 class FocusClockCore {
     constructor() {
-        this.sittingTime = 20; // minutes (LINAK 20:10 pattern)
-        this.standingTime = 10; // minutes (LINAK 20:10 pattern)
+        this.sittingTime = 20; // minutes (20:10 pattern)
+        this.standingTime = 10; // minutes (20:10 pattern)
         this.currentTime = 0; // seconds
         this.isRunning = false;
         this.isSittingSession = true;
@@ -958,7 +958,7 @@ class FocusClockCore {
     // Validate healthy sitting-to-standing ratio
     static validateHealthyRatio(sittingMinutes, standingMinutes) {
         const ratio = sittingMinutes / standingMinutes;
-        const idealRatio = 2; // 20min:10min = 2:1 ratio (Cornell University research - LINAK 20:10 pattern)
+        const idealRatio = 2; // 20min:10min = 2:1 ratio (Cornell University research - 20:10 pattern)
 
         let recommendation = '';
         let isHealthy = true;
@@ -1002,8 +1002,8 @@ class FocusClockStorage {
         this.storageKey = 'levelup_focus_clock_settings';
         // timerStateKey and pointsKey removed - database is source of truth
         this.defaultSettings = {
-            sittingTime: 20, // LINAK 20:10 pattern
-            standingTime: 10, // LINAK 20:10 pattern
+            sittingTime: 20, // 20:10 pattern
+            standingTime: 10, // 20:10 pattern
             isFirstTime: true,
             totalCycles: 0,
             lastUsed: null,
@@ -1313,7 +1313,7 @@ class FocusClockUI {
                             <label for="sittingTimeInput">
                                 <i class="fas fa-chair"></i>
                                 Sitting Time (minutes)
-                                <span class="recommended-info">💡 Recommended: 20 minutes (LINAK 20:10 pattern)</span>
+                                <span class="recommended-info">💡 Recommended: 20 minutes (20:10 pattern)</span>
                             </label>
                             <input type="number" id="sittingTimeInput" min="1" max="180" value="20" />
                         </div>
@@ -1322,7 +1322,7 @@ class FocusClockUI {
                             <label for="standingTimeInput">
                                 <i class="fas fa-walking"></i>
                                 Standing Time (minutes)
-                                <span class="recommended-info">💡 Recommended: 10 minutes (LINAK 20:10 pattern)</span>
+                                <span class="recommended-info">💡 Recommended: 10 minutes (20:10 pattern)</span>
                             </label>
                             <input type="number" id="standingTimeInput" min="1" max="60" value="10" />
                         </div>
@@ -2882,6 +2882,10 @@ class FocusClockUI {
             const playPromise = this.previewAudio.play();
             if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.catch((error) => {
+                    if (error && error.name === 'AbortError') {
+                        // Expected when preview is stopped or restarted quickly; no action needed
+                        return;
+                    }
                     console.warn('Preview playback blocked:', error);
                     this.stopAlarmPreview();
                 });
