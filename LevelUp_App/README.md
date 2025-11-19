@@ -180,3 +180,17 @@ Visit: **<http://127.0.0.1:8000>**
 5. Try different timing combinations to see scoring
 
 **Pro tip**: For testing, try 20 min sitting + 10 min standing for maximum points!
+
+## ✅ Tests
+
+Run feature assertions (Pest feature suite):
+
+```bash
+php artisan test --testsuite=Feature
+```
+
+Run browser automation (Laravel Dusk):
+
+```bash
+php artisan dusk --ansi
+```
