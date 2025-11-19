@@ -33,7 +33,7 @@
             <i class="fas fa-history"></i>
             History
         </a>
-        
+
     </div>
 
     <main class="content">
@@ -41,11 +41,11 @@
         <div class="rewards-content">
             @if(request()->query('tab') === 'available')
                 <!-- Available Rewards Content -->
-                    <p class="no-saved-message">You don't have enough points yet!</p>
-                @elseif(request()->query('tab') === 'saved')
+                <div class="rewards-grid" id="availableRewardsGrid">
+                </div>
+            @elseif(request()->query('tab') === 'saved')
                 <!-- Saved Rewards Content -->
                 <div class="rewards-grid" id="savedRewardsGrid">
-                    <p class="no-saved-message">You haven't saved any rewards yet. Browse the "All" tab and click the heart icon to save your favorites!</p>
                 </div>
             @elseif(request()->query('tab', 'all') === 'all')
                 <!-- All Rewards Content -->
@@ -55,9 +55,10 @@
                             <button class="save-btn" data-reward-id="{{ $reward->id }}" type="button">
                                 <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
                             </button>
-                            
+
                             <div class="reward-image">
-                                <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" alt="{{ $reward->card_name }}">
+                                <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}"
+                                    alt="{{ $reward->card_name }}">
                             </div>
                             <div class="reward-content">
                                 <h3>{{ $reward->card_name }}</h3>
@@ -80,9 +81,10 @@
                     <button class="save-btn" data-reward-id="{{ $reward->id }}" type="button">
                         <img src="{{ asset('images/giftcards/heart_unchecked.png') }}" alt="Save" class="heart-icon">
                     </button>
-                    
+
                     <div class="reward-image">
-                        <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" alt="{{ $reward->card_name }}">
+                        <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}"
+                            alt="{{ $reward->card_name }}">
                     </div>
                     <div class="reward-content">
                         <h3>{{ $reward->card_name }}</h3>

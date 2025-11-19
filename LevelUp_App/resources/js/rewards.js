@@ -179,6 +179,7 @@ class RewardsManager {
                     }
 
                     this.updateRedeemButtonStates();
+                    this.updateAvailableTab();
                     alert(`Successfully redeemed "${data.reward_name}"! Check your email for details.`); //TODO: but out of scope for this project, no e-mail notification implemented 
                 } else {
                     alert(data.error || 'Failed to redeem reward');
@@ -271,6 +272,11 @@ class RewardsManager {
                 availableGrid.appendChild(clonedCard);
             }
         });
+
+          // Show message if no affordable rewards
+      if (affordableCount === 0) {
+          availableGrid.innerHTML = '<p class="no-saved-message">You don\'t have enough points yet. Keep earning!</p>';
+      }
     }
 
     updateSavedTab() {
