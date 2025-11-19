@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('admin123'),
             'sitting_position' => 73, 
             'standing_position' => 110, 
-            'total_points' => 1500,
+            'total_points' => 150,
             'daily_points' => 80,
             'last_points_date' => now()->toDateString(),
             'last_daily_reset' => now(),

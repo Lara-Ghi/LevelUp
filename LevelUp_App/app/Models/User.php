@@ -88,6 +88,14 @@ class User extends Authenticatable
         return $this->belongsToMany(Reward::class, 'user_favorite_rewards', 'user_id', 'card_id');
     }
 
+    // Relationship for redeemed rewards
+  public function redeemedRewards()
+  {
+      return $this->belongsToMany(Reward::class, 'user_rewards', 'user_id', 'card_id')
+                  ->withPivot('redeemed_at')
+                  ->withTimestamps();
+  }
+
     /**
      * Reset daily points if it's a new day
      * @param string|null $userDate - Optional user's timezone date (Y-m-d format). If null, uses server date.

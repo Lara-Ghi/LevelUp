@@ -66,7 +66,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
     Route::post('/rewards/toggle-save', [RewardsController::class, 'toggleSave'])->name('rewards.toggleSave');
     Route::get('/rewards/saved', [RewardsController::class, 'getSavedRewards'])->name('rewards.getSaved');
+    Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
 
+    // Desks simulator Routes
     Route::prefix('api/simulator')->name('simulator.')->group(function () {
         Route::get('desks', [DeskSimulatorController::class, 'index'])->name('desks.index');
         Route::get('desks/{desk}', [DeskSimulatorController::class, 'show'])->name('desks.show');

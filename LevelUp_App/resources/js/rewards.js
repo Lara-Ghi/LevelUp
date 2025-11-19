@@ -19,7 +19,7 @@ class RewardsManager {
         this.initializeSaveButtons();
 
         // Initialize redeem buttons
-        this.updateRedeemButtons();
+        this.initializeRedeemButtons();
 
         // Handle tab switching to show saved rewards
         this.handleTabSwitching();
@@ -49,7 +49,7 @@ class RewardsManager {
             // const data = await response.json();
             // this.userPoints = data.total_points || 0;
 
-            this.updateRedeemButtons();
+            this.updateRedeemButtonStates();
         } catch (error) {
             console.error('Error loading user points:', error);
         }
@@ -87,7 +87,7 @@ class RewardsManager {
             });
 
             const data = await response.json();
-            
+
             if (data.saved) {
                 if (!this.savedRewards.includes(parseInt(rewardId))) {
                     this.savedRewards.push(parseInt(rewardId));
@@ -113,7 +113,7 @@ class RewardsManager {
         }
     }
 
-    updateRedeemButtons() {
+    updateRedeemButtonStates() {
         const redeemButtons = document.querySelectorAll('.redeem-btn');
 
         redeemButtons.forEach(button => {
@@ -127,8 +127,19 @@ class RewardsManager {
                 button.classList.remove('can-redeem');
                 if (btnText) btnText.textContent = 'Not Yet';
             }
+        });
+    }
 
-            // Add click handler for redemption
+    initializeRedeemButtons() {
+        // update all button states
+        this.updateRedeemButtonStates();
+
+        // add click listener
+        const redeemButtons = document.querySelectorAll('.redeem-btn');
+
+        redeemButtons.forEach(button => {
+            const requiredPoints = parseInt(button.dataset.points);
+
             button.addEventListener('click', () => {
                 if (this.userPoints >= requiredPoints) {
                     this.redeemReward(button, requiredPoints);
@@ -139,26 +150,43 @@ class RewardsManager {
         });
     }
 
-    redeemReward(button, requiredPoints) {
+    async redeemReward(button, requiredPoints) {
         const card = button.closest('.reward-card');
+        const rewardId = card.dataset.rewardId;
         const rewardName = card.querySelector('h3').textContent;
 
-        // TODO: Implement actual redemption logic with backend
         const confirmed = confirm(`Redeem "${rewardName}" for ${requiredPoints} points?`);
 
         if (confirmed) {
-            // Here you would make an API call to redeem the reward
-            console.log(`Redeeming ${rewardName} for ${requiredPoints} points`);
-            alert('Redemption successful! Check your email for details.');
+            try {
+                const response = await fetch('/rewards/redeem', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify({ reward_id: rewardId })
+                });
 
-            // Update user points
-            this.userPoints -= requiredPoints;
-            const pointsElement = document.getElementById('totalPoints');
-            if (pointsElement) {
-                pointsElement.textContent = this.userPoints;
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update user points from server response
+                    this.userPoints = data.new_points;
+                    const pointsElement = document.getElementById('totalPoints');
+                    if (pointsElement) {
+                        pointsElement.textContent = this.userPoints;
+                    }
+
+                    this.updateRedeemButtonStates();
+                    alert(`Successfully redeemed "${data.reward_name}"! Check your email for details.`); //TODO: but out of scope for this project, no e-mail notification implemented 
+                } else {
+                    alert(data.error || 'Failed to redeem reward');
+                }
+            } catch (error) {
+                console.error('Error redeeming reward:', error);
+                alert('An error occurred. Please try again.');
             }
-
-            this.updateRedeemButtons();
         }
     }
 
@@ -176,16 +204,73 @@ class RewardsManager {
         const navLinks = document.querySelectorAll('.rewards-nav-link');
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
-                    const newTab = new URLSearchParams(window.location.search).get('tab');
-                    if (newTab === 'saved') {
-                        this.updateSavedTab();
-                    }
+                const newTab = new URLSearchParams(window.location.search).get('tab');
+                if (newTab === 'saved') {
+                    this.updateSavedTab();
+                }
+                if (newTab === 'available') {
+                    this.updateAvailableTab();
+                }
             });
         });
 
         if (currentTab === 'saved') {
             this.updateSavedTab();
         }
+        if (currentTab === 'available') {
+            this.updateAvailableTab();
+        }
+    }
+    updateAvailableTab() {
+        const availableGrid = document.getElementById('availableRewardsGrid');
+        if (!availableGrid) return;
+
+        // Clear existing content
+        availableGrid.innerHTML = '';
+
+        // Get all rewards from template and filter affordable ones
+        const templateContainer = document.getElementById('rewardsTemplate');
+        const allCards = templateContainer.querySelectorAll('.reward-card');
+
+        let affordableCount = 0;
+
+        allCards.forEach(card => {
+            const redeemBtn = card.querySelector('.redeem-btn');
+            const requiredPoints = parseInt(redeemBtn.dataset.points);
+
+            // Only show if user can afford it
+            if (this.userPoints >= requiredPoints) {
+                affordableCount++;
+                const clonedCard = card.cloneNode(true);
+
+                // Reinitialize the save button
+                const saveBtn = clonedCard.querySelector('.save-btn');
+                if (saveBtn) {
+                    const rewardId = saveBtn.dataset.rewardId;
+                    const isSaved = this.savedRewards.includes(parseInt(rewardId));
+                    this.setSavedState(saveBtn, isSaved);
+                    saveBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.toggleSave(rewardId, saveBtn);
+                    });
+                }
+
+                // Reinitialize the redeem button
+                const clonedRedeemBtn = clonedCard.querySelector('.redeem-btn');
+                if (clonedRedeemBtn) {
+                    clonedRedeemBtn.classList.add('can-redeem');
+                    const btnText = clonedRedeemBtn.querySelector('.btn-text');
+                    if (btnText) btnText.textContent = 'Redeem';
+
+                    clonedRedeemBtn.addEventListener('click', () => {
+                        this.redeemReward(clonedRedeemBtn, requiredPoints);
+                    });
+                }
+
+                availableGrid.appendChild(clonedCard);
+            }
+        });
     }
 
     updateSavedTab() {
@@ -204,7 +289,7 @@ class RewardsManager {
         this.savedRewards.forEach(rewardId => {
             const templateContainer = document.getElementById('rewardsTemplate');
             const originalCard = templateContainer.querySelector(`.reward-card[data-reward-id="${rewardId}"]`);
-            
+
             if (originalCard) {
                 const clonedCard = originalCard.cloneNode(true);
 
