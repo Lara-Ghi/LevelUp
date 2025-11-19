@@ -22,7 +22,8 @@ export default defineConfig({
                 'resources/js/pico-timer-sync.js',
                 'resources/css/rewards.css',
                 'resources/js/rewards.js',
-                'resources/js/statistics.js'
+                'resources/js/statistics.js',
+                'resources/js/profile.js'
             ],
             refresh: true,
         }),
