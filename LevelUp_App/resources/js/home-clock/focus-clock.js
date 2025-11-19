@@ -2334,6 +2334,7 @@ class FocusClockUI {
         this.syncDeskPosition(isSitting);
     }
 
+    // Centralized method that calls sit or stand
     syncDeskPosition(isSitting) {
         if (!this.deskControl || !this.deskControl.enabled) {
             return;
