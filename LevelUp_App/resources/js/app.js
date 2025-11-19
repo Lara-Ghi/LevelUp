@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize all interactive components
     initNavbar();
+    initNavbarPointsSync();
     initSmoothScrolling();
     initFormHandling();
     initAnimations();
@@ -82,6 +83,43 @@ function initNavbar() {
             navLinks.classList.toggle('mobile-open');
         });
     }
+}
+
+function initNavbarPointsSync() {
+    const totalPointsEl = document.getElementById('totalPoints');
+    const body = document.body;
+    const isAuthenticated = body && body.dataset && body.dataset.authenticated === '1';
+
+    if (!isAuthenticated || !totalPointsEl) {
+        return;
+    }
+
+    const now = new Date();
+    const userDate = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0')
+    ].join('-');
+
+    fetch(`/api/health-cycle/points-status?user_date=${userDate}`, {
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (typeof data.total_points === 'number') {
+                totalPointsEl.textContent = String(data.total_points);
+            }
+        })
+        .catch(error => {
+            console.warn('Navbar points sync skipped:', error.message || error);
+        });
 }
 
 // ===========================================
@@ -412,6 +450,7 @@ Theme Colors: #171738, #2E1760, #3423A6, #7180B9, #DFF3E4
 
 export default {
     initNavbar,
+    initNavbarPointsSync,
     initSmoothScrolling,
     initFormHandling,
     initAnimations,

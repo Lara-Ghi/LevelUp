@@ -17,12 +17,13 @@
 
     @vite('resources/css/app.css')
     @vite('resources/css/home-clock/focus-clock.css')
+    @vite('resources/js/app.js')
 
     @yield('additional_css')
 
     @yield('additional_js')
 </head>
-<body>
+<body data-authenticated="{{ auth()->check() ? '1' : '0' }}">
     @include('layouts.navigation')
 
     <main>

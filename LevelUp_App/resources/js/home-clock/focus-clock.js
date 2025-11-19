@@ -1187,6 +1187,8 @@ class FocusClockUI {
         this.previewIndex = 0;
         this.previewButton = null;
         this.activePreviewContext = null;
+        this.deskControl = (window.LevelUp && window.LevelUp.deskControl) ? window.LevelUp.deskControl : null;
+        this.pendingDeskAction = null;
 
         this.init();
         console.log('✅ FocusClockUI initialization completed');
@@ -2226,6 +2228,7 @@ class FocusClockUI {
         const state = this.core.getCurrentSession();
         console.log('Starting state:', state);
         this.core.start();
+        this.syncDeskPosition(this.core.isSittingSession);
         
 
         
@@ -2328,7 +2331,67 @@ class FocusClockUI {
     // Handle session change
     handleSessionChange(isSitting) {
         console.log(`🎯 handleSessionChange called with: ${isSitting ? 'Sitting' : 'Standing'}`);
-        // Session change is now handled by the core timer
+        this.syncDeskPosition(isSitting);
+    }
+
+    syncDeskPosition(isSitting) {
+        if (!this.deskControl || !this.deskControl.enabled) {
+            return;
+        }
+
+        const action = isSitting ? 'sit' : 'stand';
+
+        if (this.pendingDeskAction === action) {
+            return;
+        }
+
+        this.pendingDeskAction = action;
+        this.sendDeskMoveCommand(action)
+            .catch(error => {
+                console.error(`❌ Desk ${action} command failed:`, error);
+            })
+            .finally(() => {
+                this.pendingDeskAction = null;
+            });
+    }
+
+    async sendDeskMoveCommand(action) {
+        if (!this.deskControl) {
+            return;
+        }
+
+        const url = action === 'sit' ? this.deskControl?.sitUrl : this.deskControl?.standUrl;
+
+        if (!url) {
+            console.warn(`⚠️ Missing desk control URL for ${action} command`);
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+        console.log(`📡 Sending desk ${action} command to simulator`);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+            },
+            body: JSON.stringify({})
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorBody || response.statusText}`);
+        }
+
+        try {
+            const data = await response.json();
+            console.log(`🪑 Desk ${action} command acknowledged`, data);
+        } catch (error) {
+            console.log(`🪑 Desk ${action} command completed (no JSON body)`);
+        }
     }
 
     // Handle cycle completion
@@ -2419,8 +2482,8 @@ class FocusClockUI {
         const totalPointsEl = document.getElementById('totalPoints');
 
         if (totalPointsEl) {
-            totalPointsEl.textContent = totalPoints.toLocaleString();
-            console.log('✅ Updated totalPoints element to:', totalPoints.toLocaleString());
+            totalPointsEl.textContent = String(totalPoints ?? 0);
+            console.log('✅ Updated totalPoints element to:', String(totalPoints ?? 0));
         } else {
             console.warn('⚠️ totalPoints element not found in navbar');
         }
