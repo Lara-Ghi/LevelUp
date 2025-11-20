@@ -549,3 +549,122 @@
         padding: 2rem 1rem;
     }
 }
+
+ /* ===========================================
+           HISTORY TAB
+     =========================================== */
+
+  .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 0.75rem;
+  }
+
+  /* Table Header */
+  .history-table thead {
+      background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+      border-bottom: 2px solid #6C4AB6;
+  }
+
+  .history-table thead th {
+      padding: 12px 16px;
+      text-align: center;
+      font-weight: 700;
+      color: #333;
+      border-right: 1px solid #dee2e6;
+      border-bottom: 2px solid #6C4AB6;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+  }
+
+  .history-table thead th:last-child {
+      border-right: none;
+  }
+
+  .history-table thead th:first-child {
+      text-align: center;
+      width: 60px;
+  }
+
+  /* Table Body */
+  .history-table tbody tr {
+      transition: background-color 0.2s ease;
+      border-bottom: 1px solid #dee2e6;
+  }
+
+  .history-table tbody tr:nth-child(even) {
+      background: #f8f9fa;
+  }
+
+  .history-table tbody tr:nth-child(odd) {
+      background: white;
+  }
+
+  .history-table tbody tr:hover {
+      background: #e7f1ff !important;
+      cursor: pointer;
+  }
+
+  /* Table Cells */
+  .history-table tbody td {
+      padding: 14px 16px;
+      color: #495057;
+      border-right: 1px solid #e9ecef;
+      vertical-align: middle;
+  }
+
+  .history-table tbody td:last-child {
+      border-right: none;
+  }
+
+  .history-table tbody td:first-child {
+      text-align: center;
+      font-weight: 600;
+      color: #6C4AB6;
+      background: rgba(108, 74, 182, 0.05);
+  }
+
+  .history-table tbody td:nth-child(2) {
+      font-weight: 600;
+      color: #212529;
+  }
+
+  .history-table tbody td:nth-child(3) {
+      font-weight: 500;
+      color: #6C4AB6;
+      font-size: 0.85rem;
+  }
+
+  /* Responsive Table */
+  @media (max-width: 768px) {
+      .history-container {
+          padding: 0.5rem;
+      }
+
+      .history-table {
+          font-size: 0.85rem;
+      }
+
+      .history-table thead th,
+      .history-table tbody td {
+          padding: 10px 12px;
+      }
+
+      .history-table thead th:first-child {
+          width: 40px;
+      }
+  }
+
+  @media (max-width: 480px) {
+      .history-table {
+          font-size: 0.75rem;
+      }
+
+      .history-table thead th,
+      .history-table tbody td {
+          padding: 8px 10px;
+      }
+  }

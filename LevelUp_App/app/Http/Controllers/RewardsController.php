@@ -23,10 +23,12 @@ class RewardsController extends Controller
 
         $rewards = Reward::where('archived', false)->get();
         $savedRewardIds = $user ? $user->favoriteRewards()->pluck('card_id')->toArray() : [];
+         $redeemedRewards = $user ? $user->redeemedRewards()->orderBy('pivot_redeemed_at', 'desc')->get() : [];
 
         return view('rewards.rewards', [
             'rewards' => $rewards,
             'savedRewardIds' => $savedRewardIds,
+            'redeemedRewards' => $redeemedRewards,
         ]);
     }
 
@@ -60,7 +62,10 @@ class RewardsController extends Controller
 
         // Create redemption record
         $user->redeemedRewards()->attach($rewardId, [
-            'redeemed_at' => now()
+            'redeemed_at' => now(),
+            'card_name_snapshot' => $reward->card_name,
+      'points_amount_snapshot' => $reward->points_amount,
+      'card_description_snapshot' => $reward->card_description,
         ]);
 
         return response()->json([

@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('card_id');
-            $table->timestamp('redeemed_at');           
+            $table->timestamp('redeemed_at'); 
+            $table->string('card_name_snapshot');
+            $table->integer('points_amount_snapshot');
+            $table->text('card_description_snapshot');    
 
             $table->index(['user_id', 'card_id']);
             $table->timestamps();
