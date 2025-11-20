@@ -43,23 +43,6 @@
     @yield('scripts')
 
     <script>
-
-// TODO: (Lara) commented out to test a different way to flag page as active
-// + changed in navigation.blade.php "class="nav-link {{ request()->is(...""
-// + changed app.blade.php (see commented out lines, to erase if okay)
-// if working/approved by the whole team, all this can be deleted
-
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     // Update active navigation link based on current page
-        //     const currentPage = window.location.pathname;
-        //     const navLinks = document.querySelectorAll('.nav-link');
-            
-        //     navLinks.forEach(link => {
-        //         link.classList.remove('active');
-        //         if (link.getAttribute('href') === currentPage || (currentPage === '/' && link.textContent.trim() === 'Home')) {
-        //             link.classList.add('active');
-        //         }
-        //     });
             
             // Smooth scroll for anchor links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
