@@ -88,6 +88,26 @@ Each workflow relies on multiple listeners—keep every process below running in
 
    Keep this third window open alongside your Vite and Laravel terminals. The API is available at `http://127.0.0.1:8100/api/v2/<api_key>/desks`.
 
+## Monitor Simulator Logs
+
+Use the application log to watch every command the app sends to the wifi2ble API along with each response. Run these from the `LevelUp_App` directory:
+
+- **Local PowerShell**
+
+   ```powershell
+   Get-Content .\storage\logs\laravel.log -Tail 100 -Wait
+   ```
+
+   This streams new entries in real time, so you can see `DeskSimulatorController` payloads and Pico phase updates as they happen.
+
+- **Docker container**
+
+   ```powershell
+   docker compose exec app tail -f storage/logs/laravel.log
+   ```
+
+   Add `| grep DeskSimulator` if you only want desk-related lines (use `Select-String` on PowerShell if `grep` is unavailable).
+
 ## Docker Workflow
 
 1. **Bootstrap env & containers**

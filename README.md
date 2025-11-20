@@ -28,7 +28,7 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 
 ## Run It
 
-Full environment instructions (local PHP, Docker stack, simulator ports, Pico W hardware flashing, and common troubleshooting) now live in `SETUP.md`. Start there for step-by-step commands.
+Full environment instructions (local PHP, Docker stack, simulator ports, Pico W hardware flashing, real-time log tailing, and common troubleshooting) now live in `SETUP.md`. Start there for step-by-step commands and the log command that streams desk-simulator traffic while you test.
 
 ## Pico W Controls
 
