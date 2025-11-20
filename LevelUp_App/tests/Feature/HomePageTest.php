@@ -112,9 +112,9 @@ test('authenticated users load focus clock assets', function () {
 
     $response
         ->assertOk()
-        ->assertSee('resources/js/home-clock/focus-clock.js', false)
-        ->assertSee('resources/js/pico-timer-sync.js', false)
-        ->assertSee('resources/js/app.js', false);
+        ->assertSee('/build/assets/focus-clock-', false)
+        ->assertSee('/build/assets/pico-timer-sync-', false)
+        ->assertSee('/build/assets/app-', false);
 });
 
 // --------- NAV POINTS REFLECT USER TOTAL ---------
