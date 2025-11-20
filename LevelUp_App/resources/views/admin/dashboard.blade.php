@@ -6,6 +6,10 @@
     @vite('resources/css/rewards.css')
 @endsection
 
+@section('additional_js')
+    @vite('resources/js/admin-dashboard.js')
+@endsection
+
 @section('content')
   <!-- Dashboard Sub-Navigation -->
   <div class="rewards-nav">
@@ -234,74 +238,174 @@
           </div>
 
         @elseif(request()->query('tab') === 'rewards')
-          <!-- Manage Rewards Content -->
-          <div style="padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-              <h2 style="margin: 0;">All Rewards ({{ $rewards->count() }})</h2>
-              <div style="display: flex; gap: 1rem;">
-                <a href="{{ route('rewards.create') }}" class="loginpage-btn" style="display: inline-block;">
-                  <button type="button">
-                    <i class="fas fa-plus"></i> Add Reward
-                  </button>
-                </a>
+          <div class="dashboard-grid">
+            {{-- LEFT COLUMN: Reward Form --}}
+            <div class="login-card">
+              <div class="text section-title">Reward Form</div>
+
+              @if(isset($editReward))
+                <form method="POST" action="{{ route('admin.rewards.update', $editReward) }}" enctype="multipart/form-data" class="form">
+                  @csrf @method('PUT')
+                  @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
+
+                  <div class="login-data">
+                    <label>Reward Name *</label>
+                    <input type="text" name="card_name" value="{{ old('card_name', $editReward->card_name) }}" required>
+                  </div>
+
+                  <div class="login-data">
+                    <label>Points Amount *</label>
+                    <input type="number" name="points_amount" min="0" value="{{ old('points_amount', $editReward->points_amount) }}" required>
+                  </div>
+
+                  <div class="login-data">
+                    <label>Description</label>
+                    <textarea name="card_description" rows="3">{{ old('card_description', $editReward->card_description) }}</textarea>
+                  </div>
+
+                  <div class="login-data">
+                    <label>Reward Image</label>
+                    <input type="file" name="card_image" accept="image/*">
+                    @if($editReward->card_image)
+                      <div style="margin-top: 8px;">
+                        <img src="{{ asset($editReward->card_image) }}" alt="Current image" style="width: 100px; height: 60px; object-fit: cover;">
+                        <p style="font-size: 0.85em; color: #666;">Current image</p>
+                      </div>
+                    @endif
+                  </div>
+
+                  <div class="loginpage-btn" style="margin-top:12px;">
+                    <button type="submit">Save Changes</button>
+                  </div>
+                </form>
+              @else
+                <form method="POST" action="{{ route('admin.rewards.store') }}" enctype="multipart/form-data" class="form">
+                  @csrf
+
+                  <div class="login-data">
+                    <label>Reward Name *</label>
+                    <input type="text" name="card_name" value="{{ old('card_name') }}" required>
+                  </div>
+
+                  <div class="login-data">
+                    <label>Points Amount *</label>
+                    <input type="number" name="points_amount" min="0" value="{{ old('points_amount') }}" required>
+                  </div>
+
+                  <div class="login-data">
+                    <label>Description</label>
+                    <textarea name="card_description" rows="3">{{ old('card_description') }}</textarea>
+                  </div>
+
+                  <div class="login-data">
+                    <label>Reward Image</label>
+                    <input type="file" name="card_image" accept="image/*">
+                    <p style="font-size: 0.85em; color: #666; margin-top: 4px;">Optional: Upload an image for the reward card</p>
+                  </div>
+
+                  <div class="loginpage-btn" style="margin-top:12px;">
+                    <button type="submit">Create Reward</button>
+                  </div>
+                </form>
+              @endif
+            </div>
+
+            {{-- RIGHT COLUMN: Rewards List --}}
+            <div class="login-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div class="text section-title">Active Rewards</div>
                 <button type="button" class="loginpage-btn" id="toggleArchivedBtn" style="background-color: #6c757d;">
-                  <i class="fas fa-archive"></i> See Archived Rewards
+                  <i class="fas fa-archive"></i> Show Archived
                 </button>
               </div>
-            </div>
 
-            <!-- Active Rewards Grid -->
-            <div class="rewards-grid">
-              @forelse($rewards as $reward)
-                <div class="reward-card" data-reward-id="{{ $reward->id }}">
-                  <div class="admin-controls">
-                    <a href="{{ route('rewards.edit', $reward->id) }}" class="admin-btn edit-btn" title="Edit">
-                      <i class="fas fa-edit"></i>
-                    </a>
-                    <button type="button" class="admin-btn archive-btn" data-reward-id="{{ $reward->id }}" title="Archive">
-                      <i class="fas fa-archive"></i>
-                    </button>
-                  </div>
+              @if($activeRewards && $activeRewards->isEmpty())
+                <p style="text-align: center; color: #999;">No active rewards found.</p>
+              @else
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  @foreach($activeRewards ?? [] as $reward)
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                      <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+                        <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" 
+                            alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        <div>
+                          <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1em;">{{ $reward->card_name }}</h4>
+                          <p style="color: #666; font-size: 0.9em; margin: 0.25rem 0;">{{ Str::limit($reward->card_description ?? '', 50) }}</p>
+                          <p style="color: #007bff; font-weight: bold; margin: 0.25rem 0;">{{ $reward->points_amount }} Points</p>
+                        </div>
+                      </div>
 
-                  <div class="reward-image">
-                    <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}"
-                         alt="{{ $reward->card_name }}">
-                  </div>
+                      <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <a href="{{ route('admin.dashboard', array_filter(['tab' => 'rewards', 'q' => request('q'), 'edit_reward' => $reward->id])) }}" 
+                          class="btn-edit btn-compact" title="Edit reward">
+                          <button type="button">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                        </a>
 
-                  <div class="reward-content">
-                    <h3>{{ $reward->card_name }}</h3>
-                    <p class="reward-description">{{ $reward->card_description }}</p>
-                    <p class="reward-points">{{ $reward->points_amount }} Points</p>
-                  </div>
+                        <form action="{{ route('admin.rewards.archive', $reward) }}" method="POST" style="display: inline;">
+                          @csrf @method('PATCH')
+                          <div class="loginpage-btn btn-compact">
+                            <button type="submit" style="background-color: #ffc107;" title="Archive reward"
+                                    onclick="return confirm('Are you sure you want to archive this reward?')">
+                              <i class="fas fa-archive"></i>
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  @endforeach
                 </div>
-              @empty
-                <p style="grid-column: 1 / -1; text-align: center; color: #999;">No rewards yet. Click "Add Reward" to create
-                  one!</p>
-              @endforelse
-            </div>
+              @endif
 
-            <!-- Archived Rewards Section (hidden by default) -->
-            <div id="archivedRewardsSection" style="display: none; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #ddd;">
-              <h2 style="margin-bottom: 1.5rem;">Archived Rewards</h2>
-              <div class="rewards-grid">
-                <p style="grid-column: 1 / -1; text-align: center; color: #999;">No archived rewards yet.</p>
+              <!-- Archived Rewards Section -->
+              <div id="archivedRewardsSection" style="display: none; margin-top: 2rem; padding-top: 1rem; border-top: 2px solid #ddd;">
+                <div class="text section-title">Archived Rewards</div>
+                
+                @if($archivedRewards && $archivedRewards->isEmpty())
+                  <p style="text-align: center; color: #999;">No archived rewards found.</p>
+                @else
+                  <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    @foreach($archivedRewards ?? [] as $reward)
+                      <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; opacity: 0.7;">
+                        <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+                          <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" 
+                              alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                          <div>
+                            <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1em;">{{ $reward->card_name }} <span style="color: #999;">(Archived)</span></h4>
+                            <p style="color: #666; font-size: 0.9em; margin: 0.25rem 0;">{{ Str::limit($reward->card_description ?? '', 50) }}</p>
+                            <p style="color: #007bff; font-weight: bold; margin: 0.25rem 0;">{{ $reward->points_amount }} Points</p>
+                          </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                          <form action="{{ route('admin.rewards.unarchive', $reward) }}" method="POST" style="display: inline;">
+                            @csrf @method('PATCH')
+                            <div class="loginpage-btn btn-compact">
+                              <button type="submit" style="background-color: #28a745;" title="Unarchive reward"
+                                      onclick="return confirm('Are you sure you want to unarchive this reward?')">
+                                <i class="fas fa-undo"></i>
+                              </button>
+                            </div>
+                          </form>
+
+                          <form action="{{ route('admin.rewards.destroy', $reward) }}" method="POST" style="display: inline;">
+                            @csrf @method('DELETE')
+                            <div class="loginpage-btn btn-compact">
+                              <button type="submit" style="background-color: #dc3545;" title="Delete reward"
+                                      onclick="return confirm('Are you sure you want to delete this reward? This cannot be undone.')">
+                                <i class="fas fa-trash"></i>
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    @endforeach
+                  </div>
+                @endif
               </div>
             </div>
           </div>
-
-          <script>
-            // Toggle archived rewards visibility
-            document.getElementById('toggleArchivedBtn')?.addEventListener('click', function () {
-              const section = document.getElementById('archivedRewardsSection');
-              if (section.style.display === 'none') {
-                section.style.display = 'block';
-                this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Archived Rewards';
-              } else {
-                section.style.display = 'none';
-                this.innerHTML = '<i class="fas fa-archive"></i> See Archived Rewards';
-              }
-            });
-          </script>
         @endif
       </div>
     </div>
