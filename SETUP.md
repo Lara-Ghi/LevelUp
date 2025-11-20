@@ -73,11 +73,16 @@ Each workflow relies on multiple listeners—keep every process below running in
    # Terminal 1 - asset dev server
    npm run dev
 
-   # Terminal 2 - Laravel HTTP server
-   php artisan serve
+   # Terminal 2 - Laravel HTTP server without Pico W board
+   php artisan serve # Shows app's hotspot
+
+      # Pico W addition - expose Laravel to the hotspot
+      php artisan serve --host=0.0.0.0 --port=8000
    ```
 
    Visit `http://127.0.0.1:8000` once both are running.
+
+   The Pico W connects over your hotspot, so it must see the Laravel server on your laptop’s wireless interface. The plain `php artisan serve` binds to `127.0.0.1` only, which blocks remote devices; adding `--host=0.0.0.0` listens on every interface while keeping the same port 8000.
 
 5. **wifi2ble simulator (outside Docker)**
 
@@ -187,5 +192,6 @@ When using Docker, prepend commands with `docker compose exec app`.
 3. **Usage**
 
    - Power the Pico W while your laptop serves the Laravel API (either locally or via Docker with port 8000 accessible on the hotspot network)
+   - When running locally, launch Laravel with `php artisan serve --host=0.0.0.0 --port=8000` so the HTTP server is reachable from the Pico over Wi-Fi
    - Ensure your laptop’s firewall allows inbound HTTP on **port 8000 only** over the phone hotspot so the Pico can hit `http://<laptop-ip>:8000/api/pico/display`; no other port range is required
    - The OLED and RGB LED mirror the current sitting/standing phase and pause state logged by the app; the potentiometer controls LED intensity and the pause button maps to the in-app pause toggle
