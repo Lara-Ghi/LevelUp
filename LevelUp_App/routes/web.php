@@ -1,96 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\StatisticsController;
-use App\Http\Controllers\HealthCycleController;
-use App\Http\Controllers\RewardsController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\PicoDisplayController;
-use App\Http\Middleware\IsAdmin;
-use App\Http\Controllers\Admin\AdminDashboardController;
-use App\Http\Controllers\Admin\AdminUserController;
-use App\Http\Controllers\DeskSimulatorController;
 
-// Home Routes
-Route::get('/', function () {
-    return view('home');
-})->name('home');
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here only the route mapping functions from the smaller route files
+| are loaded and executed.
+|
+*/
 
-// Pico W display API endpoints (no auth required - internal hardware access)
-Route::get('/api/pico/display', [PicoDisplayController::class, 'getState'])->name('api.pico.display');
-Route::post('/api/pico/timer-phase', [PicoDisplayController::class, 'updateTimerPhase'])->name('api.pico.timer-phase');
-Route::post('/api/pico/timer-pause', [PicoDisplayController::class, 'toggleTimerPause'])->name('api.pico.timer-pause');
-
-// Authentication Routes
-Route::middleware('guest')->group(function () {
-    // Login
-    Route::get('/login', [LoginController::class, 'show'])->name('login');
-    Route::post('/login', [LoginController::class, 'authenticate'])->name('login.perform');
-});
-
-// Admin Dashboard (for admin only)
-Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])
-    ->prefix('admin')
-    ->name('admin.')
-    ->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminDashboardController::class, 'index'])->name('dashboard');
-
-        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
-        Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
-        Route::patch('/users/{user}/promote', [AdminUserController::class, 'promote'])->name('users.promote');
-        Route::patch('/users/{user}/demote', [AdminUserController::class, 'demote'])->name('users.demote');
-        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
-    });
-
-// Logout (only accessible when authenticated)
-Route::post('/logout', [LoginController::class, 'logout'])
-    ->middleware('auth')
-    ->name('logout');
-
-// Password Reset Routes (placeholders for future implementation)
-Route::get('/forgot-password', function() {
-    return redirect()->route('login');
-})->name('password.request');
-
-// Protected Routes (require authentication)
-Route::middleware('auth')->group(function () {
-    // Profile Routes
-    Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
-    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
-
-    // Statistics Routes
-    Route::get('/statistics', [StatisticsController::class, 'statistics'])->name('statistics');
-    
-    // Rewards Routes
-    Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
-    Route::post('/rewards/toggle-save', [RewardsController::class, 'toggleSave'])->name('rewards.toggleSave');
-    Route::get('/rewards/saved', [RewardsController::class, 'getSavedRewards'])->name('rewards.getSaved');
-    Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
-
-    // Desks simulator Routes
-    Route::prefix('api/simulator')->name('simulator.')->group(function () {
-        Route::get('desks', [DeskSimulatorController::class, 'index'])->name('desks.index');
-        Route::get('desks/{desk}', [DeskSimulatorController::class, 'show'])->name('desks.show');
-        Route::get('desks/{desk}/{category}', [DeskSimulatorController::class, 'showCategory'])->name('desks.category');
-        Route::put('desks/{desk}/state', [DeskSimulatorController::class, 'updateState'])->name('desks.state');
-        Route::post('desks/{desk}/sit', [DeskSimulatorController::class, 'moveToSit'])->name('desks.sit');
-        Route::post('desks/{desk}/stand', [DeskSimulatorController::class, 'moveToStand'])->name('desks.stand');
-    });
-
-    // Admin Rewards Management Routes (admin only)
-    Route::middleware(IsAdmin::class)->prefix('admin/rewards')->name('rewards.')->group(function () {
-        Route::get('create', [RewardsController::class, 'create'])->name('create');
-        Route::post('store', [RewardsController::class, 'store'])->name('store');
-        Route::get('{reward}/edit', [RewardsController::class, 'edit'])->name('edit');
-        Route::put('{reward}', [RewardsController::class, 'update'])->name('update');
-        Route::delete('{reward}', [RewardsController::class, 'destroy'])->name('destroy');
-    });
-});
-
-// Health Cycle API routes (require authentication)
-Route::middleware('auth')->group(function () {
-    Route::post('/api/health-cycle/complete', [HealthCycleController::class, 'completeHealthCycle']);
-    Route::get('/api/health-cycle/points-status', [HealthCycleController::class, 'getPointsStatus']);
-    Route::get('/api/health-cycle/history', [HealthCycleController::class, 'getHistory']);
-});
+(require __DIR__ . '/web/home.php')();
+(require __DIR__ . '/web/pico.php')();
+(require __DIR__ . '/web/auth.php')();
+(require __DIR__ . '/web/app.php')();
+(require __DIR__ . '/web/admin.php')();
