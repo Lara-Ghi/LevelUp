@@ -136,6 +136,17 @@ npm run dev
 php artisan serve
 ```
 
+#### wifi2ble simulator (local run)
+
+If you are running the Python simulator outside Docker, start it on port **8100** in a separate terminal:
+
+```powershell
+cd wifi2ble-box-simulator-main
+python simulator/main.py --port 8100
+```
+
+Keep this window open while developing. The API will be available at `http://127.0.0.1:8100/api/v2/<api_key>/desks`, so ensure your `.env` has `WIFI2BLE_BASE_URL=http://127.0.0.1:8100`.
+
 ### Step 7: Open the App
 
 Visit: **<http://127.0.0.1:8000>**
@@ -192,5 +203,6 @@ php artisan test --testsuite=Feature
 Run browser automation (Laravel Dusk):
 
 ```bash
-php artisan dusk --ansi
+
+
 ```

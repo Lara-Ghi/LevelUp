@@ -44,8 +44,8 @@ docker compose down
 
 # You must keep this command running in a separate POWERSHELL console
 cd c:\YOUR OWN DIRECTORY\LevelUp\wifi2ble-box-simulator-main
-python simulator/main.py --port 8000
+python simulator/main.py --port 8100
 
 # To see the API data in JSON format go to:
-http://127.0.0.1:8000/api/v2/E9Y2LxT4g1hQZ7aD8nR3mWx5P0qK6pV7/desks
+http://127.0.0.1:8100/api/v2/E9Y2LxT4g1hQZ7aD8nR3mWx5P0qK6pV7/desks
 ```

@@ -8,6 +8,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -70,6 +71,13 @@ class DeskSimulatorController extends Controller
             // Convert cm to mm
             $positionMm = $user->sitting_position * 10;
 
+            Log::info('DeskSimulator: moveToSit triggered', [
+                'user_id' => $user->getKey(),
+                'desk_id' => $deskId,
+                'position_mm' => $positionMm,
+                'position_cm' => $user->sitting_position,
+            ]);
+
             return response()->json($this->client->updateDeskState($deskId, ['position_mm' => $positionMm]));
         } catch (Throwable $exception) {
             return $this->errorFromSimulator($exception);
@@ -90,6 +98,13 @@ class DeskSimulatorController extends Controller
 
             // Convert cm to mm
             $positionMm = $user->standing_position * 10;
+
+            Log::info('DeskSimulator: moveToStand triggered', [
+                'user_id' => $user->getKey(),
+                'desk_id' => $deskId,
+                'position_mm' => $positionMm,
+                'position_cm' => $user->standing_position,
+            ]);
 
             return response()->json($this->client->updateDeskState($deskId, ['position_mm' => $positionMm]));
         } 

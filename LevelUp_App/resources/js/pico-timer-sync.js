@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const currentPhase = isSitting ? 'sitting' : 'standing';
                 if (currentPhase !== lastPhase) {
                     updatePicoTimerPhase(currentPhase, timeLeft);
+                    console.log(`🪑 Session state changed to ${currentPhase}`);
                     lastPhase = currentPhase;
                     lastTimeUpdate = Date.now();
                 }
@@ -81,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const now = Date.now();
                 if (now - lastTimeUpdate >= 5000) {
                     updatePicoTimerPhase(currentPhase, timeLeft);
+                    console.log(`⏱️ Sent periodic time update for ${currentPhase} (${timeLeft}s left)`);
                     lastTimeUpdate = now;
                 }
             };

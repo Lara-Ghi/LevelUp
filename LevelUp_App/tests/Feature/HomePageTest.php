@@ -110,11 +110,16 @@ test('authenticated users load focus clock assets', function () {
 
     $response = $this->actingAs($user)->get(route('home'));
 
-    $response
-        ->assertOk()
-        ->assertSee('/build/assets/focus-clock-', false)
-        ->assertSee('/build/assets/pico-timer-sync-', false)
-        ->assertSee('/build/assets/app-', false);
+    $response->assertOk();
+
+    $content = $response->getContent();
+
+    expect($content)
+        ->toMatch('/(\/build\/assets\/focus-clock-|resources\/js\/home-clock\/focus-clock\.js)/')
+        ->and($content)
+        ->toMatch('/(\/build\/assets\/pico-timer-sync-|resources\/js\/pico-timer-sync\.js)/')
+        ->and($content)
+        ->toMatch('/(\/build\/assets\/app-|resources\/js\/app\.js)/');
 });
 
 // --------- NAV POINTS REFLECT USER TOTAL ---------

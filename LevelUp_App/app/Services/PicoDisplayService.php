@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class PicoDisplayService
 {
@@ -64,6 +65,11 @@ class PicoDisplayService
         $currentState = $this->getState();
         $currentState['timer_phase'] = $phase;
         $currentState['time_remaining'] = $timeRemaining;
+
+        Log::info('PicoDisplay: timer phase updated', [
+            'phase' => $phase,
+            'time_remaining' => $timeRemaining,
+        ]);
         
         // Generate warning message if within 30 seconds of end
         $warningMessage = null;
@@ -86,6 +92,10 @@ class PicoDisplayService
     {
         $currentState = $this->getState();
         $currentState['is_paused'] = $paused;
+
+        Log::info('PicoDisplay: timer pause toggled', [
+            'paused' => $paused,
+        ]);
         $this->storeState($currentState);
     }
 
