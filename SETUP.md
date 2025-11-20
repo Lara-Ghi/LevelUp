@@ -137,7 +137,7 @@ Each workflow relies on multiple listeners—keep every process below running in
 - UI suite (Laravel Dusk):
 
   ```powershell
-  php artisan dusk
+  php artisan dusk --ansi
   ```
 
    Prerequisites for UI tests:
