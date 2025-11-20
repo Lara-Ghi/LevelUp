@@ -71,6 +71,35 @@
                         </div>
                     @endforeach
                 </div>
+            @elseif(request()->query('tab') === 'history')
+                  <!-- History Tab Content -->
+                      @if($redeemedRewards->count() > 0)
+                          <table class="history-table">
+                              <thead>
+                                  <tr>
+                                      <th>#</th>
+                                      <th>Reward Name</th>
+                                      <th>Points Spent</th>
+                                      <th>Description</th>
+                                      <th>Redeemed Date</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  @foreach($redeemedRewards as $index => $reward)
+                                      <tr>
+                                          <td>{{ $index + 1 }}</td>
+                                          <td>{{ $reward->pivot->card_name_snapshot }}</td>
+                                          <td>{{ $reward->pivot->points_amount_snapshot }}</td>
+                                          <td>{{ $reward->pivot->card_description_snapshot }}</td>
+                                          <td>{{
+  \Carbon\Carbon::parse($reward->pivot->redeemed_at)->format('M d, Y H:i') }}</td>
+                                      </tr>
+                                  @endforeach
+                              </tbody>
+                          </table>
+                      @else
+                          <p class="no-saved-message">You haven't redeemed any rewards yet. Browse rewards and redeem some!</p>
+                      @endif
             @endif
         </div>
 
