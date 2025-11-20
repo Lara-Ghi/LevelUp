@@ -26,14 +26,15 @@ class UserFactory extends Factory
             'name' => fake()->firstName(),
             'surname' => fake()->lastName(),
             'username' => fake()->unique()->userName(),
+            'date_of_birth' => fake()->date('Y-m-d'),
             'role' => 'user',
             'password' => static::$password ??= Hash::make('password'),
+            'desk_id' => null,
+            'total_points' => fake()->numberBetween(0, 1000),
+            'daily_points' => fake()->numberBetween(0, 100),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
     public function unverified(): static
     {
         return $this->state(fn (array $attributes) => $attributes);
