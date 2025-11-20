@@ -29,7 +29,21 @@ class AdminDashboardController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $rewards = Reward::orderBy('card_name')->get();
-        return view('admin.dashboard', compact('users', 'q', 'editUser', 'rewards'));
+        // Separate rewards into active and archived
+        $activeRewards = Reward::where('archived', false)->orderBy('card_name')->get();
+        $archivedRewards = Reward::where('archived', true)->orderBy('card_name')->get();
+        
+        // Handle edit reward
+        $editRewardId = $request->integer('edit_reward');
+        $editReward = $editRewardId ? Reward::find($editRewardId) : null;
+        
+        return view('admin.dashboard', compact(
+            'users', 
+            'q', 
+            'editUser', 
+            'activeRewards', 
+            'archivedRewards', 
+            'editReward'
+        ));
     }
 }

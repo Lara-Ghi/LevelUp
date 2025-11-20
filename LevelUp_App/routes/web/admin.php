@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminRewardsController; // ADD THIS LINE
 use App\Http\Middleware\IsAdmin;
 
 return function () {
@@ -17,9 +18,8 @@ return function () {
             Route::patch('/users/{user}/promote', [AdminUserController::class, 'promote'])->name('users.promote');
             Route::patch('/users/{user}/demote', [AdminUserController::class, 'demote'])->name('users.demote');
             Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
-        });
-
-    Route::middleware(IsAdmin::class)->prefix('admin')->name('admin.')->group(function () {
+            
+            // Reward Management Routes
             Route::post('/rewards', [AdminRewardsController::class, 'store'])->name('rewards.store');
             Route::put('/rewards/{reward}', [AdminRewardsController::class, 'update'])->name('rewards.update');
             Route::patch('/rewards/{reward}/archive', [AdminRewardsController::class, 'archive'])->name('rewards.archive');

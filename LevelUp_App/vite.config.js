@@ -23,7 +23,8 @@ export default defineConfig({
                 'resources/css/rewards.css',
                 'resources/js/rewards.js',
                 'resources/js/statistics.js',
-                'resources/js/profile.js'
+                'resources/js/profile.js',
+                'resources/js/admin-dashboard.js'
             ],
             refresh: true,
         }),
