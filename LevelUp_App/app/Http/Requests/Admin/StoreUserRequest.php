@@ -22,6 +22,7 @@ class StoreUserRequest extends FormRequest
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
             'sitting_position'  => ['nullable', 'integer', 'between:0,65535'],
             'standing_position' => ['nullable', 'integer', 'between:0,65535'],
+            'desk_id'           => ['nullable', 'exists:desks,desk_id'],
         ];
     }
 
