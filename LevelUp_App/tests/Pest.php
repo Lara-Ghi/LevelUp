@@ -1,8 +1,8 @@
 <?php
 
-uses(Tests\DuskTestCase::class)
-//  ->use(Illuminate\Foundation\Testing\DatabaseMigrations::class)
-    ->in('Browser');
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +18,14 @@ uses(Tests\DuskTestCase::class)
 uses(Tests\TestCase::class)
  // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
      ->in('Feature');
+
+uses(Tests\DuskTestCase::class)
+//  ->use(Illuminate\Foundation\Testing\DatabaseMigrations::class)
+    ->in('Browser');
+
+uses(RefreshDatabase::class)
+    // Apply RefreshDatabase to all Feature tests (or narrow to 'Feature/Admin' if you prefer)
+    ->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
@@ -48,4 +56,13 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+// Global helper for all tests
+function adminForUsers(): User
+{
+    return User::factory()->create([
+        'role'     => 'admin',
+        'password' => Hash::make('password'),
+    ]);
 }
