@@ -31,3 +31,15 @@ class AdminDashboard {
 document.addEventListener('DOMContentLoaded', () => {
     new AdminDashboard();
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+              const selectAllCheckbox = document.getElementById('selectAllDesksCheckbox');
+              const checkboxes = document.querySelectorAll('.desk-checkbox');
+
+              if (selectAllCheckbox && checkboxes.length > 0) {
+                selectAllCheckbox.addEventListener('change', function () {
+                  const checked = selectAllCheckbox.checked;
+                  checkboxes.forEach(cb => cb.checked = checked);
+                });
+              }
+            });

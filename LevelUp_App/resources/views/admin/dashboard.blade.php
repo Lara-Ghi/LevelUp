@@ -12,7 +12,7 @@
 
 @section('content')
   <!-- Dashboard Sub-Navigation -->
-  <div class="rewards-nav">
+  <div class="rewards-nav"> 
     <a href="{{ route('admin.dashboard', ['tab' => 'users']) }}"
       class="rewards-nav-link {{ request()->query('tab', 'users') === 'users' ? 'active' : '' }}">
       <i class="fas fa-users"></i>
@@ -22,6 +22,16 @@
       class="rewards-nav-link {{ request()->query('tab') === 'rewards' ? 'active' : '' }}">
       <i class="fas fa-gift"></i>
       Manage Rewards
+    </a>
+    <a href="{{ route('admin.dashboard', ['tab' => 'desks']) }}"
+      class="rewards-nav-link {{ request()->query('tab') === 'desks' ? 'active' : '' }}">
+      <i class="fas fa-table"></i>
+      Manage Desks
+    </a>
+    <a href="{{ route('admin.dashboard', ['tab' => 'desk-cleaning']) }}"
+      class="rewards-nav-link {{ request()->query('tab') === 'desk-cleaning' ? 'active' : '' }}">
+      <i class="fas fa-broom"></i>
+      Desk Cleaning
     </a>
   </div>
 
@@ -40,6 +50,7 @@
           </div>
         @endif
 
+        {{-- USERS TAB --}}
         @if(request()->query('tab', 'users') === 'users')
           <div class="dashboard-grid">
             {{-- LEFT COLUMN: User Form --}}
@@ -151,6 +162,7 @@
             <div class="login-card">
               <form method="GET" action="{{ route('admin.dashboard') }}" class="form big-search"
                 style="margin-bottom: 2rem;">
+                <input type="hidden" name="tab" value="users">
                 <div class="login-data">
                   <input type="text" name="q" placeholder="Search by name/surname/username..." value="{{ request('q') }}">
                 </div>
@@ -188,7 +200,7 @@
                       </div>
 
                       <div class="user-actions">
-                        <a href="{{ route('admin.dashboard', array_filter(['q' => request('q'), 'edit' => $user->user_id])) }}"
+                        <a href="{{ route('admin.dashboard', array_filter(['tab' => 'users', 'q' => request('q'), 'edit' => $user->user_id])) }}"
                           class="btn-edit btn-compact" title="Edit user">
                           <button type="button">
                             <i class="fa-solid fa-pen"></i>
@@ -231,12 +243,13 @@
                 </div>
 
                 <div class="mt-3 text-center">
-                  {{ $users->links() }}
+                  {{ $users->appends(['tab' => 'users', 'q' => request('q')])->links() }}
                 </div>
               @endif
             </div>
           </div>
 
+        {{-- REWARDS TAB --}}
         @elseif(request()->query('tab') === 'rewards')
           <div class="dashboard-grid">
             {{-- LEFT COLUMN: Reward Form --}}
@@ -406,6 +419,268 @@
               </div>
             </div>
           </div>
+
+        {{-- DESKS TAB --}}
+        @elseif(request()->query('tab') === 'desks')
+          @php
+            $desks            = $desks ?? collect();
+            $availableDeskIds = $availableDeskIds ?? [];
+            $editDesk         = $editDesk ?? null;
+            $deskSearch       = request('q', '');
+            $deskStates       = $deskStates ?? []; // [serial => ['config_name', 'position_cm', 'status']]
+          @endphp
+
+          <div class="dashboard-grid">
+            {{-- LEFT COLUMN: Desk Form --}}
+            <div class="login-card">
+              <div class="text section-title">
+                {{ isset($editDesk) ? 'Edit Desk' : 'Register Simulator Desks' }}
+              </div>
+
+              @if(isset($editDesk))
+                {{-- EDIT SINGLE DESK --}}
+                <form method="POST" action="{{ route('admin.desks.update', $editDesk) }}" class="form">
+                  @csrf
+                  @method('PATCH')
+                  <input type="hidden" name="tab" value="desks">
+                  @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
+
+                  <div class="login-data">
+                    <label>Desk Name (optional)</label>
+                    <input type="text" name="name" value="{{ old('name', $editDesk->name) }}">
+                  </div>
+
+                  <div class="login-data">
+                    <label>Simulator Desk ID</label>
+                    <input type="text" value="{{ $editDesk->serial_number }}" disabled>
+                    <p class="desk-help-text">
+                      This ID comes from the simulator API and cannot be changed here.
+                    </p>
+                  </div>
+
+                  <div class="loginpage-btn" style="margin-top:12px;">
+                    <button type="submit">Save Changes</button>
+                  </div>
+                </form>
+              @else
+                {{-- CREATE: SIMULATOR DESKS --}}
+                <form method="POST" action="{{ route('admin.desks.store') }}" class="form">
+                  @csrf
+                  <input type="hidden" name="tab" value="desks">
+
+                  <div class="login-data">
+                    <label>Desk Name (optional)</label>
+                    <input type="text" name="name" value="{{ old('name') }}">
+                    <p class="desk-help-text">
+                      This name will be applied to all selected desks (you can rename them individually afterwards).
+                    </p>
+                  </div>
+
+                  @if(empty($availableDeskIds))
+                    <p class="desk-help-text" style="margin-top:1rem;">
+                      All simulator desks are already managed, or the simulator could not be reached.
+                    </p>
+                  @else
+                    <div class="login-data">
+                      <label>Simulator Desks to Register *</label>
+
+                      <div class="desk-register-wrapper">
+                        <select name="desk_ids[]" multiple required size="8"
+                                class="desk-multi-select desk-register-select">
+                            @foreach($availableDeskIds as $id)
+                                <option value="{{ $id }}"
+                                    @if(collect(old('desk_ids', []))->contains($id)) selected @endif>
+                                    {{ $id }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                      <p class="desk-help-text">
+                        Hold Ctrl (Windows) or Cmd (macOS) to select multiple desks.
+                      </p>
+                    </div>
+
+                    <div class="desk-register-actions">
+                        <div class="loginpage-btn">
+                            <button type="submit">Register Desk(s)</button>
+                        </div>
+                    </div>
+                  @endif
+                </form>
+              @endif
+            </div>
+
+            {{-- RIGHT COLUMN: Desk List --}}
+            <div class="login-card">
+              <div class="text section-title">Managed Desks</div>
+
+              {{-- Search --}}
+              <form method="GET" action="{{ route('admin.dashboard') }}" class="form big-search desk-search-form">
+                <input type="hidden" name="tab" value="desks">
+                <div class="login-data">
+                  <input type="text" name="q" placeholder="Search by name or simulator ID..."
+                        value="{{ $deskSearch }}">
+                </div>
+                <div class="loginpage-btn">
+                  <button type="submit">Search</button>
+                </div>
+              </form>
+
+              {{-- Managed desks (compact cards) --}}
+              @if($desks->isEmpty())
+                <p class="text-center">No desks registered yet.</p>
+              @else
+                <div class="userlist-header desklist-header">
+                  <div>Name</div>
+                  <div>Simulator ID</div>
+                </div>
+
+                <div class="user-cards desk-cards">
+                  @foreach($desks as $desk)
+                    @php
+                      $state = $deskStates[$desk->serial_number] ?? null;
+                    @endphp
+
+                    <div class="user-card desk-card">
+                      <div class="user-info-row desk-info-row">
+                        <div class="desk-name">
+                          {{ $desk->name ?? ($state['config_name'] ?? '-') }}
+                        </div>
+                        <div class="desk-serial">
+                          {{ $desk->serial_number }}
+                        </div>
+                      </div>
+
+                      <div class="desk-meta-row">
+                        <span class="desk-position">
+                          @if($state && !is_null($state['position_cm']))
+                            {{ $state['position_cm'] }} cm
+                          @else
+                            -
+                          @endif
+                        </span>
+                        <span class="desk-status">
+                          {{ $state['status'] ?? 'Unknown' }}
+                        </span>
+                      </div>
+
+                      <div class="user-actions desk-actions">
+                        <a href="{{ route('admin.dashboard', array_filter([
+                                'tab'       => 'desks',
+                                'q'         => request('q'),
+                                'edit_desk' => $desk->id,
+                            ])) }}"
+                          class="btn-edit btn-compact" title="Edit desk">
+                          <button type="button">
+                            <i class="fa-solid fa-pen"></i>
+                          </button>
+                        </a>
+
+                        <form action="{{ route('admin.desks.destroy', $desk) }}" method="POST"
+                              onsubmit="return confirm('Are you sure you want to remove this desk from management?');">
+                          @csrf
+                          @method('DELETE')
+                          <div class="loginpage-btn btn-compact">
+                            <button type="submit" class="btn-delete" title="Delete desk">
+                              <i class="fa-solid fa-trash"></i>
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  @endforeach
+                </div>
+              @endif
+            </div>
+          </div>
+
+        {{-- DESK CLEANING TAB --}}
+        @elseif(request()->query('tab') === 'desk-cleaning')
+          @php
+            $allManagedDesks = $allManagedDesks ?? collect();
+            $deskStates      = $deskStates ?? [];
+          @endphp
+
+          @if($allManagedDesks->isEmpty())
+            <div class="login-card" style="width:100%; max-width: 720px; margin: 0 auto;">
+              <div class="text section-title">Set Height for Multiple Desks</div>
+              <p class="text-center" style="margin-top: 1rem;">
+                There are no managed desks yet. Go to <strong>Manage Desks</strong> tab to register desks first.
+              </p>
+            </div>
+          @else
+            <form method="POST" action="{{ route('admin.desks.bulk-height') }}" class="desk-cleaning-form">
+              @csrf
+              <input type="hidden" name="tab" value="desk-cleaning">
+              @if(request('q'))<input type="hidden" name="q" value="{{ request('q') }}">@endif
+
+              <div class="dashboard-grid">
+                {{-- LEFT COLUMN: Desk list with checkboxes --}}
+                <div class="login-card">
+                  <div class="text section-title">Select Desks</div>
+
+                  <div class="login-data">
+                    <div class="desk-select-all-row">
+                      <label class="desk-select-all-label">
+                        <input type="checkbox" id="selectAllDesksCheckbox">
+                        <span>Select all desks</span>
+                      </label>
+                    </div>
+
+                    <div class="desk-list-scroll">
+                      @foreach($allManagedDesks as $desk)
+                        @php
+                          $state     = $deskStates[$desk->serial_number] ?? null;
+                          $labelName = $desk->name
+                            ?? ($state['config_name'] ?? ('Desk #'.$desk->id));
+                          $posText   = $state && !is_null($state['position_cm'])
+                            ? $state['position_cm'].' cm'
+                            : 'unknown height';
+                        @endphp
+
+                        <label class="desk-checkbox-row">
+                          <input type="checkbox"
+                                name="desk_ids[]"
+                                value="{{ $desk->id }}"
+                                class="desk-checkbox">
+                          <div class="desk-checkbox-info">
+                            <div class="desk-checkbox-name">{{ $labelName }}</div>
+                            <div class="desk-checkbox-meta">
+                              <span class="desk-checkbox-serial">{{ $desk->serial_number }}</span>
+                              <span class="desk-checkbox-pos">• {{ $posText }}</span>
+                            </div>
+                          </div>
+                        </label>
+                      @endforeach
+                    </div>
+
+                    <p class="desk-help-text" style="margin-top:0.5rem;">
+                      Tick one or more desks, or use <strong>Select all desks</strong> above.
+                    </p>
+                  </div>
+                </div>
+
+                {{-- RIGHT COLUMN: Height input + button --}}
+                <div class="login-card">
+                  <div class="text section-title">Target Height</div>
+
+                  <div class="login-data">
+                    <label>Target height (cm) *</label>
+                    <input type="number" name="height_cm" min="50" max="130" required>
+                    <p class="desk-help-text">
+                      This will send a command to the simulator to move all selected desks
+                      to the specified height.
+                    </p>
+                  </div>
+
+                  <div class="loginpage-btn desk-bulk-submit">
+                    <button type="submit">Move Selected Desks</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          @endif
         @endif
       </div>
     </div>

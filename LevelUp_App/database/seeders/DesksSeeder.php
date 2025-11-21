@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Desk;
-use Illuminate\Support\Facades\DB;
+use App\Services\Wifi2BleSimulatorClient;
+use Illuminate\Support\Facades\Log;
 
 class DesksSeeder extends Seeder
 {
@@ -15,24 +15,27 @@ class DesksSeeder extends Seeder
     public function run(): void
     {
         // Only seed if table is empty (prevents duplicates)
-        if (DB::table('desks')->count() == 0) {
-            // Simulator desk IDs (all 7 desks)
-            $simulatorDeskIds = [
-                'cd:fb:1a:53:fb:e6',
-                'ee:62:5b:b8:73:1d',
-                '70:9e:d5:e7:8c:98',
-                '00:ec:eb:50:c2:c8',
-                'f1:50:c2:b8:bf:22',
-                'ce:38:a6:30:af:1d',
-                '91:17:a4:3b:f4:4d',
-            ];
+        if (Desk::query()->exists()) {
+            return;
+        }
 
-            foreach ($simulatorDeskIds as $deskId) {
-                Desk::create([
-                    'desk_model' => 'Linak Desk',
-                    'serial_number' => $deskId,
-                ]);
-            }
+        try {
+            /** @var Wifi2BleSimulatorClient $client */
+            $client = app(Wifi2BleSimulatorClient::class);
+
+            // GET /api/v2/<api_key>/desks returns an array of IDs
+            $simulatorDeskIds = $client->listDesks();
+        } catch (\Throwable $e) {
+            Log::error('Failed to load desks from simulator', ['exception' => $e]);
+            $simulatorDeskIds = [];
+        }
+
+        foreach ($simulatorDeskIds as $deskId) {
+            Desk::create([
+                'name'               => null,
+                'desk_model'         => 'Linak Desk',
+                'serial_number'      => $deskId,
+            ]);
         }
     }
 }

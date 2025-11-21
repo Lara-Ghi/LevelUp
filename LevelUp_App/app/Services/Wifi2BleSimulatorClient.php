@@ -71,6 +71,32 @@ class Wifi2BleSimulatorClient
         return $response->throw()->json();
     }
 
+    /**
+     * Create a new desk in the simulator.
+     *
+     * @param array<string,mixed> $payload
+     * @return array<string,mixed> The created desk payload from API
+     * @throws RequestException|ConnectionException
+     */
+    public function createDesk(array $payload): array
+    {
+        $response = $this->client()->post($this->endpoint(), $payload);
+
+        return $response->throw()->json();
+    }
+
+    /**
+     * Delete a desk from the simulator.
+     *
+     * @throws RequestException|ConnectionException
+     */
+    public function deleteDesk(string $deskId): void
+    {
+        $response = $this->client()->delete($this->endpoint("/{$deskId}"));
+
+        $response->throw();
+    }
+
     private function endpoint(string $path = ''): string
     {
         return "/api/v2/{$this->apiKey}/desks" . $path;

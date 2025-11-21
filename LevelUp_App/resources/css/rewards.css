@@ -668,3 +668,191 @@
           padding: 8px 10px;
       }
   }
+  /* Shared helper text */
+.desk-help-text {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 4px;
+}
+
+/* Multi-selects on desk tab */
+.desk-multi-select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+}
+
+/* Search form spacing */
+.desk-search-form {
+  margin-bottom: 1.5rem;
+}
+
+/* Compact desk cards */
+.desk-cards .desk-card {
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 0.4rem;
+}
+
+.desk-info-row {
+  font-size: 0.9rem;
+}
+
+.desk-serial {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.desk-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.2rem;
+}
+
+.desk-status {
+  font-style: italic;
+}
+
+/* Keep actions small */
+.desk-actions .loginpage-btn.btn-compact button {  
+  padding: 7px 12px;
+}
+
+/* === DESK CLEANING TAB === */
+
+/* Scrollable list container */
+.desk-list-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: #fdfdfd;
+}
+
+/* Select-all row */
+.desk-select-all-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.4rem;
+}
+
+.desk-select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* Small native-style checkboxes */
+.desk-select-all-label input[type="checkbox"],
+.desk-checkbox-row input[type="checkbox"] {
+    width: 13px;
+    height: 28px;
+    cursor: pointer;
+
+    /* Small square */
+    border: 2px solid #444;
+    border-radius: 3px;
+    background: #fff;
+    display: inline-block;
+    position: relative;
+ }
+/* Checked state (purple background + white tick) */
+.desk-select-all-label input[type="checkbox"]:checked,
+.desk-checkbox-row input[type="checkbox"]:checked {
+    background: #5d3dfd;
+    border-color: #5d3dfd;
+}
+.desk-select-all-label span {
+    position: relative;
+    top: -7px;
+}
+
+.desk-select-all-label input[type="checkbox"]:checked::after,
+.desk-checkbox-row input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 4px;
+    height: 7px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Desk rows in the list */
+.desk-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.desk-checkbox-row:last-child {
+  border-bottom: none;
+}
+
+.desk-checkbox-row input.desk-checkbox {
+  margin-top: 2px;
+}
+
+.desk-checkbox-info {
+  flex: 1;
+}
+
+.desk-checkbox-name {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.desk-checkbox-meta {
+  font-size: 0.8rem;
+  color: #666;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.desk-checkbox-serial {
+  font-family: monospace;
+}
+
+.desk-checkbox-pos {
+  opacity: 0.9;
+}
+
+/* Right column: confirm button spacing */
+.desk-bulk-submit {
+  margin-top: 1rem;
+}
+
+.desk-register-wrapper {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #fdfdfd;
+  padding: 0.25rem 0.4rem;   
+  margin-bottom: 0.5rem;
+}
+
+.desk-register-select {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 0;
+  background: transparent;
+  font-size: 0.85rem;
+}
+
+.desk-register-actions {
+    margin-top: 6rem; 
+}

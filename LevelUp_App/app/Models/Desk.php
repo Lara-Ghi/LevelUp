@@ -9,6 +9,7 @@ class Desk extends Model
     protected $table = 'desks';
 
     protected $fillable = [
+        'name',
         'desk_model',
         'serial_number',
     ];
@@ -19,5 +20,3 @@ class Desk extends Model
         return $this->hasOne(User::class, 'desk_id', 'id');
     }
 }
-
-
