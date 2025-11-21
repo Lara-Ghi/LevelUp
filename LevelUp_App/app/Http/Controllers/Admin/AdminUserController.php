@@ -20,6 +20,7 @@ class AdminUserController extends Controller
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
             'sitting_position'  => ['nullable', 'integer', 'between:0,65535'],
             'standing_position' => ['nullable', 'integer', 'between:0,65535'],
+            'desk_id'           => ['nullable', 'integer', 'exists:desks,id'],
         ]);
 
         $data['role'] = 'user';
@@ -39,6 +40,7 @@ class AdminUserController extends Controller
             'date_of_birth'     => ['nullable', 'date'],
             'sitting_position'  => ['nullable', 'integer', 'between:0,65535'],
             'standing_position' => ['nullable', 'integer', 'between:0,65535'],
+            'desk_id'           => ['nullable', 'integer', 'exists:desks,id'],
         ]);
 
         // Role change (from user to admin) is handled only via promote()

@@ -856,3 +856,25 @@
 .desk-register-actions {
     margin-top: 6rem; 
 }
+
+/* Nicer select input, matching your form styling */
+.select-styled {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #f7f7f7;
+    color: #333;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+}
+
+.select-styled:focus {
+    outline: none;
+    border-color: #6c4cf7; /* purple like your theme */
+    box-shadow: 0 0 0 2px rgba(108, 76, 247, 0.25);
+    background: white;
+}

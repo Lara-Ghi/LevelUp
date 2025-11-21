@@ -52,6 +52,9 @@
 
         {{-- USERS TAB --}}
         @if(request()->query('tab', 'users') === 'users')
+        @php
+          $deskOptions = $deskOptions ?? collect();
+        @endphp
           <div class="dashboard-grid">
             {{-- LEFT COLUMN: User Form --}}
             <div class="login-card">
@@ -95,6 +98,24 @@
                       <label>Standing Position</label>
                       <input type="number" name="standing_position" min="0" max="65535"
                         value="{{ old('standing_position', $editUser->standing_position) }}">
+                    </div>
+                  </div>
+                  {{-- Desk assignment --}}
+                  <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
+                    <div class="login-data" style="flex:1 1 260px;">
+                      <label>Assigned Desk</label>
+                        <select name="desk_id" class="select-styled">
+                        <option value="">-- No desk assigned --</option>
+                        @foreach($deskOptions as $desk)
+                          <option value="{{ $desk->id }}"
+                            @selected(old('desk_id', $editUser->desk_id) == $desk->id)>
+                            {{ $desk->name ?? ('Desk #'.$desk->id) }} ({{ $desk->serial_number }})
+                          </option>
+                        @endforeach
+                      </select>
+                      <p class="desk-help-text">
+                        Choose a desk for this user or leave empty to remove the assignment.
+                      </p>
                     </div>
                   </div>
 
@@ -148,6 +169,25 @@
                       <label>Standing Position</label>
                       <input type="number" name="standing_position" min="0" max="65535"
                         value="{{ old('standing_position') }}">
+                    </div>
+                  </div>
+
+                  {{-- Desk assignment (for new user) --}}
+                  <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
+                    <div class="login-data" style="flex:1 1 260px;">
+                      <label>Assigned Desk</label>
+                        <select name="desk_id" class="select-styled">
+                        <option value="">-- No desk assigned --</option>
+                        @foreach($deskOptions as $desk)
+                          <option value="{{ $desk->id }}"
+                            @selected(old('desk_id') == $desk->id)>
+                            {{ $desk->name ?? ('Desk #'.$desk->id) }} ({{ $desk->serial_number }})
+                          </option>
+                        @endforeach
+                      </select>
+                      <p class="desk-help-text">
+                        Optional: assign a desk to this user.
+                      </p>
                     </div>
                   </div>
 

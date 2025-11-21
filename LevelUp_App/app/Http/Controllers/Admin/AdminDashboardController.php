@@ -39,6 +39,13 @@ class AdminDashboardController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $deskOptions = collect();
+        if ($request->query('tab', 'users') === 'users') {
+            $deskOptions = Desk::orderBy('name')
+                ->orderBy('serial_number')
+                ->get();
+        }
+        
         // ----- REWARDS TAB -----
         $activeRewards   = Reward::where('archived', false)->orderBy('card_name')->get();
         $archivedRewards = Reward::where('archived', true)->orderBy('card_name')->get();
@@ -123,6 +130,7 @@ class AdminDashboardController extends Controller
             'editDesk',
             'deskStates',
             'allManagedDesks'
+            'deskOptions'
         ));
     }
 }
