@@ -129,7 +129,7 @@ class AdminDashboardController extends Controller
             'availableDeskIds',
             'editDesk',
             'deskStates',
-            'allManagedDesks'
+            'allManagedDesks',
             'deskOptions'
         ));
     }
