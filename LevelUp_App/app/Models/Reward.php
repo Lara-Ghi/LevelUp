@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Reward extends Model
 {
+
+    use HasFactory;
+
     protected $table = 'rewards_catalog';
 
     protected $fillable = [
@@ -14,6 +18,11 @@ class Reward extends Model
         'card_description',
         'card_image',
         'archived',
+    ];
+
+    protected $casts = [
+        'archived' => 'boolean',
+        'points_amount' => 'integer',
     ];
 
     // Users who favorited this reward (inverse of User->favoriteRewards)
