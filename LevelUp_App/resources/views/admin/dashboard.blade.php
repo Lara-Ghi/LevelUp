@@ -311,7 +311,7 @@
                     <input type="number" name="points_amount" min="0" value="{{ old('points_amount', $editReward->points_amount) }}" required>
                   </div>
 
-                  <div class="login-data">
+                  <div class="login-data" style="margin-bottom: 20px;">
                     <label>Description</label>
                     <textarea name="card_description" rows="3">{{ old('card_description', $editReward->card_description) }}</textarea>
                   </div>
@@ -319,13 +319,13 @@
                   <div class="login-data">
                     <label>Reward Image</label>
                     <input type="file" name="card_image" accept="image/*">
+                  </div>
                     @if($editReward->card_image)
-                      <div style="margin-top: 8px;">
+                      <div style="margin-top: 8px; margin-bottom: 16px;">
                         <img src="{{ asset($editReward->card_image) }}" alt="Current image" style="width: 100px; height: 60px; object-fit: cover;">
                         <p style="font-size: 0.85em; color: #666;">Current image</p>
                       </div>
                     @endif
-                  </div>
 
                   <div class="loginpage-btn" style="margin-top:12px;">
                     <button type="submit">Save Changes</button>
@@ -367,7 +367,8 @@
             <div class="login-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div class="text section-title">Active Rewards</div>
-                <button type="button" class="loginpage-btn" id="toggleArchivedBtn" style="background-color: #6c757d;">
+                <button type="button" class="loginpage-btn" id="toggleArchivedBtn"
+                  style="background: linear-gradient(43deg, var(--color-primary) 0%, #171231 46%, #1c2046 100%); color: white;">
                   <i class="fas fa-archive"></i> Show Archived
                 </button>
               </div>
@@ -379,8 +380,23 @@
                   @foreach($activeRewards ?? [] as $reward)
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
                       <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
-                        <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" 
-                            alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        @php
+                            $filename = $reward->card_image;
+                            $storagePath = $filename ? public_path('storage/images/giftcards/' . basename($filename)) : null;
+                            $publicPath = $filename ? public_path('images/giftcards/' . basename($filename)) : null;
+                        @endphp
+
+                        @if($filename && file_exists($storagePath))
+                            <img src="{{ asset('storage/images/giftcards/' . basename($filename)) }}"
+                                alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        @elseif($filename && file_exists($publicPath))
+                            <img src="{{ asset('images/giftcards/' . basename($filename)) }}"
+                                alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        @else
+                            <img src="{{ asset('images/giftcards/placeholder.png') }}"
+                                alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                        @endif
+                        
                         <div>
                           <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1em;">{{ $reward->card_name }}</h4>
                           <p style="color: #666; font-size: 0.9em; margin: 0.25rem 0;">{{ Str::limit($reward->card_description ?? '', 50) }}</p>
@@ -389,12 +405,15 @@
                       </div>
 
                       <div style="display: flex; gap: 0.5rem; align-items: center;">
-                        <a href="{{ route('admin.dashboard', array_filter(['tab' => 'rewards', 'q' => request('q'), 'edit_reward' => $reward->id])) }}" 
-                          class="btn-edit btn-compact" title="Edit reward">
-                          <button type="button">
-                            <i class="fas fa-edit"></i>
-                          </button>
-                        </a>
+                        <form style="display: inline;">
+                          <div class="loginpage-btn btn-compact">
+                            <button type="button" 
+                                    onclick="window.location='{{ route('admin.dashboard', array_filter(['tab' => 'rewards', 'q' => request('q'), 'edit_reward' => $reward->id])) }}'" 
+                                    title="Edit reward">
+                              <i class="fas fa-edit"></i>
+                            </button>
+                          </div>
+                        </form>
 
                         <form action="{{ route('admin.rewards.archive', $reward) }}" method="POST" style="display: inline;">
                           @csrf @method('PATCH')
@@ -422,8 +441,23 @@
                     @foreach($archivedRewards ?? [] as $reward)
                       <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; opacity: 0.7;">
                         <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
-                          <img src="{{ $reward->card_image ? asset($reward->card_image) : asset('images/giftcards/placeholder.png') }}" 
-                              alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                          @php
+                              $filename = $reward->card_image;
+                              $storagePath = $filename ? public_path('storage/images/giftcards/' . basename($filename)) : null;
+                              $publicPath = $filename ? public_path('images/giftcards/' . basename($filename)) : null;
+                          @endphp
+
+                          @if($filename && file_exists($storagePath))
+                              <img src="{{ asset('storage/images/giftcards/' . basename($filename)) }}"
+                                  alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                          @elseif($filename && file_exists($publicPath))
+                              <img src="{{ asset('images/giftcards/' . basename($filename)) }}"
+                                  alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                          @else
+                              <img src="{{ asset('images/giftcards/placeholder.png') }}"
+                                  alt="{{ $reward->card_name }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                          @endif
+
                           <div>
                             <h4 style="margin: 0 0 0.25rem 0; font-size: 1.1em;">{{ $reward->card_name }} <span style="color: #999;">(Archived)</span></h4>
                             <p style="color: #666; font-size: 0.9em; margin: 0.25rem 0;">{{ Str::limit($reward->card_description ?? '', 50) }}</p>

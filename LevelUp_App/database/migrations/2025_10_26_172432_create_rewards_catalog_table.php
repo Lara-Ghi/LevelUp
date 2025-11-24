@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('card_name');
             $table->integer('points_amount');
-            $table->text('card_description');
-            $table->string('card_image');
+            $table->text('card_description')->nullable();
+            $table->string('card_image')->nullable();
             $table->boolean('archived')->default(false);
             
             $table->timestamps();

@@ -14,15 +14,21 @@ class AdminRewardsController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'card_name'         => ['required', 'string', 'max:255'],
+            'card_name'         => ['required', 'string', 'max:255', Rule::unique('rewards_catalog')],
             'points_amount'     => ['required', 'integer', 'min:0'],
             'card_description'  => ['nullable', 'string', 'max:1000'],
             'card_image'        => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+        ], [
+            'card_name.required' => 'The reward name is required.',
+            'points_amount.required' => 'The points amount is required.',
         ]);
 
         if ($request->hasFile('card_image')) {
             $imagePath = $request->file('card_image')->store('images/giftcards', 'public');
             $data['card_image'] = $imagePath;
+        }
+        else {
+            $data['card_image'] = 'images/giftcards/placeholder.png'; 
         }
 
         $data['archived'] = false;
@@ -35,7 +41,7 @@ class AdminRewardsController extends Controller
     public function update(Request $request, Reward $reward): RedirectResponse
     {
         $data = $request->validate([
-            'card_name'         => ['required', 'string', 'max:255'],
+            'card_name'         => ['required', 'string', 'max:255', Rule::unique('rewards_catalog')->ignore($reward->id)],
             'points_amount'     => ['required', 'integer', 'min:0'],
             'card_description'  => ['nullable', 'string', 'max:1000'],
             'card_image'        => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
@@ -82,6 +88,14 @@ class AdminRewardsController extends Controller
 
     public function destroy(Reward $reward): RedirectResponse
     {
+        // Check if reward is archived
+        if (!$reward->archived) {
+            return back()->with('error', 'Only archived rewards can be deleted.');
+        }
+
+        // Delete favorite relationships
+        $reward->favoritedBy()->detach();
+
         // Delete image file if exists
         if ($reward->card_image) {
             Storage::disk('public')->delete($reward->card_image);
