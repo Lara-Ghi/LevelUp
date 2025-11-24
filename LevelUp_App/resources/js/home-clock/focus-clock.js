@@ -113,6 +113,85 @@ class FocusClockCore {
             onSessionChange: () => {},
             onCycleComplete: () => {}
         };
+        this.storage = null;
+    }
+
+    // Set storage instance
+    setStorage(storage) {
+        this.storage = storage;
+    }
+
+    // Save current state
+    saveState() {
+        if (this.storage) {
+            this.storage.saveTimerState({
+                isSittingSession: this.isSittingSession,
+                sessionDuration: this.sessionDuration,
+                currentTime: this.currentTime,
+                isRunning: this.isRunning,
+                sessionStartTime: this.sessionStartTime,
+                lastUpdated: Date.now()
+            });
+        }
+    }
+
+    // Restore state
+    restoreState() {
+        if (!this.storage) return false;
+
+        const state = this.storage.getTimerState();
+        if (!state) return false;
+
+        // Check if state is too old (e.g., > 24 hours)
+        if (Date.now() - state.lastUpdated > 24 * 60 * 60 * 1000) {
+            this.storage.clearTimerState();
+            return false;
+        }
+
+        this.isSittingSession = state.isSittingSession;
+        this.sessionDuration = state.sessionDuration;
+        
+        // Restore sitting/standing times from session duration to ensure consistency
+        // This is an approximation but keeps the logic sound
+        if (this.isSittingSession) {
+            this.sittingTime = Math.round(this.sessionDuration / 60);
+        } else {
+            this.standingTime = Math.round(this.sessionDuration / 60);
+        }
+
+        if (state.isRunning && state.sessionStartTime) {
+            // Calculate elapsed time since it was running
+            const elapsed = Math.floor((Date.now() - state.sessionStartTime) / 1000);
+            this.currentTime = Math.max(0, this.sessionDuration - elapsed);
+            
+            // Reconstruct sessionStartTime so start() knows we are resuming
+            this.sessionStartTime = Date.now() - ((this.sessionDuration - this.currentTime) * 1000);
+            
+            if (this.currentTime > 0) {
+                // Resume automatically
+                this.start();
+            } else {
+                // Session finished while away
+                this.currentTime = 0;
+                this.completeSession();
+            }
+        } else {
+            // Was paused or stopped
+            this.currentTime = state.currentTime;
+            this.isRunning = false;
+            
+            // Reconstruct sessionStartTime so start() knows we are resuming if user clicks start
+            // Only if we are not at the very beginning (fresh start)
+            if (this.currentTime < this.sessionDuration) {
+                 this.sessionStartTime = Date.now() - ((this.sessionDuration - this.currentTime) * 1000);
+            } else {
+                 this.sessionStartTime = null; // Treat as fresh start
+            }
+            
+            this.callbacks.onTick(this.currentTime, this.isSittingSession);
+        }
+        
+        return true;
     }
 
     // Timer state persistence removed - cycles now come from database
@@ -169,6 +248,7 @@ class FocusClockCore {
         // Update the start time and status immediately
         this.sessionStartTime = Date.now() - ((this.sessionDuration - this.currentTime) * 1000);
         this.isRunning = true;
+        this.saveState();
         
         // Calculate when this session should complete
         const timeUntilCompletion = this.currentTime * 1000; // Convert to milliseconds
@@ -284,6 +364,7 @@ class FocusClockCore {
             const elapsed = Math.floor((Date.now() - this.sessionStartTime) / 1000);
             this.currentTime = Math.max(0, this.sessionDuration - elapsed);
         }
+        this.saveState();
     }
 
     // Stop and reset the timer
@@ -293,6 +374,9 @@ class FocusClockCore {
         this.sessionDuration = this.currentTime;
         this.sessionStartTime = null; // This is key for distinguishing between fresh start and resume
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
+        if (this.storage) {
+            this.storage.clearTimerState();
+        }
     }
 
     // Timer tick function - always calculates based on session start time
@@ -309,6 +393,9 @@ class FocusClockCore {
             this.currentTime = newTime;
             // Update display
             this.callbacks.onTick(this.currentTime, this.isSittingSession);
+            
+            // Save state periodically (every second)
+            this.saveState();
 
             // Check if we need to switch sessions
             if (this.currentTime <= 0) {
@@ -402,6 +489,7 @@ class FocusClockCore {
         this.sessionStartTime = Date.now();
         this.isRunning = true;
         this.warningShown = false; // Reset warning for new session
+        this.saveState();
         
         // Set failsafe timeout for new session
         if (this.completionTimeoutId) {
@@ -943,6 +1031,8 @@ class FocusClockCore {
 
         if (wasRunning) {
             this.start();
+        } else {
+            this.saveState();
         }
 
         this.callbacks.onTick(this.currentTime, this.isSittingSession);
@@ -1164,6 +1254,31 @@ class FocusClockStorage {
             lastUsed: settings.lastUsed
         };
     }
+
+    // Save timer state to localStorage
+    saveTimerState(state) {
+        try {
+            localStorage.setItem('levelup_timer_state', JSON.stringify(state));
+        } catch (error) {
+            console.error('Error saving timer state:', error);
+        }
+    }
+
+    // Get timer state from localStorage
+    getTimerState() {
+        try {
+            const stored = localStorage.getItem('levelup_timer_state');
+            return stored ? JSON.parse(stored) : null;
+        } catch (error) {
+            console.warn('Error loading timer state:', error);
+            return null;
+        }
+    }
+
+    // Clear timer state
+    clearTimerState() {
+        localStorage.removeItem('levelup_timer_state');
+    }
 }
 
 // Export for use in other files
@@ -1176,8 +1291,12 @@ window.FocusClockStorage = FocusClockStorage;
 class FocusClockUI {
     constructor() {
         console.log('🏗️ FocusClockUI constructor called');
+        // Assign to window immediately so core can access it during initialization
+        window.focusClockUI = this;
+        
         this.core = new FocusClockCore();
         this.storage = new FocusClockStorage();
+        this.core.setStorage(this.storage);
         this.elements = {};
         this.isInitialized = false;
         this.lastCheckedDate = this.getCurrentDateString(); // Track current date for daily reset
@@ -1196,14 +1315,26 @@ class FocusClockUI {
 
     // Initialize the Focus Clock UI
     init() {
-        this.createHTML();
-        this.bindElements();
-        this.setupEventListeners();
+        // Check if we are on the home page (where the clock UI should be rendered)
+        // We check for the existence of the welcome container which is unique to home.blade.php
+        // OR if the path is exactly '/' or '/home'
+        this.isHomePage = document.querySelector('.welcome-container') !== null || 
+                          window.location.pathname === '/' || 
+                          window.location.pathname === '/home';
+        
+        console.log(`Initializing FocusClockUI. isHomePage: ${this.isHomePage}`);
+
+        if (this.isHomePage) {
+            this.createHTML();
+            this.bindElements();
+            this.setupEventListeners();
+        }
+        
         this.setupCoreCallbacks();
         this.core.preloadAlarmAudio();
 
         // Check if first time user
-        if (this.storage.isFirstTimeUser()) {
+        if (this.storage.isFirstTimeUser() && this.isHomePage) {
             this.showSetupModal();
         } else {
             this.loadSavedSettings();
@@ -1603,9 +1734,9 @@ class FocusClockUI {
     // Setup event listeners
     setupEventListeners() {
         // Control buttons
-        this.elements.startBtn.addEventListener('click', () => this.startTimer());
-        this.elements.pauseBtn.addEventListener('click', () => this.pauseTimer());
-        this.elements.stopBtn.addEventListener('click', () => this.stopTimer());
+        if (this.elements.startBtn) this.elements.startBtn.addEventListener('click', () => this.startTimer());
+        if (this.elements.pauseBtn) this.elements.pauseBtn.addEventListener('click', () => this.pauseTimer());
+        if (this.elements.stopBtn) this.elements.stopBtn.addEventListener('click', () => this.stopTimer());
         if (this.elements.settingsBtn) {
             this.elements.settingsBtn.addEventListener('click', () => {
                 console.log('⚙️ Settings button clicked!');
@@ -1635,14 +1766,17 @@ class FocusClockUI {
             });
             console.log('✅ Settings button event listener attached');
         } else {
-            console.error('❌ Settings button element not found during event listener setup');
+            // Only log error if we are on home page where button should exist
+            if (this.isHomePage) {
+                console.error('❌ Settings button element not found during event listener setup');
+            }
         }
 
         // Setup modal
-        this.elements.saveSettingsBtn.addEventListener('click', () => this.saveInitialSettings());
-        this.elements.sittingTimeInput.addEventListener('input', () => this.validateSetupInputs());
-        this.elements.standingTimeInput.addEventListener('input', () => this.validateSetupInputs());
-        this.elements.enableAudioAlerts.addEventListener('change', () => this.toggleAudioControls());
+        if (this.elements.saveSettingsBtn) this.elements.saveSettingsBtn.addEventListener('click', () => this.saveInitialSettings());
+        if (this.elements.sittingTimeInput) this.elements.sittingTimeInput.addEventListener('input', () => this.validateSetupInputs());
+        if (this.elements.standingTimeInput) this.elements.standingTimeInput.addEventListener('input', () => this.validateSetupInputs());
+        if (this.elements.enableAudioAlerts) this.elements.enableAudioAlerts.addEventListener('change', () => this.toggleAudioControls());
 
         if (this.elements.setupAlarmPresetSelect) {
             this.elements.setupAlarmPresetSelect.addEventListener('change', () => {
@@ -1655,13 +1789,13 @@ class FocusClockUI {
         }
 
         // Settings modal
-        this.elements.closeSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
-        this.elements.cancelSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
-        this.elements.updateSettingsBtn.addEventListener('click', () => this.updateSettings());
-        this.elements.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
-        this.elements.editSittingTimeInput.addEventListener('input', () => this.validateEditInputs());
-        this.elements.editStandingTimeInput.addEventListener('input', () => this.validateEditInputs());
-        this.elements.editEnableAudioAlerts.addEventListener('change', () => this.toggleEditAudioControls());
+        if (this.elements.closeSettingsBtn) this.elements.closeSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
+        if (this.elements.cancelSettingsBtn) this.elements.cancelSettingsBtn.addEventListener('click', () => this.hideSettingsModal());
+        if (this.elements.updateSettingsBtn) this.elements.updateSettingsBtn.addEventListener('click', () => this.updateSettings());
+        if (this.elements.resetSettingsBtn) this.elements.resetSettingsBtn.addEventListener('click', () => this.resetSettings());
+        if (this.elements.editSittingTimeInput) this.elements.editSittingTimeInput.addEventListener('input', () => this.validateEditInputs());
+        if (this.elements.editStandingTimeInput) this.elements.editStandingTimeInput.addEventListener('input', () => this.validateEditInputs());
+        if (this.elements.editEnableAudioAlerts) this.elements.editEnableAudioAlerts.addEventListener('change', () => this.toggleEditAudioControls());
 
         if (this.elements.editAlarmPresetSelect) {
             this.elements.editAlarmPresetSelect.addEventListener('change', () => {
@@ -1676,17 +1810,21 @@ class FocusClockUI {
 
 
         // Modal backdrop clicks
-        this.elements.setupModal.addEventListener('click', (e) => {
-            if (e.target === this.elements.setupModal) {
-                // Don't allow closing setup modal by clicking backdrop on first time
-            }
-        });
+        if (this.elements.setupModal) {
+            this.elements.setupModal.addEventListener('click', (e) => {
+                if (e.target === this.elements.setupModal) {
+                    // Don't allow closing setup modal by clicking backdrop on first time
+                }
+            });
+        }
 
-        this.elements.settingsModal.addEventListener('click', (e) => {
-            if (e.target === this.elements.settingsModal) {
-                this.hideSettingsModal();
-            }
-        });
+        if (this.elements.settingsModal) {
+            this.elements.settingsModal.addEventListener('click', (e) => {
+                if (e.target === this.elements.settingsModal) {
+                    this.hideSettingsModal();
+                }
+            });
+        }
 
         // Ensure initial preset summaries are accurate
         this.updatePresetDetails('setup');
@@ -1713,8 +1851,15 @@ class FocusClockUI {
         
         this.core.initialize(settings.sittingTime, settings.standingTime);
         
+        // Try to restore active timer state
+        const restored = this.core.restoreState();
+        if (restored) {
+            console.log('🔄 Restored active timer state');
+            this.updateButtonStates(this.core.isRunning);
+        }
+        
         this.updateStatsDisplay();
-        this.updateDisplay(settings.sittingTime * 60, true);
+        this.updateDisplay(this.core.currentTime, this.core.isSittingSession);
 
         // Load user's points and today's cycles from backend
         this.loadPointsStatus();
@@ -2248,15 +2393,20 @@ class FocusClockUI {
     // Update button states
     updateButtonStates(isRunning) {
         const hasPausedTime = !isRunning && this.core.currentTime < this.core.sessionDuration;
-        this.elements.startBtn.disabled = isRunning;
-        this.elements.pauseBtn.disabled = !isRunning;
-        this.elements.stopBtn.disabled = !isRunning && !hasPausedTime; // Enable reset when paused
+        if (this.elements.startBtn) this.elements.startBtn.disabled = isRunning;
+        if (this.elements.pauseBtn) this.elements.pauseBtn.disabled = !isRunning;
+        if (this.elements.stopBtn) this.elements.stopBtn.disabled = !isRunning && !hasPausedTime; // Enable reset when paused
     }
 
     // Update main display
     updateDisplay(timeLeft, isSitting) {
         console.log(`Display update - Time: ${FocusClockCore.formatTime(timeLeft)}, Session: ${isSitting ? 'Sitting' : 'Standing'}`);
         
+        // Only update UI elements if they exist (i.e., we are on the home page)
+        if (!this.elements.timeDisplay) {
+            return;
+        }
+
         // Update time display
         this.elements.timeDisplay.textContent = FocusClockCore.formatTime(timeLeft);
 
@@ -2293,7 +2443,9 @@ class FocusClockUI {
 
         // Update container class for styling
         const container = document.querySelector('.clock-container');
-        container.className = `clock-container ${isSitting ? 'sitting-session' : 'standing-session'}`;
+        if (container) {
+            container.className = `clock-container ${isSitting ? 'sitting-session' : 'standing-session'}`;
+        }
     }
 
     // Update side images
@@ -2319,6 +2471,8 @@ class FocusClockUI {
 
     // Update progress ring
     updateProgressRing(timeLeft, isSitting) {
+        if (!this.elements.progressRing) return;
+
         const totalTime = isSitting ? this.core.sittingTime * 60 : this.core.standingTime * 60;
         const progress = ((totalTime - timeLeft) / totalTime) * 100;
         const circumference = 2 * Math.PI * 170; // radius = 170
@@ -2797,8 +2951,12 @@ class FocusClockUI {
     updateStatsDisplay() {
         const settings = this.storage.getSettings();
 
-        this.elements.sittingTimeInfo.textContent = `${settings.sittingTime} min`;
-        this.elements.standingTimeInfo.textContent = `${settings.standingTime} min`;
+        if (this.elements.sittingTimeInfo) {
+            this.elements.sittingTimeInfo.textContent = `${settings.sittingTime} min`;
+        }
+        if (this.elements.standingTimeInfo) {
+            this.elements.standingTimeInfo.textContent = `${settings.standingTime} min`;
+        }
         // Today's cycles are now updated via loadPointsStatus() from database
     }
 
@@ -3057,39 +3215,37 @@ class FocusClockUI {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Only initialize if we're on the home page and elements exist
-    if (document.querySelector('main.content')) {
-        // Initialize the Focus Clock UI
-        window.focusClockUI = new FocusClockUI();
+    // Initialize the Focus Clock UI globally
+    // It will handle whether to render the full UI or just run in background
+    window.focusClockUI = new FocusClockUI();
 
-        // Handle page visibility changes - ensure timer accuracy when tab becomes active
-        document.addEventListener('visibilitychange', function() {
-            if (!window.focusClockUI || !window.focusClockUI.core) return;
+    // Handle page visibility changes - ensure timer accuracy when tab becomes active
+    document.addEventListener('visibilitychange', function() {
+        if (!window.focusClockUI || !window.focusClockUI.core) return;
 
-            if (!document.hidden && window.focusClockUI.core.isRunning) {
-                // Tab became visible and timer is running
-                console.log('🔄 Tab became visible - checking for missed session completions and alarms');
-                
-                // Check if alarm should have fired while tab was hidden
-                const timeLeft = window.focusClockUI.core.currentTime;
-                const warningTime = 30; // 30 seconds warning
-                
-                // If we're at or past the 30-second mark and alarm hasn't shown yet, trigger it
-                if (timeLeft <= warningTime && !window.focusClockUI.core.warningShown) {
-                    console.log('⚠️ Alarm was delayed while tab was hidden - playing now!');
-                    window.focusClockUI.core.warningShown = true;
-                    const sessionType = window.focusClockUI.core.isSittingSession ? 'standUp' : 'backToWork';
-                    window.focusClockUI.core.playAlarmAndShowPopup(sessionType);
-                }
-                
-                // Force an immediate update to catch up
-                window.focusClockUI.core.tick();
-                
-                // Also check if we missed a session completion while in background
-                window.focusClockUI.core.checkForMissedCompletion();
+        if (!document.hidden && window.focusClockUI.core.isRunning) {
+            // Tab became visible and timer is running
+            console.log('🔄 Tab became visible - checking for missed session completions and alarms');
+            
+            // Check if alarm should have fired while tab was hidden
+            const timeLeft = window.focusClockUI.core.currentTime;
+            const warningTime = 30; // 30 seconds warning
+            
+            // If we're at or past the 30-second mark and alarm hasn't shown yet, trigger it
+            if (timeLeft <= warningTime && !window.focusClockUI.core.warningShown) {
+                console.log('⚠️ Alarm was delayed while tab was hidden - playing now!');
+                window.focusClockUI.core.warningShown = true;
+                const sessionType = window.focusClockUI.core.isSittingSession ? 'standUp' : 'backToWork';
+                window.focusClockUI.core.playAlarmAndShowPopup(sessionType);
             }
-        });
-    }
+            
+            // Force an immediate update to catch up
+            window.focusClockUI.core.tick();
+            
+            // Also check if we missed a session completion while in background
+            window.focusClockUI.core.checkForMissedCompletion();
+        }
+    });
 });
 
 // Export for use in other files

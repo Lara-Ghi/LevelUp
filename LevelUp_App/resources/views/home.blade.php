@@ -25,25 +25,3 @@
         </div>
     </main>
 @endsection
-
-@auth
-    @php
-        $deskSerial = optional(auth()->user()->desk)->serial_number;
-        $deskControlEnabled = $deskSerial && auth()->user()->sitting_position && auth()->user()->standing_position;
-    @endphp
-
-    <!-- Focus Clock JavaScript - Only for authenticated users -->
-    @section('scripts')
-        <script>
-            window.LevelUp = window.LevelUp || {};
-            window.LevelUp.deskControl = {
-                enabled: {{ $deskControlEnabled ? 'true' : 'false' }},
-                deskSerial: @json($deskSerial),
-                sitUrl: @json($deskControlEnabled ? route('simulator.desks.sit', ['desk' => $deskSerial]) : null),
-                standUrl: @json($deskControlEnabled ? route('simulator.desks.stand', ['desk' => $deskSerial]) : null),
-            };
-        </script>
-        @vite('resources/js/home-clock/focus-clock.js')
-        @vite('resources/js/pico-timer-sync.js')
-    @endsection
-@endauth
