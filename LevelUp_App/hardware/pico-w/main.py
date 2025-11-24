@@ -52,6 +52,7 @@ is_paused = False  # Track pause state
 last_button_time = 0  # For button debouncing
 last_button_state = 1  # Track previous button state (1 = not pressed)
 warning_animation_frame = 0  # Track animation frame for warning screens
+resume_message_expiry = 0  # Timestamp when "RESUMED!" message should expire
 
 # === Block Font Glyphs ===
 # Minimal block font for bold OLED headings (5x7 base grid)
@@ -609,10 +610,10 @@ def update_led_brightness():
 # === Pause Controls ===
 def check_pause_button():
     """Check if pause button is pressed and toggle pause state (edge-triggered)"""
-    global is_paused, last_button_time, last_button_state
+    global is_paused, last_button_time, last_button_state, resume_message_expiry
     
     if not pause_button or not pause_led:
-        return
+        return False
     
     # Read button (active low - pressed = 0)
     button_state = pause_button.value()
@@ -630,13 +631,21 @@ def check_pause_button():
             # Update pause LED
             pause_led.value(1 if is_paused else 0)
             
+            # Set resume message timer if resuming
+            if not is_paused:
+                resume_message_expiry = time.time() + 2
+            
             # Send pause/resume command to backend
             toggle_timer_pause(is_paused)
             
             log(f"Button pressed - Timer {'PAUSED' if is_paused else 'RESUMED'}")
+            
+            last_button_state = button_state
+            return True
     
     # Update last button state
     last_button_state = button_state
+    return False
 
 
 # === Backend Commands ===
@@ -672,7 +681,7 @@ def toggle_timer_pause(pause):
 # === Main Display Logic ===
 def display_message(data):
     """Display message on OLED screen"""
-    global last_displayed_message, in_warning_mode, warning_animation_frame
+    global last_displayed_message, in_warning_mode, warning_animation_frame, is_paused, resume_message_expiry
     
     if not oled:
         log("OLED not initialized")
@@ -684,6 +693,21 @@ def display_message(data):
     timer_phase = data.get('timer_phase')
     time_remaining = data.get('time_remaining')
     warning_message = data.get('warning_message')
+    
+    # Sync local pause state with server state if not recently toggled locally
+    server_paused = data.get('is_paused', False)
+    # Only update local state from server if we haven't toggled it locally recently (debounce)
+    if time.time() - last_button_time > 2.0:
+        if server_paused != is_paused:
+            # State changed remotely
+            # If we are resuming (server=False, local=True), trigger the resumed message
+            if is_paused and not server_paused:
+                resume_message_expiry = time.time() + 2
+                
+            is_paused = server_paused
+            if pause_led:
+                pause_led.value(1 if is_paused else 0)
+            log(f"Synced pause state from server: {is_paused}")
     
     # Update RGB LED based on timer phase and time remaining
     update_rgb_led(timer_phase, time_remaining)
@@ -706,10 +730,13 @@ def display_message(data):
         display_text = data.get('message', DEFAULT_MESSAGE)
     
     # Don't update if message hasn't changed
-    if display_text == last_displayed_message and not display_text.lower().startswith('get ready'):
+    # Include pause state and resume timer in the signature to detect changes
+    current_signature = f"{display_text}|{is_paused}|{time.time() < resume_message_expiry}"
+    
+    if current_signature == last_displayed_message and not display_text.lower().startswith('get ready'):
         return
     
-    log(f"Displaying: {display_text}")
+    log(f"Displaying: {display_text} (Paused: {is_paused})")
     is_warning_display = display_text.lower().startswith('get ready')
     if not is_warning_display:
         warning_animation_frame = 0
@@ -761,7 +788,13 @@ def display_message(data):
             if name_text:
                 points_value = data.get('points')
                 points_line = None
-                if points_value is not None:
+                
+                # Determine secondary line content (Points, Paused, or Resumed)
+                if is_paused:
+                    points_line = "PAUSED"
+                elif time.time() < resume_message_expiry:
+                    points_line = "RESUMED!"
+                elif points_value is not None:
                     if isinstance(points_value, float) and points_value.is_integer():
                         points_display = str(int(points_value))
                     else:
@@ -891,7 +924,7 @@ def display_message(data):
         # Update display
         oled.show()
         
-        last_displayed_message = display_text
+        last_displayed_message = current_signature
         log("Display updated successfully")
         
     except Exception as e:
@@ -992,10 +1025,15 @@ def main():
     max_retries = 3
     last_data_fetch = 0
     
+    # Initialize data with fallback
+    data = get_display_data()
+    
     while True:
         try:
             # Check pause button
-            check_pause_button()
+            if check_pause_button():
+                # Force immediate update on button press
+                display_message(data)
             
             # Update LED brightness from potentiometer (fast, non-blocking)
             update_led_brightness()
@@ -1010,6 +1048,11 @@ def main():
                 
                 # Reset retry counter on success
                 retry_count = 0
+            else:
+                # Check if we need to clear the "RESUMED!" message
+                if resume_message_expiry > 0 and current_time > resume_message_expiry:
+                    resume_message_expiry = 0
+                    display_message(data)
             
             # Small delay to avoid CPU overload but keep brightness responsive
             time.sleep(0.1)

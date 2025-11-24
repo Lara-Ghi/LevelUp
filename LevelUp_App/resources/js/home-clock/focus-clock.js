@@ -1835,7 +1835,7 @@ class FocusClockUI {
         this.core.setCallbacks({
             onTick: (timeLeft, isSitting) => this.updateDisplay(timeLeft, isSitting),
             onSessionChange: (isSitting) => this.handleSessionChange(isSitting),
-            onCycleComplete: (cycleCount) => this.handleCycleComplete(cycleCount)
+            onCycleComplete: () => this.handleCycleComplete()
         });
     }
 
@@ -2135,6 +2135,14 @@ class FocusClockUI {
                                 </div>
                             </div>
                         </div>
+
+                        <div class="danger-zone" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Reset Zone</h4>
+                            <button class="btn-danger" id="resetSettingsBtn">
+                                <i class="fas fa-trash"></i>
+                                Reset All Settings & History
+                            </button>
+                        </div>
                     </div>
 
                     <div class="modal-footer" style="display: flex; gap: 0.5rem; padding-top: 1rem;">
@@ -2150,7 +2158,7 @@ class FocusClockUI {
                 </div>
             </div>
         `;
-        
+
         // Add the modal to the document body
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         console.log('✅ Settings modal created and added to DOM');
@@ -2375,13 +2383,18 @@ class FocusClockUI {
         this.core.start();
         this.syncDeskPosition(this.core.isSittingSession);
         
-
+        // Notify server about resume
+        this.sendPauseState(false);
         
         this.updateButtonStates(true);
     }
 
     pauseTimer() {
         this.core.pause();
+        
+        // Notify server about pause
+        this.sendPauseState(true);
+        
         this.updateButtonStates(false);
     }
 
@@ -3211,6 +3224,27 @@ class FocusClockUI {
 
     // Show error if alarm audio fails to load
 
+    async sendPauseState(isPaused) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const response = await fetch('/api/pico/timer-pause', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ paused: isPaused })
+            });
+            
+            if (!response.ok) {
+                console.error('Failed to update pause state on server');
+            } else {
+                console.log(`✅ Timer ${isPaused ? 'paused' : 'resumed'} on server`);
+            }
+        } catch (error) {
+            console.error('Error updating pause state:', error);
+        }
+    }
 }
 
 // Initialize when DOM is ready

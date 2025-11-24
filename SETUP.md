@@ -28,7 +28,7 @@ Each workflow relies on multiple listeners—keep every process below running in
 
 ## Prerequisites
 
-- PHP 8.2+ with Composer (ensure `extension=gd` is enabled in `php.ini`)
+- PHP 8.2+ with Composer (ensure `extension=gd` is enabled in `php.ini` for image manipulation and tests)
 - Node.js 18+ and npm
 - MySQL/MariaDB (XAMPP works fine) or Docker Desktop if you prefer containers
 - Python 3.10+ (only if you plan to run the wifi2ble simulator locally)
