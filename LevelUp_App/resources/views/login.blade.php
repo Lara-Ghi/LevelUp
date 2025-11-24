@@ -59,4 +59,10 @@
         </div>
     </div>
 </div>
+
+{{-- Clear timer state on login page load to ensure fresh start after logout --}}
+<script>
+    // Clear timer state when arriving at login page (e.g., after logout)
+    localStorage.removeItem('levelup_timer_state');
+</script>
 @endsection

@@ -78,12 +78,18 @@
                         Profile
                     </a>
 
-                    <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                    <form action="{{ route('logout') }}" method="POST" style="display:inline;" id="logout-form">
                         @csrf
                         <button type="submit" class="login-btn" style="border:none;">
                             <i class="fa-solid fa-right-from-bracket"></i> Logout
                         </button>
                     </form>
+                    <script>
+                        // Clear timer state before form submission for reliable reset
+                        document.getElementById('logout-form').addEventListener('submit', function() {
+                            localStorage.removeItem('levelup_timer_state');
+                        });
+                    </script>
                 @endauth
 
                 {{-- Show only when not logged in --}}
