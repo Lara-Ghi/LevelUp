@@ -8,6 +8,7 @@
 
 @section('additional_js')
     @vite('resources/js/admin-dashboard.js')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 @endsection
 
 @section('content')
@@ -22,6 +23,11 @@
       class="rewards-nav-link {{ request()->query('tab') === 'users' ? 'active' : '' }}">
       <i class="fas fa-users"></i>
       Manage Users
+    </a>
+    <a href="{{ route('admin.dashboard', ['tab' => 'averages']) }}"
+      class="rewards-nav-link {{ request()->query('tab') === 'averages' ? 'active' : '' }}">
+      <i class="fas fa-chart-bar"></i>
+      Users Statistics
     </a>
     <a href="{{ route('admin.dashboard', ['tab' => 'desk-cleaning']) }}"
       class="rewards-nav-link {{ request()->query('tab') === 'desk-cleaning' ? 'active' : '' }}">
@@ -530,6 +536,41 @@
               @endif
             </div>
           </div>
+
+        {{-- AVERAGES TAB --}}
+          @elseif(request()->query('tab') === 'averages')
+          <main class="statistics-content" style="padding-top: 0;">
+            <header class="statistics-container" style="text-align: center;">
+              <h1 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: #7f4af1; font-size: 2.5rem; margin-bottom: 2rem;">
+                Average User Statistics
+              </h1>
+              <div style="display: flex; gap: 3rem; justify-content: center; margin-bottom: 2.5rem; font-size: 1.15rem;">
+                <div>
+                  <strong style="color: #8D9EFF;">Total Users:</strong>
+                  <div style="margin-top: 0.5rem;">{{ $totalUsers }}</div>
+                </div>
+                <div>
+                  <strong style="color: #B9E0FF;">Average Sitting Minutes:</strong>
+                  <div style="margin-top: 0.5rem;">{{ number_format($avgSitting, 2) }}</div>
+                </div>
+                <div>
+                  <strong style="color: #8D9EFF;">Average Standing Minutes:</strong>
+                  <div style="margin-top: 0.5rem;">{{ number_format($avgStanding, 2) }}</div>
+                </div>
+              </div>
+            </header>
+
+            <section class="stats-grid-container" style="display: flex; justify-content: center;">
+              <article class="barchart" aria-labelledby="avgBarTitle" style="width: 100%; max-width: 500px; margin: 0 auto;">
+                <h2 id="avgBarTitle" class="visually-hidden">Average Sitting and Standing</h2>
+                <script>
+                  window.avgSitting = {{ $avgSitting }};
+                  window.avgStanding = {{ $avgStanding }};
+                </script>
+                <canvas id="averageStatsChart" role="img" aria-label="Bar chart" style="background: #fff; border-radius: 16px; box-shadow: 0 2px 16px #e0e0e0; padding: 1rem;"></canvas>
+              </article>
+            </section>
+          </main>
 
         {{-- DESK CLEANING TAB --}}
         @elseif(request()->query('tab') === 'desk-cleaning')
