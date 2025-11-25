@@ -20,7 +20,7 @@ class AdminUserController extends Controller
         $minHeight = 60;
         $maxHeight = 130;
 
-        if ($request->has('desk_id')) {
+        if ($request->filled('desk_id')) {
             try {
                 // We need to find the serial number for this desk ID
                 $desk = \App\Models\Desk::find($request->desk_id);
@@ -46,7 +46,7 @@ class AdminUserController extends Controller
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
             'sitting_position'  => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
             'standing_position' => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
-            'desk_id'           => ['required', 'integer', 'exists:desks,id'],
+            'desk_id'           => ['nullable', 'integer', 'exists:desks,id'],
         ]);
 
         $data['role'] = 'user';
@@ -61,7 +61,7 @@ class AdminUserController extends Controller
     {
         $minHeight = 60;
         $maxHeight = 130;
-        $deskId = $request->input('desk_id', $user->desk_id);
+        $deskId = $request->has('desk_id') ? $request->input('desk_id') : $user->desk_id;
 
         if ($deskId) {
             try {
@@ -87,7 +87,7 @@ class AdminUserController extends Controller
             'date_of_birth'     => ['nullable', 'date'],
             'sitting_position'  => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
             'standing_position' => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
-            'desk_id'           => ['required', 'integer', 'exists:desks,id'],
+            'desk_id'           => ['nullable', 'integer', 'exists:desks,id'],
         ]);
 
         // Role change (from user to admin) is handled only via promote()

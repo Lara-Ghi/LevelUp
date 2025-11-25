@@ -9,12 +9,12 @@ test('admin users can access admin-only routes', function () {
 
     // Test admin routes
     $adminRoutes = [
-        'admin.dashboard',
+        'admin.dashboard' => ['tab' => 'desks'],
     ];
 
-    foreach ($adminRoutes as $route) {
+    foreach ($adminRoutes as $route => $params) {
         // Act: Access admin route as admin
-        $response = $this->get(route($route));
+        $response = $this->get(route($route, $params));
 
         // Assert: Should load successfully
         $response->assertOk();
@@ -30,7 +30,7 @@ test('normal users cannot access admin-only routes', function () {
     $this->actingAs($user);
 
     // Act: Try to access admin dashboard
-    $response = $this->get(route('admin.dashboard'));
+    $response = $this->get(route('admin.dashboard', ['tab' => 'desks']));
 
     // Assert: Should be redirected to home with error message
     $response->assertRedirect(route('home'));
@@ -42,7 +42,7 @@ test('normal users cannot access admin-only routes', function () {
 
 test('guests cannot access admin routes and get redirected to login first', function () {
     // Act: Try to access admin route as guest
-    $response = $this->get(route('admin.dashboard'));
+    $response = $this->get(route('admin.dashboard', ['tab' => 'desks']));
 
     // Assert: Should be redirected to login (auth middleware comes before IsAdmin)
     $response->assertRedirect(route('login'));

@@ -539,38 +539,84 @@
 
         {{-- AVERAGES TAB --}}
           @elseif(request()->query('tab') === 'averages')
-          <main class="statistics-content" style="padding-top: 0;">
-            <header class="statistics-container" style="text-align: center;">
-              <h1 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: #7f4af1; font-size: 2.5rem; margin-bottom: 2rem;">
-                Average User Statistics
-              </h1>
-              <div style="display: flex; gap: 3rem; justify-content: center; margin-bottom: 2.5rem; font-size: 1.15rem;">
+          @php
+            $normalizedSitting = 20;
+            $normalizedStanding = $avgSitting > 0 ? ($avgStanding / $avgSitting) * 20 : 0;
+            $goalStanding = 10;
+            $sessionTotal = max($avgSitting + $avgStanding, 0);
+            $standingShare = $sessionTotal > 0 ? ($avgStanding / $sessionTotal) * 100 : 0;
+            $sittingShare = max(0, 100 - $standingShare);
+            $trendDelta = $normalizedStanding - $goalStanding;
+            $trendPrefix = $trendDelta >= 0 ? '+' : '';
+
+            if ($avgSitting == 0 && $avgStanding == 0) {
+                $status = 'No Data';
+                $statusColor = '#6c757d';
+                $message = "Collect more sessions to unlock insights.";
+            } elseif ($avgSitting == 0) {
+                $status = 'Standing Only';
+                $statusColor = '#28a745';
+                $message = "Teams are fully upright right now.";
+                $normalizedStanding = 20;
+            } elseif ($normalizedStanding < 5) {
+                $status = 'Sedentary';
+                $statusColor = '#dc3545';
+                $message = "Encourage micro-stands or breaks.";
+            } elseif ($normalizedStanding > 15) {
+              $status = 'Highly Active';
+              $statusColor = '#28a745';
+              $message = "Users are exceeding the goal.";
+            } else {
+                $status = 'Balanced';
+                $statusColor = '#17a2b8';
+                $message = "Close to the 20:10 LevelUp target.";
+            }
+          @endphp
+
+          <div class="analytics-stack">
+            <div class="login-card analytics-chart-card analytics-chart-card--featured">
+              <div class="analytics-chart-header">
                 <div>
-                  <strong style="color: #8D9EFF;">Total Users:</strong>
-                  <div style="margin-top: 0.5rem;">{{ $totalUsers }}</div>
+                  <p class="analytics-eyebrow">Live dataset</p>
+                  <h3>Average minutes per posture</h3>
                 </div>
-                <div>
-                  <strong style="color: #B9E0FF;">Average Sitting Minutes:</strong>
-                  <div style="margin-top: 0.5rem;">{{ number_format($avgSitting, 2) }}</div>
-                </div>
-                <div>
-                  <strong style="color: #8D9EFF;">Average Standing Minutes:</strong>
-                  <div style="margin-top: 0.5rem;">{{ number_format($avgStanding, 2) }}</div>
+                <div class="analytics-chart-meta">
+                  <span class="analytics-pill muted">Goal 20 : 10</span>
+                  <span class="analytics-pill" style="background: {{ $statusColor }};">{{ $status }}</span>
                 </div>
               </div>
-            </header>
-
-            <section class="stats-grid-container" style="display: flex; justify-content: center;">
-              <article class="barchart" aria-labelledby="avgBarTitle" style="width: 100%; max-width: 500px; margin: 0 auto;">
+              <article class="barchart" aria-labelledby="avgBarTitle">
                 <h2 id="avgBarTitle" class="visually-hidden">Average Sitting and Standing</h2>
                 <script>
-                  window.avgSitting = {{ $avgSitting }};
-                  window.avgStanding = {{ $avgStanding }};
+                window.avgSitting = {{ $avgSitting }};
+                window.avgStanding = {{ $avgStanding }};
                 </script>
-                <canvas id="averageStatsChart" role="img" aria-label="Bar chart" style="background: #fff; border-radius: 16px; box-shadow: 0 2px 16px #e0e0e0; padding: 1rem;"></canvas>
+                <canvas id="averageStatsChart"></canvas>
               </article>
-            </section>
-          </main>
+                <div class="analytics-inline-summary">
+                  <div>
+                    <span>Status</span>
+                    <strong style="color: {{ $statusColor }};">{{ $status }}</strong>
+                    <small>Live reading</small>
+                  </div>
+                  <div>
+                    <span>Current ratio</span>
+                    <strong>20 : {{ number_format($normalizedStanding, 1) }}</strong>
+                    <small>{{ $trendPrefix }}{{ number_format($trendDelta, 1) }} vs goal</small>
+                  </div>
+                  <div>
+                    <span>Standing share</span>
+                    <strong>{{ number_format($standingShare, 0) }}%</strong>
+                    <small>{{ number_format($sittingShare, 0) }}% seated</small>
+                  </div>
+                  <div>
+                    <span>Users tracked</span>
+                    <strong>{{ $totalUsers }}</strong>
+                    <small>live desks</small>
+                  </div>
+                </div>
+            </div>
+          </div>
 
         {{-- DESK CLEANING TAB --}}
         @elseif(request()->query('tab') === 'desk-cleaning')

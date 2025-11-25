@@ -159,3 +159,55 @@ test('home page includes csrf token meta tag for simulator calls', function () {
         ->assertSee('<meta name="csrf-token"', false)
         ->assertSee('content="', false);
 });
+
+// --------- CONTENT REGRESSIONS ---------
+test('guest view shows admin contact callout', function () {
+    $response = $this->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertSeeText('Need an account?')
+        ->assertSee('fas fa-user-lock', false)
+        ->assertSeeText('Please contact your administrator');
+});
+
+test('github pill link remains visible on homepage', function () {
+    $response = $this->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertSee('href="https://github.com/Lara-Ghi/LevelUp"', false)
+        ->assertSeeText('Made by the wonderful Group 3 - LevelUp');
+});
+
+test('authenticated users see their name highlighted in welcome banner', function () {
+    $user = makeHomeUser(['name' => 'Sky']);
+
+    $response = $this->actingAs($user)->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertSeeText('Welcome back,')
+        ->assertSeeText($user->name);
+});
+
+test('authenticated layout exposes body authenticated data flag', function () {
+    $user = makeHomeUser();
+
+    $response = $this->actingAs($user)->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertSee('data-authenticated="1"', false);
+});
+
+test('authenticated users do not see guest admin contact callout', function () {
+    $user = makeHomeUser();
+
+    $response = $this->actingAs($user)->get(route('home'));
+
+    $response
+        ->assertOk()
+        ->assertDontSeeText('Need an account?')
+        ->assertDontSee('fas fa-user-lock', false);
+});

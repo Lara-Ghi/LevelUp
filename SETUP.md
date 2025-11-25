@@ -159,6 +159,12 @@ Use the application log to watch every command the app sends to the wifi2ble API
   php artisan test --testsuite=Feature
   ```
 
+- Unit suite (Pest):
+
+  ```powershell
+  php artisan test --testsuite=Unit
+  ```
+
 - UI suite (Laravel Dusk):
 
   ```powershell

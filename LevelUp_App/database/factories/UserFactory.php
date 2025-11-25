@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Desk;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
@@ -29,7 +30,7 @@ class UserFactory extends Factory
             'date_of_birth' => fake()->date('Y-m-d'),
             'role' => 'user',
             'password' => static::$password ??= Hash::make('password'),
-            'desk_id' => null,
+            'desk_id' => Desk::factory(),
             'total_points' => fake()->numberBetween(0, 1000),
             'daily_points' => fake()->numberBetween(0, 100),
         ];

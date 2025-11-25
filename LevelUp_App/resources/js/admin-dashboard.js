@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('averageStatsChart')) {
         const avgSitting = window.avgSitting || 0;
         const avgStanding = window.avgStanding || 0;
+        const sittingPurple = '#6C4AB6'; // Homepage hero purple
+        const standingGreen = '#10B981'; // Homepage focus clock green
 
         const ctx = document.getElementById('averageStatsChart').getContext('2d');
         new Chart(ctx, {
@@ -58,28 +60,74 @@ document.addEventListener('DOMContentLoaded', function () {
                     {
                         label: 'Minutes',
                         data: [avgSitting, avgStanding],
-                        backgroundColor: ['#B9E0FF', '#8D9EFF'], // Use your statistics colors
-                        borderRadius: 8,
-                        borderWidth: 2
+                        backgroundColor: [sittingPurple, standingGreen],
+                        borderColor: [sittingPurple, standingGreen],
+                        borderWidth: 2,
+                        borderRadius: 14,
+                        borderSkipped: false,
+                        barPercentage: 0.55,
+                        categoryPercentage: 0.5,
+                        hoverBackgroundColor: ['#8D72E1', '#34D399']
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 1200,
+                    easing: 'easeOutQuart'
+                },
+                layout: {
+                    padding: {
+                        top: 10,
+                        right: 16,
+                        left: 16,
+                        bottom: 0
+                    }
+                },
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Average Sitting vs Standing (in minutes)'
+                        text: 'Average Sitting vs Standing (in minutes)',
+                        color: '#2b2f43',
+                        font: {
+                            size: 16,
+                            weight: '600'
+                        }
                     },
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1f1f2b',
+                        padding: 12,
+                        titleFont: { weight: '600' },
+                        bodyFont: { weight: '500' },
+                        callbacks: {
+                            label: (context) => `${context.formattedValue} minutes`
+                        }
+                    }
                 },
                 scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#6b6f85',
+                            font: { weight: '600' }
+                        }
+                    },
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: 'rgba(107, 111, 133, 0.1)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#6b6f85'
+                        },
                         title: {
                             display: true,
-                            text: 'Minutes'
+                            text: 'Minutes',
+                            color: '#6b6f85'
                         }
                     }
                 }
