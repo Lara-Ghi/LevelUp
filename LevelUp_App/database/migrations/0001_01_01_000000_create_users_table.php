@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->date('date_of_birth')->nullable();
             $table->enum('role', ['admin', 'user'])->default('user');
             $table->string('password');
-            $table->unsignedBigInteger('desk_id')->nullable();
+            $table->unsignedBigInteger('desk_id');
             $table->unsignedSmallInteger('sitting_position')->nullable();
             $table->unsignedSmallInteger('standing_position')->nullable();
             $table->unsignedSmallInteger('total_points')->default(0);
@@ -35,7 +35,7 @@ return new class extends Migration {
                 $table->foreign('desk_id')
                     ->references('id')
                     ->on('desks')
-                    ->onDelete('set null');
+                    ->onDelete('restrict');
 
             });
         }

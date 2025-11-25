@@ -103,9 +103,11 @@
                   {{-- Desk assignment --}}
                   <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
                     <div class="login-data" style="flex:1 1 260px;">
-                      <label>Assigned Desk</label>
-                        <select name="desk_id" class="select-styled">
-                        <option value="">-- No desk assigned --</option>
+                      <label>Assigned Desk *</label>
+                      <select name="desk_id" class="select-styled" required>
+                        <option value="" disabled {{ old('desk_id', $editUser->desk_id) ? '' : 'selected' }}>
+                          -- Select a desk --
+                        </option>
                         @foreach($deskOptions as $desk)
                           <option value="{{ $desk->id }}"
                             @selected(old('desk_id', $editUser->desk_id) == $desk->id)>
@@ -114,7 +116,7 @@
                         @endforeach
                       </select>
                       <p class="desk-help-text">
-                        Choose a desk for this user or leave empty to remove the assignment.
+                        A desk is required for every user.
                       </p>
                     </div>
                   </div>
@@ -175,9 +177,11 @@
                   {{-- Desk assignment (for new user) --}}
                   <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
                     <div class="login-data" style="flex:1 1 260px;">
-                      <label>Assigned Desk</label>
-                        <select name="desk_id" class="select-styled">
-                        <option value="">-- No desk assigned --</option>
+                      <label>Assigned Desk *</label>
+                      <select name="desk_id" class="select-styled" required>
+                        <option value="" disabled {{ old('desk_id') ? '' : 'selected' }}>
+                          -- Select a desk --
+                        </option>
                         @foreach($deskOptions as $desk)
                           <option value="{{ $desk->id }}"
                             @selected(old('desk_id') == $desk->id)>
@@ -186,7 +190,7 @@
                         @endforeach
                       </select>
                       <p class="desk-help-text">
-                        Optional: assign a desk to this user.
+                        A desk is required for every user.
                       </p>
                     </div>
                   </div>

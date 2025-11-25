@@ -68,6 +68,13 @@ class AdminDeskController extends Controller
      */
     public function destroy(Desk $desk): RedirectResponse
     {
+        // Check if any user is using this desk
+        $hasUsers = User::where('desk_id', $desk->id)->exists();
+
+        if ($hasUsers) {
+            return back()->with('error', 'This desk is assigned to one or more users and cannot be deleted.');
+        }
+
         $desk->delete();
 
         return back()

@@ -40,7 +40,6 @@ class User extends Authenticatable
         'daily_points',
         'last_points_date',
         'last_daily_reset',
-        'desk_id',
     ];
 
     /**
