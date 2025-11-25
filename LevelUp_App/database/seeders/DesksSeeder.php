@@ -36,9 +36,9 @@ class DesksSeeder extends Seeder
             Log::warning('Simulator returned 0 desks. Seeding default fallback desks.');
 
             $fallback = [
-                ['serial_number' => 'DEFAULT-DESK-1', 'name' => 'Default Desk 1'],
-                ['serial_number' => 'DEFAULT-DESK-2', 'name' => 'Default Desk 2'],
-                ['serial_number' => 'DEFAULT-DESK-3', 'name' => 'Default Desk 3'],
+                ['serial_number' => 'cd:fb:1a:53:fb:e6', 'name' => 'Default Desk 1'],
+                ['serial_number' => 'ee:62:5b:b8:73:1d', 'name' => 'Default Desk 2'],
+                ['serial_number' => '70:9e:d5:e7:8c:98', 'name' => 'Default Desk 3'],
             ];
 
             foreach ($fallback as $desk) {
