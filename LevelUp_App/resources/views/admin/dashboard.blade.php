@@ -372,7 +372,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div class="text section-title">Active Rewards</div>
                 <button type="button" class="loginpage-btn" id="toggleArchivedBtn"
-                  style="background: linear-gradient(43deg, var(--color-primary) 0%, #171231 46%, #1c2046 100%); color: white;">
+                  style="background: linear-gradient(43deg, var(--color-primary) 0%, #171231 46%, #1c2046 100%); color: white; border-radius: 8px;">
                   <i class="fas fa-archive"></i> Show Archived
                 </button>
               </div>
@@ -644,28 +644,36 @@
                       </div>
 
                       <div class="user-actions desk-actions">
-                        <a href="{{ route('admin.dashboard', array_filter([
-                                'tab'       => 'desks',
-                                'q'         => request('q'),
-                                'edit_desk' => $desk->id,
-                            ])) }}"
-                          class="btn-edit btn-compact" title="Edit desk">
-                          <button type="button">
-                            <i class="fa-solid fa-pen"></i>
-                          </button>
-                        </a>
+                          {{-- Edit desk - same style as reward Edit --}}
+                          <form style="display: inline;">
+                            <div class="loginpage-btn btn-compact">
+                              <button type="button"
+                                      onclick="window.location='{{ route('admin.dashboard', array_filter([
+                                          'tab'       => 'desks',
+                                          'q'         => request('q'),
+                                          'edit_desk' => $desk->id,
+                                      ])) }}'"
+                                      title="Edit desk">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                            </div>
+                          </form>
 
-                        <form action="{{ route('admin.desks.destroy', $desk) }}" method="POST"
-                              onsubmit="return confirm('Are you sure you want to remove this desk from management?');">
-                          @csrf
-                          @method('DELETE')
-                          <div class="loginpage-btn btn-compact">
-                            <button type="submit" class="btn-delete" title="Delete desk">
-                              <i class="fa-solid fa-trash"></i>
-                            </button>
-                          </div>
-                        </form>
-                      </div>
+                          {{-- Delete desk - same style as reward Delete --}}
+                          <form action="{{ route('admin.desks.destroy', $desk) }}" method="POST"
+                                style="display: inline;"
+                                onsubmit="return confirm('Are you sure you want to remove this desk from management?');">
+                            @csrf
+                            @method('DELETE')
+                            <div class="loginpage-btn btn-compact">
+                              <button type="submit"
+                                      style="background-color: #dc3545;"
+                                      title="Delete desk">
+                                <i class="fa-solid fa-trash"></i>
+                              </button>
+                            </div>
+                          </form>
+                        </div>
                     </div>
                   @endforeach
                 </div>

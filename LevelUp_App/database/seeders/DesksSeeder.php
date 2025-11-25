@@ -44,7 +44,7 @@ class DesksSeeder extends Seeder
             foreach ($fallback as $desk) {
                 Desk::create([
                     'name'          => $desk['name'],
-                    'desk_model'    => 'Fallback Desk',
+                    'desk_model'    => 'Linak Desk',
                     'serial_number' => $desk['serial_number'],
                 ]);
             }
