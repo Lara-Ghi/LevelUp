@@ -4,22 +4,48 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Wifi2BleSimulatorClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class AdminUserController extends Controller
 {
+    public function __construct(
+        private readonly Wifi2BleSimulatorClient $client
+    ) {}
+
     public function store(Request $request): RedirectResponse
     {
+        $minHeight = 60;
+        $maxHeight = 130;
+
+        if ($request->has('desk_id')) {
+            try {
+                // We need to find the serial number for this desk ID
+                $desk = \App\Models\Desk::find($request->desk_id);
+                if ($desk) {
+                    $simDesk = $this->client->getDesk($desk->serial_number);
+                    if (isset($simDesk['config']['min_position_mm'])) {
+                        $minHeight = ceil($simDesk['config']['min_position_mm'] / 10);
+                    }
+                    if (isset($simDesk['config']['max_position_mm'])) {
+                        $maxHeight = floor($simDesk['config']['max_position_mm'] / 10);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fallback
+            }
+        }
+
         $data = $request->validate([
             'name'              => ['required', 'string', 'max:100'],
             'surname'           => ['required', 'string', 'max:100'], 
             'username'          => ['required', 'string', 'max:60', Rule::unique('users', 'username')],
             'date_of_birth'     => ['nullable', 'date'],
             'password'          => ['required', 'string', 'min:8', 'confirmed'],
-            'sitting_position'  => ['nullable', 'integer', 'between:0,65535'],
-            'standing_position' => ['nullable', 'integer', 'between:0,65535'],
+            'sitting_position'  => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
+            'standing_position' => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
             'desk_id'           => ['required', 'integer', 'exists:desks,id'],
         ]);
 
@@ -33,13 +59,34 @@ class AdminUserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $minHeight = 60;
+        $maxHeight = 130;
+        $deskId = $request->input('desk_id', $user->desk_id);
+
+        if ($deskId) {
+            try {
+                $desk = \App\Models\Desk::find($deskId);
+                if ($desk) {
+                    $simDesk = $this->client->getDesk($desk->serial_number);
+                    if (isset($simDesk['config']['min_position_mm'])) {
+                        $minHeight = ceil($simDesk['config']['min_position_mm'] / 10);
+                    }
+                    if (isset($simDesk['config']['max_position_mm'])) {
+                        $maxHeight = floor($simDesk['config']['max_position_mm'] / 10);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Fallback
+            }
+        }
+
         $data = $request->validate([
             'name'              => ['required', 'string', 'max:100'],
             'surname'           => ['required', 'string', 'max:100'],
             'username'          => ['required', 'string', 'max:60', Rule::unique('users', 'username')->ignore($user->user_id, 'user_id')],
             'date_of_birth'     => ['nullable', 'date'],
-            'sitting_position'  => ['nullable', 'integer', 'between:0,65535'],
-            'standing_position' => ['nullable', 'integer', 'between:0,65535'],
+            'sitting_position'  => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
+            'standing_position' => ['nullable', 'integer', "between:$minHeight,$maxHeight"],
             'desk_id'           => ['required', 'integer', 'exists:desks,id'],
         ]);
 

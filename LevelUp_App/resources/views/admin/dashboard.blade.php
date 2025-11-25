@@ -91,12 +91,12 @@
                   <div class="d-flex flex-wrap" style="gap:16px;">
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Sitting Position</label>
-                      <input type="number" name="sitting_position" min="0" max="65535"
+                      <input type="number" name="sitting_position" min="60" max="130"
                         value="{{ old('sitting_position', $editUser->sitting_position) }}">
                     </div>
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Standing Position</label>
-                      <input type="number" name="standing_position" min="0" max="65535"
+                      <input type="number" name="standing_position" min="60" max="130"
                         value="{{ old('standing_position', $editUser->standing_position) }}">
                     </div>
                   </div>
@@ -104,12 +104,17 @@
                   <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Assigned Desk *</label>
-                      <select name="desk_id" class="select-styled" required>
+                      <select name="desk_id" id="deskSelect" class="select-styled" required onchange="updateHeightLimits()">
                         <option value="" disabled {{ old('desk_id', $editUser->desk_id) ? '' : 'selected' }}>
                           -- Select a desk --
                         </option>
                         @foreach($deskOptions as $desk)
+                          @php
+                              $limits = $deskLimits[$desk->id] ?? ['min' => 60, 'max' => 130];
+                          @endphp
                           <option value="{{ $desk->id }}"
+                            data-min="{{ $limits['min'] }}"
+                            data-max="{{ $limits['max'] }}"
                             @selected(old('desk_id', $editUser->desk_id) == $desk->id)>
                             {{ $desk->name ?? ('Desk #'.$desk->id) }} ({{ $desk->serial_number }})
                           </option>
@@ -125,6 +130,29 @@
                     <button type="submit">Save Changes</button>
                   </div>
                 </form>
+                <script>
+                    function updateHeightLimits() {
+                        const select = document.getElementById('deskSelect');
+                        const selectedOption = select.options[select.selectedIndex];
+                        const min = selectedOption.getAttribute('data-min') || 60;
+                        const max = selectedOption.getAttribute('data-max') || 130;
+                        
+                        const sittingInput = document.querySelector('input[name="sitting_position"]');
+                        const standingInput = document.querySelector('input[name="standing_position"]');
+                        
+                        if (sittingInput) {
+                            sittingInput.min = min;
+                            sittingInput.max = max;
+                            // Optional: validate current value
+                        }
+                        if (standingInput) {
+                            standingInput.min = min;
+                            standingInput.max = max;
+                        }
+                    }
+                    // Run on load
+                    document.addEventListener('DOMContentLoaded', updateHeightLimits);
+                </script>
               @else
                 <form method="POST" action="{{ route('admin.users.store') }}" class="form">
                   @csrf
@@ -165,11 +193,11 @@
                   <div class="d-flex flex-wrap" style="gap:16px;">
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Sitting Position</label>
-                      <input type="number" name="sitting_position" min="0" max="65535" value="{{ old('sitting_position') }}">
+                      <input type="number" name="sitting_position" min="60" max="130" value="{{ old('sitting_position') }}">
                     </div>
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Standing Position</label>
-                      <input type="number" name="standing_position" min="0" max="65535"
+                      <input type="number" name="standing_position" min="60" max="130"
                         value="{{ old('standing_position') }}">
                     </div>
                   </div>
@@ -178,12 +206,17 @@
                   <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Assigned Desk *</label>
-                      <select name="desk_id" class="select-styled" required>
+                      <select name="desk_id" id="deskSelectNew" class="select-styled" required onchange="updateHeightLimitsNew()">
                         <option value="" disabled {{ old('desk_id') ? '' : 'selected' }}>
                           -- Select a desk --
                         </option>
                         @foreach($deskOptions as $desk)
+                          @php
+                              $limits = $deskLimits[$desk->id] ?? ['min' => 60, 'max' => 130];
+                          @endphp
                           <option value="{{ $desk->id }}"
+                            data-min="{{ $limits['min'] }}"
+                            data-max="{{ $limits['max'] }}"
                             @selected(old('desk_id') == $desk->id)>
                             {{ $desk->name ?? ('Desk #'.$desk->id) }} ({{ $desk->serial_number }})
                           </option>
@@ -199,6 +232,28 @@
                     <button type="submit">Create User</button>
                   </div>
                 </form>
+                <script>
+                    function updateHeightLimitsNew() {
+                        const select = document.getElementById('deskSelectNew');
+                        const selectedOption = select.options[select.selectedIndex];
+                        const min = selectedOption.getAttribute('data-min') || 60;
+                        const max = selectedOption.getAttribute('data-max') || 130;
+                        
+                        // Scope to this form
+                        const form = select.closest('form');
+                        const sittingInput = form.querySelector('input[name="sitting_position"]');
+                        const standingInput = form.querySelector('input[name="standing_position"]');
+                        
+                        if (sittingInput) {
+                            sittingInput.min = min;
+                            sittingInput.max = max;
+                        }
+                        if (standingInput) {
+                            standingInput.min = min;
+                            standingInput.max = max;
+                        }
+                    }
+                </script>
               @endif
             </div>
 
@@ -753,7 +808,7 @@
 
                   <div class="login-data">
                     <label>Target height (cm) *</label>
-                    <input type="number" name="height_cm" min="50" max="130" required>
+                    <input type="number" name="height_cm" min="60" max="130" required>
                     <p class="desk-help-text">
                       This will send a command to the simulator to move all selected desks
                       to the specified height.

@@ -34,10 +34,6 @@
                 <div class="profile-ident">
                     <div class="profile-handle">{{ '@' . ($user->username ?? 'unknown') }}</div>
                 </div>
-
-                <button class="edit-btn">
-                    ✏️ Edit
-                </button>
             </div>
 
             <dl class="profile-dl">
@@ -104,8 +100,8 @@
                                        id="standingInput" 
                                        name="standing_position" 
                                        value="{{ $user->standing_position }}" 
-                                       min="60" 
-                                       max="200" 
+                                       min="{{ $minHeight }}" 
+                                       max="{{ $maxHeight }}" 
                                        class="height-input-field hidden">
                                 <span id="standingUnit" class="unit hidden">cm</span>
                             </div>
@@ -124,8 +120,8 @@
                                        id="sittingInput" 
                                        name="sitting_position" 
                                        value="{{ $user->sitting_position }}" 
-                                       min="40" 
-                                       max="120" 
+                                       min="{{ $minHeight }}" 
+                                       max="{{ $maxHeight }}" 
                                        class="height-input-field hidden">
                                 <span id="sittingUnit" class="unit hidden">cm</span>
                             </div>

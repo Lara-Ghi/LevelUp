@@ -15,6 +15,8 @@ class Desk:
         self.config = {
             "name": name,
             "manufacturer": manufacturer,
+            "min_position_mm": min_position,
+            "max_position_mm": max_position,
         }
         self.state = {
             "position_mm": initial_position,
