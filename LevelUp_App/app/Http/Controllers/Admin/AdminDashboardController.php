@@ -18,7 +18,11 @@ class AdminDashboardController extends Controller
 
     public function index(Request $request, Wifi2BleSimulatorClient $simClient)
     {
-        $tab = $request->query('tab', 'users');
+        if (!$request->has('tab')) {
+            return redirect()->route('admin.dashboard', ['tab' => 'desks']);
+        }
+
+        $tab = $request->query('tab');
 
         // ----- USERS TAB -----
         $q        = trim($request->get('q', ''));
@@ -42,7 +46,7 @@ class AdminDashboardController extends Controller
         $deskOptions = collect();
         $deskLimits = []; // [desk_id => ['min' => 60, 'max' => 130]]
 
-        if ($request->query('tab', 'users') === 'users') {
+        if ($tab === 'users') {
             $deskOptions = Desk::orderBy('name')
                 ->orderBy('serial_number')
                 ->get();

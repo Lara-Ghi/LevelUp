@@ -15,7 +15,7 @@
   <!-- Dashboard Sub-Navigation -->
   <div class="rewards-nav"> 
     <a href="{{ route('admin.dashboard', ['tab' => 'desks']) }}"
-      class="rewards-nav-link {{ request()->query('tab', 'desks') === 'desks' ? 'active' : '' }}">
+      class="rewards-nav-link {{ request()->query('tab') === 'desks' ? 'active' : '' }}">
       <i class="fas fa-table"></i>
       Manage Desks
     </a>
@@ -57,7 +57,7 @@
         @endif
 
         {{-- DESKS TAB --}}
-        @if(request()->query('tab', 'desks') === 'desks')
+        @if(request()->query('tab') === 'desks')
           @php
             $desks            = $desks ?? collect();
             $availableDeskIds = $availableDeskIds ?? [];
