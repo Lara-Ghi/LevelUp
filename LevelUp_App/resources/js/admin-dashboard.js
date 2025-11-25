@@ -43,3 +43,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
               }
             });
+
+// Average Statistics Page Script
+document.addEventListener('DOMContentLoaded', function () {
+    if (document.getElementById('averageStatsChart')) {
+        const avgSitting = window.avgSitting || 0;
+        const avgStanding = window.avgStanding || 0;
+
+        const ctx = document.getElementById('averageStatsChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Average Sitting', 'Average Standing'],
+                datasets: [
+                    {
+                        label: 'Minutes',
+                        data: [avgSitting, avgStanding],
+                        backgroundColor: ['#B9E0FF', '#8D9EFF'], // Use your statistics colors
+                        borderRadius: 8,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Average Sitting vs Standing (in minutes)'
+                    },
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Minutes'
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
