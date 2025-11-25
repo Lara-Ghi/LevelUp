@@ -158,7 +158,10 @@ class AdminDashboardController extends Controller
             'deskStates',
             'allManagedDesks',
             'deskOptions',
-            'deskLimits'
+            'deskLimits',
+            'avgSitting',
+            'avgStanding',
+            'totalUsers'
         ));
     }
 }
