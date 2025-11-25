@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Desk;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Services\Wifi2BleSimulatorClient;
+use Throwable;
 
 class AdminDeskController extends Controller
 {
@@ -43,7 +45,9 @@ class AdminDeskController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Desk(s) added to management successfully.');
+        $count = count($data['desk_ids']);
+        
+        return back()->with('success',sprintf('%d desk(s) added to management successfully.', $count));
     }
 
     /**
@@ -66,6 +70,13 @@ class AdminDeskController extends Controller
      */
     public function destroy(Desk $desk): RedirectResponse
     {
+        // Check if any user is using this desk
+        $hasUsers = User::where('desk_id', $desk->id)->exists();
+
+        if ($hasUsers) {
+            return back()->with('error', 'This desk is assigned to one or more users and cannot be deleted.');
+        }
+
         $desk->delete();
 
         return back()
@@ -77,7 +88,7 @@ class AdminDeskController extends Controller
         $data = $request->validate([
             'desk_ids'   => ['required', 'array', 'min:1'],
             'desk_ids.*' => ['integer', 'exists:desks,id'],
-            'height_cm'  => ['required', 'integer', 'between:50,130'],
+            'height_cm'  => ['required', 'integer', 'between:60,130'],
         ]);
 
         $positionMm = $data['height_cm'] * 10;

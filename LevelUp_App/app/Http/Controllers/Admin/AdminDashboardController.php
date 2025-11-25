@@ -40,10 +40,24 @@ class AdminDashboardController extends Controller
             ->withQueryString();
 
         $deskOptions = collect();
+        $deskLimits = []; // [desk_id => ['min' => 60, 'max' => 130]]
+
         if ($request->query('tab', 'users') === 'users') {
             $deskOptions = Desk::orderBy('name')
                 ->orderBy('serial_number')
                 ->get();
+            
+            foreach ($deskOptions as $d) {
+                try {
+                    $data = $simClient->getDesk($d->serial_number);
+                    $deskLimits[$d->id] = [
+                        'min' => isset($data['config']['min_position_mm']) ? (int) ceil($data['config']['min_position_mm'] / 10) : 60,
+                        'max' => isset($data['config']['max_position_mm']) ? (int) floor($data['config']['max_position_mm'] / 10) : 130,
+                    ];
+                } catch (Throwable $e) {
+                    $deskLimits[$d->id] = ['min' => 60, 'max' => 130];
+                }
+            }
         }
         
         // ----- REWARDS TAB -----
@@ -112,12 +126,20 @@ class AdminDashboardController extends Controller
                             ? (int) round($data['state']['position_mm'] / 10)
                             : null,
                         'status'      => data_get($data, 'state.status'),
+                        'min_cm'      => isset($data['config']['min_position_mm']) 
+                            ? (int) ceil($data['config']['min_position_mm'] / 10) 
+                            : 60,
+                        'max_cm'      => isset($data['config']['max_position_mm']) 
+                            ? (int) floor($data['config']['max_position_mm'] / 10) 
+                            : 130,
                     ];
                 } catch (Throwable $e) {
                     $deskStates[$desk->serial_number] = [
                         'config_name' => null,
                         'position_cm' => null,
                         'status'      => 'Unavailable',
+                        'min_cm'      => 60,
+                        'max_cm'      => 130,
                     ];
                 }
             }
@@ -136,9 +158,7 @@ class AdminDashboardController extends Controller
             'deskStates',
             'allManagedDesks',
             'deskOptions',
-            'avgSitting',
-            'avgStanding',
-            'totalUsers'
+            'deskLimits'
         ));
     }
 }

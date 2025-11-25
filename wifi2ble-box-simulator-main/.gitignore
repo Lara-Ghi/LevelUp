@@ -37,3 +37,6 @@ dist/
 # System-specific files
 .DS_Store
 Thumbs.db
+
+# Data directory for the simulator
+wifi2ble-box-simulator-main/data/

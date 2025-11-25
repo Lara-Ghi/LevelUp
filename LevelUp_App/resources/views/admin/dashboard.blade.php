@@ -98,30 +98,37 @@
                   <div class="d-flex flex-wrap" style="gap:16px;">
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Sitting Position</label>
-                      <input type="number" name="sitting_position" min="0" max="65535"
+                      <input type="number" name="sitting_position" min="60" max="130"
                         value="{{ old('sitting_position', $editUser->sitting_position) }}">
                     </div>
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Standing Position</label>
-                      <input type="number" name="standing_position" min="0" max="65535"
+                      <input type="number" name="standing_position" min="60" max="130"
                         value="{{ old('standing_position', $editUser->standing_position) }}">
                     </div>
                   </div>
                   {{-- Desk assignment --}}
                   <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
                     <div class="login-data" style="flex:1 1 260px;">
-                      <label>Assigned Desk</label>
-                        <select name="desk_id" class="select-styled">
-                        <option value="">-- No desk assigned --</option>
+                      <label>Assigned Desk *</label>
+                      <select name="desk_id" id="deskSelect" class="select-styled" required onchange="updateHeightLimits()">
+                        <option value="" disabled {{ old('desk_id', $editUser->desk_id) ? '' : 'selected' }}>
+                          -- Select a desk --
+                        </option>
                         @foreach($deskOptions as $desk)
+                          @php
+                              $limits = $deskLimits[$desk->id] ?? ['min' => 60, 'max' => 130];
+                          @endphp
                           <option value="{{ $desk->id }}"
+                            data-min="{{ $limits['min'] }}"
+                            data-max="{{ $limits['max'] }}"
                             @selected(old('desk_id', $editUser->desk_id) == $desk->id)>
                             {{ $desk->name ?? ('Desk #'.$desk->id) }} ({{ $desk->serial_number }})
                           </option>
                         @endforeach
                       </select>
                       <p class="desk-help-text">
-                        Choose a desk for this user or leave empty to remove the assignment.
+                        A desk is required for every user.
                       </p>
                     </div>
                   </div>
@@ -130,6 +137,29 @@
                     <button type="submit">Save Changes</button>
                   </div>
                 </form>
+                <script>
+                    function updateHeightLimits() {
+                        const select = document.getElementById('deskSelect');
+                        const selectedOption = select.options[select.selectedIndex];
+                        const min = selectedOption.getAttribute('data-min') || 60;
+                        const max = selectedOption.getAttribute('data-max') || 130;
+                        
+                        const sittingInput = document.querySelector('input[name="sitting_position"]');
+                        const standingInput = document.querySelector('input[name="standing_position"]');
+                        
+                        if (sittingInput) {
+                            sittingInput.min = min;
+                            sittingInput.max = max;
+                            // Optional: validate current value
+                        }
+                        if (standingInput) {
+                            standingInput.min = min;
+                            standingInput.max = max;
+                        }
+                    }
+                    // Run on load
+                    document.addEventListener('DOMContentLoaded', updateHeightLimits);
+                </script>
               @else
                 <form method="POST" action="{{ route('admin.users.store') }}" class="form">
                   @csrf
@@ -170,11 +200,11 @@
                   <div class="d-flex flex-wrap" style="gap:16px;">
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Sitting Position</label>
-                      <input type="number" name="sitting_position" min="0" max="65535" value="{{ old('sitting_position') }}">
+                      <input type="number" name="sitting_position" min="60" max="130" value="{{ old('sitting_position') }}">
                     </div>
                     <div class="login-data" style="flex:1 1 260px;">
                       <label>Standing Position</label>
-                      <input type="number" name="standing_position" min="0" max="65535"
+                      <input type="number" name="standing_position" min="60" max="130"
                         value="{{ old('standing_position') }}">
                     </div>
                   </div>
@@ -182,18 +212,25 @@
                   {{-- Desk assignment (for new user) --}}
                   <div class="d-flex flex-wrap" style="gap:16px; margin-top: 8px;">
                     <div class="login-data" style="flex:1 1 260px;">
-                      <label>Assigned Desk</label>
-                        <select name="desk_id" class="select-styled">
-                        <option value="">-- No desk assigned --</option>
+                      <label>Assigned Desk *</label>
+                      <select name="desk_id" id="deskSelectNew" class="select-styled" required onchange="updateHeightLimitsNew()">
+                        <option value="" disabled {{ old('desk_id') ? '' : 'selected' }}>
+                          -- Select a desk --
+                        </option>
                         @foreach($deskOptions as $desk)
+                          @php
+                              $limits = $deskLimits[$desk->id] ?? ['min' => 60, 'max' => 130];
+                          @endphp
                           <option value="{{ $desk->id }}"
+                            data-min="{{ $limits['min'] }}"
+                            data-max="{{ $limits['max'] }}"
                             @selected(old('desk_id') == $desk->id)>
                             {{ $desk->name ?? ('Desk #'.$desk->id) }} ({{ $desk->serial_number }})
                           </option>
                         @endforeach
                       </select>
                       <p class="desk-help-text">
-                        Optional: assign a desk to this user.
+                        A desk is required for every user.
                       </p>
                     </div>
                   </div>
@@ -202,12 +239,34 @@
                     <button type="submit">Create User</button>
                   </div>
                 </form>
+                <script>
+                    function updateHeightLimitsNew() {
+                        const select = document.getElementById('deskSelectNew');
+                        const selectedOption = select.options[select.selectedIndex];
+                        const min = selectedOption.getAttribute('data-min') || 60;
+                        const max = selectedOption.getAttribute('data-max') || 130;
+                        
+                        // Scope to this form
+                        const form = select.closest('form');
+                        const sittingInput = form.querySelector('input[name="sitting_position"]');
+                        const standingInput = form.querySelector('input[name="standing_position"]');
+                        
+                        if (sittingInput) {
+                            sittingInput.min = min;
+                            sittingInput.max = max;
+                        }
+                        if (standingInput) {
+                            standingInput.min = min;
+                            standingInput.max = max;
+                        }
+                    }
+                </script>
               @endif
             </div>
 
             {{-- RIGHT COLUMN: Search + User Cards --}}
             <div class="login-card">
-              <form method="GET" action="{{ route('admin.dashboard') }}" class="form big-search"
+              <form method="GET" action="{{ route('admin.dashboard') }}" class="form"
                 style="margin-bottom: 2rem;">
                 <input type="hidden" name="tab" value="users">
                 <div class="login-data">
@@ -375,7 +434,7 @@
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div class="text section-title">Active Rewards</div>
                 <button type="button" class="loginpage-btn" id="toggleArchivedBtn"
-                  style="background: linear-gradient(43deg, var(--color-primary) 0%, #171231 46%, #1c2046 100%); color: white;">
+                  style="background: linear-gradient(43deg, var(--color-primary) 0%, #171231 46%, #1c2046 100%); color: white; border-radius: 8px;">
                   <i class="fas fa-archive"></i> Show Archived
                 </button>
               </div>
@@ -597,7 +656,7 @@
               <div class="text section-title">Managed Desks</div>
 
               {{-- Search --}}
-              <form method="GET" action="{{ route('admin.dashboard') }}" class="form big-search desk-search-form">
+              <form method="GET" action="{{ route('admin.dashboard') }}" class="form desk-search-form">
                 <input type="hidden" name="tab" value="desks">
                 <div class="login-data">
                   <input type="text" name="q" placeholder="Search by name or simulator ID..."
@@ -647,28 +706,36 @@
                       </div>
 
                       <div class="user-actions desk-actions">
-                        <a href="{{ route('admin.dashboard', array_filter([
-                                'tab'       => 'desks',
-                                'q'         => request('q'),
-                                'edit_desk' => $desk->id,
-                            ])) }}"
-                          class="btn-edit btn-compact" title="Edit desk">
-                          <button type="button">
-                            <i class="fa-solid fa-pen"></i>
-                          </button>
-                        </a>
+                          {{-- Edit desk - same style as reward Edit --}}
+                          <form style="display: inline;">
+                            <div class="loginpage-btn btn-compact">
+                              <button type="button"
+                                      onclick="window.location='{{ route('admin.dashboard', array_filter([
+                                          'tab'       => 'desks',
+                                          'q'         => request('q'),
+                                          'edit_desk' => $desk->id,
+                                      ])) }}'"
+                                      title="Edit desk">
+                                <i class="fas fa-edit"></i>
+                              </button>
+                            </div>
+                          </form>
 
-                        <form action="{{ route('admin.desks.destroy', $desk) }}" method="POST"
-                              onsubmit="return confirm('Are you sure you want to remove this desk from management?');">
-                          @csrf
-                          @method('DELETE')
-                          <div class="loginpage-btn btn-compact">
-                            <button type="submit" class="btn-delete" title="Delete desk">
-                              <i class="fa-solid fa-trash"></i>
-                            </button>
-                          </div>
-                        </form>
-                      </div>
+                          {{-- Delete desk - same style as reward Delete --}}
+                          <form action="{{ route('admin.desks.destroy', $desk) }}" method="POST"
+                                style="display: inline;"
+                                onsubmit="return confirm('Are you sure you want to remove this desk from management?');">
+                            @csrf
+                            @method('DELETE')
+                            <div class="loginpage-btn btn-compact">
+                              <button type="submit"
+                                      style="background-color: #dc3545;"
+                                      title="Delete desk">
+                                <i class="fa-solid fa-trash"></i>
+                              </button>
+                            </div>
+                          </form>
+                        </div>
                     </div>
                   @endforeach
                 </div>
@@ -748,7 +815,7 @@
 
                   <div class="login-data">
                     <label>Target height (cm) *</label>
-                    <input type="number" name="height_cm" min="50" max="130" required>
+                    <input type="number" name="height_cm" min="60" max="130" required>
                     <p class="desk-help-text">
                       This will send a command to the simulator to move all selected desks
                       to the specified height.

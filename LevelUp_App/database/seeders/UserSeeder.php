@@ -20,9 +20,13 @@ class UserSeeder extends Seeder
             ->take(2)
             ->pluck('id')
             ->values();
-
-        $adminDeskId = $deskIds->get(0, null); // first desk or null
-        $userDeskId  = $deskIds->get(1, null); // second desk or null
+        
+        if ($deskIds->isEmpty()) {
+            throw new \RuntimeException('You must seed desks before seeding users.');
+        }
+        
+        $adminDeskId = $deskIds->get(0); // first desk
+        $userDeskId  = $deskIds->get(1, $adminDeskId); // second desk or first if only one
 
         // Create a complete admin test user (all fields populated)
         User::create([
@@ -38,7 +42,7 @@ class UserSeeder extends Seeder
             'daily_points'      => 80,
             'last_points_date'  => now()->toDateString(),
             'last_daily_reset'  => now(),
-            'desk_id'           => $adminDeskId,  // may be null if no desk
+            'desk_id'           => $adminDeskId,
         ]);
 
         // Create a regular user with some progress
@@ -53,7 +57,7 @@ class UserSeeder extends Seeder
             'total_points'      => 320,
             'daily_points'      => 40,
             'last_points_date'  => now()->toDateString(),
-            'desk_id'           => $userDeskId,   // may be null if only 1 or 0 desks
+            'desk_id'           => $userDeskId,   // may be the same as admin if only one desk
         ]);
     }
 }

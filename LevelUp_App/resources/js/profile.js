@@ -157,6 +157,10 @@ class ProfileHeightEditor {
         const standing = parseInt(this.standingInput.value);
         const sitting = parseInt(this.sittingInput.value);
         
+        // Get limits from input attributes
+        const minHeight = parseInt(this.standingInput.getAttribute('min')) || 60;
+        const maxHeight = parseInt(this.standingInput.getAttribute('max')) || 200;
+        
         // Check if standing height is greater than sitting height
         if (standing && sitting && standing <= sitting) {
             e.preventDefault();
@@ -166,17 +170,17 @@ class ProfileHeightEditor {
         }
         
         // Validate standing height range
-        if (standing && (standing < 60 || standing > 200)) {
+        if (standing && (standing < minHeight || standing > maxHeight)) {
             e.preventDefault();
-            this.showValidationError('Standing height must be between 60cm and 200cm!');
+            this.showValidationError(`Standing height must be between ${minHeight}cm and ${maxHeight}cm!`);
             this.standingInput.focus();
             return false;
         }
         
         // Validate sitting height range
-        if (sitting && (sitting < 40 || sitting > 120)) {
+        if (sitting && (sitting < minHeight || sitting > maxHeight)) {
             e.preventDefault();
-            this.showValidationError('Sitting height must be between 40cm and 120cm!');
+            this.showValidationError(`Sitting height must be between ${minHeight}cm and ${maxHeight}cm!`);
             this.sittingInput.focus();
             return false;
         }
