@@ -43,7 +43,9 @@ class AdminDeskController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Desk(s) added to management successfully.');
+        $count = count($data['desk_ids']);
+        
+        return back()->with('success',sprintf('%d desk(s) added to management successfully.', $count));
     }
 
     /**

@@ -200,7 +200,7 @@
 
             {{-- RIGHT COLUMN: Search + User Cards --}}
             <div class="login-card">
-              <form method="GET" action="{{ route('admin.dashboard') }}" class="form big-search"
+              <form method="GET" action="{{ route('admin.dashboard') }}" class="form"
                 style="margin-bottom: 2rem;">
                 <input type="hidden" name="tab" value="users">
                 <div class="login-data">
@@ -590,7 +590,7 @@
               <div class="text section-title">Managed Desks</div>
 
               {{-- Search --}}
-              <form method="GET" action="{{ route('admin.dashboard') }}" class="form big-search desk-search-form">
+              <form method="GET" action="{{ route('admin.dashboard') }}" class="form desk-search-form">
                 <input type="hidden" name="tab" value="desks">
                 <div class="login-data">
                   <input type="text" name="q" placeholder="Search by name or simulator ID..."

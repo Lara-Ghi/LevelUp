@@ -71,6 +71,12 @@ DB_USERNAME=your_username
 DB_PASSWORD=your_password
 ```
 
+Edit `.env` file with the correct WIFI2BLE_BASE_URL:
+
+```env
+WIFI2BLE_BASE_URL=http://127.0.0.1:8000/
+```
+
 #### Option C: Using Docker (Laravel + MySQL + wifi2ble simulator)
 
 1. Install Docker Desktop and ensure it is running.
@@ -80,14 +86,18 @@ DB_PASSWORD=your_password
    cd LevelUp_App
    Copy-Item .env.docker.example .env.docker -Force
    ```
+3. Edit `.env` file with the correct WIFI2BLE_BASE_URL:
 
-3. Build and start the stack (PHP-FPM, Nginx, MySQL, and the wifi2ble simulator API):
+```env
+WIFI2BLE_BASE_URL=http://simulator:8000/
+```
+4. Build and start the stack (PHP-FPM, Nginx, MySQL, and the wifi2ble simulator API):
 
    ```powershell
    docker compose up --build
    ```
 
-4. Once the containers are running, install dependencies and run migrations inside the PHP container:
+5. Once the containers are running, install dependencies and run migrations inside the PHP container:
 
    ```powershell
    docker compose exec app composer install
@@ -96,7 +106,7 @@ DB_PASSWORD=your_password
    docker compose exec app php artisan migrate --seed
    ```
 
-5. Visit the app at [http://localhost:8080](http://localhost:8080). The simulator API is exposed at [http://localhost:8000/api/v2/<api_key>/desks](http://localhost:8000/api/v2/<api_key>/desks) from your host, while Laravel uses the internal `http://simulator:8000` address.
+6. Visit the app at [http://localhost:8080](http://localhost:8080). The simulator API is exposed at [http://localhost:8000/api/v2/<api_key>/desks](http://localhost:8000/api/v2/<api_key>/desks) from your host, while Laravel uses the internal `http://simulator:8000` address.
 
 ### Step 5: Run Database Migrations
 
