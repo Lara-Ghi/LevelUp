@@ -30,12 +30,30 @@ class DesksSeeder extends Seeder
             $simulatorDeskIds = [];
         }
 
-        // Only register half of the desks
-        $totalDesks = count($simulatorDeskIds);
+        // If simulator returned 0 desks → fallback to defaults
+        if (count($simulatorDeskIds) === 0) {
 
-        if ($totalDesks === 0) {
+            Log::warning('Simulator returned 0 desks. Seeding default fallback desks.');
+
+            $fallback = [
+                ['serial_number' => 'DEFAULT-DESK-1', 'name' => 'Default Desk 1'],
+                ['serial_number' => 'DEFAULT-DESK-2', 'name' => 'Default Desk 2'],
+                ['serial_number' => 'DEFAULT-DESK-3', 'name' => 'Default Desk 3'],
+            ];
+
+            foreach ($fallback as $desk) {
+                Desk::create([
+                    'name'          => $desk['name'],
+                    'desk_model'    => 'Fallback Desk',
+                    'serial_number' => $desk['serial_number'],
+                ]);
+            }
+
             return;
         }
+
+        // Otherwise: register half of the simulator desks
+        $totalDesks = count($simulatorDeskIds);
 
         $halfCount = (int) floor($totalDesks / 2);
 
