@@ -236,6 +236,9 @@ class FocusClockCore {
 
         // Preload alarm audio files for instant playback
         this.preloadAlarmAudio();
+        
+        // Unlock audio context (must be called during user interaction)
+        this.unlockAudio();
 
         // If resuming from pause, use existing currentTime
         // If starting fresh, set up new session duration
@@ -268,7 +271,7 @@ class FocusClockCore {
         if (this.alarmTimeoutId) {
             clearTimeout(this.alarmTimeoutId);
         }
-        const timeUntilAlarm = (this.currentTime - 30) * 1000; // 30 seconds before end
+        const timeUntilAlarm = (this.currentTime - 31) * 1000; // 31 seconds before end (compensate for delay)
         if (timeUntilAlarm > 0) {
             // Schedule stopping of current alarm if it would overlap
             this.scheduleAlarmStop(timeUntilAlarm);
@@ -506,7 +509,7 @@ class FocusClockCore {
         if (this.alarmTimeoutId) {
             clearTimeout(this.alarmTimeoutId);
         }
-        const timeUntilAlarm = (this.sessionDuration - 30) * 1000; // 30 seconds before end
+        const timeUntilAlarm = (this.sessionDuration - 31) * 1000; // 31 seconds before end (compensate for delay)
         if (timeUntilAlarm > 0) {
             // Schedule stopping of current alarm if it would overlap
             this.scheduleAlarmStop(timeUntilAlarm);
@@ -612,6 +615,37 @@ class FocusClockCore {
         } catch (error) {
             console.warn('Audio preload failed:', error);
         }
+    }
+
+    // Unlock audio context (must be called during user interaction)
+    unlockAudio() {
+        if (!this.preloadedAudio) return;
+        
+        console.log('🔓 Unlocking audio context...');
+        // Unlock ALL audio files to ensure any of them can play
+        Object.values(this.preloadedAudio).forEach(audio => {
+            try {
+                // Play and immediately pause to unlock audio on mobile/laptops
+                // We set volume to 0 to avoid noise
+                const originalVolume = audio.volume;
+                audio.volume = 0;
+                
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        audio.volume = originalVolume;
+                        console.log('✅ Audio unlocked successfully');
+                    }).catch(error => {
+                        console.warn('Audio unlock failed (expected if no interaction):', error);
+                        audio.volume = originalVolume;
+                    });
+                }
+            } catch (e) {
+                console.warn('Error unlocking audio:', e);
+            }
+        });
     }
     
     // Calculate when to stop current alarm to avoid overlaps with next alarm
@@ -789,9 +823,18 @@ class FocusClockCore {
             
             // Use preloaded audio if available for instant playback
             if (this.preloadedAudio && this.preloadedAudio[alarmSound]) {
-                // Clone the preloaded audio for instant playback
-                this.currentAlarm = this.preloadedAudio[alarmSound].cloneNode();
-                console.log(`🚀 Using preloaded audio: ${alarmSound}`);
+                // Use the ORIGINAL preloaded audio object to benefit from the "blessing"
+                // obtained during unlockAudio() (user interaction).
+                // Cloning the node often loses the blessed status on some browsers.
+                this.currentAlarm = this.preloadedAudio[alarmSound];
+                
+                // Reset state just in case
+                this.currentAlarm.currentTime = 0;
+                if (!this.currentAlarm.paused) {
+                    this.currentAlarm.pause();
+                }
+                
+                console.log(`🚀 Using preloaded audio (original): ${alarmSound}`);
             } else {
                 // Fallback to creating new Audio object
                 this.currentAlarm = new Audio(alarmSound);
@@ -2136,22 +2179,15 @@ class FocusClockUI {
                             </div>
                         </div>
 
-                        <div class="danger-zone" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #E5E7EB;">
-                            <h4><i class="fas fa-exclamation-triangle"></i> Reset Zone</h4>
-                            <button class="btn-danger" id="resetSettingsBtn">
-                                <i class="fas fa-trash"></i>
-                                Reset All Settings & History
-                            </button>
-                        </div>
                     </div>
 
-                    <div class="modal-footer" style="display: flex; gap: 0.5rem; padding-top: 1rem;">
-                        <button class="btn-modal btn-save" id="updateSettingsBtn" style="flex: 1;">
+                    <div class="modal-footer" style="display: flex; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid #E2E8F0; margin-top: 0.5rem;">
+                        <button class="btn-modal btn-save" id="updateSettingsBtn" style="flex: 1; padding: 0.7rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: #10B981; color: white; border: none; cursor: pointer; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
                             <i class="fas fa-save"></i>
                             Save
                         </button>
-                        <button class="btn-danger" id="resetSettingsBtn" style="flex: 1;">
-                            <i class="fas fa-undo"></i>
+                        <button class="btn-danger" id="resetSettingsBtn" style="flex: 1; padding: 0.7rem 1rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background-color: #EF4444; color: white; border: none; cursor: pointer; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                            <i class="fas fa-trash-alt"></i>
                             Reset
                         </button>
                     </div>
@@ -3085,14 +3121,10 @@ class FocusClockUI {
             const file = this.previewQueue[this.previewIndex];
             let audio = null;
 
-            if (this.core?.preloadedAudio && this.core.preloadedAudio[file]) {
-                audio = this.core.preloadedAudio[file].cloneNode();
-            }
-
-            if (!audio) {
-                audio = new Audio(file);
-                audio.preload = 'auto';
-            }
+            // Always create new Audio for preview to ensure it works with user interaction
+            // and avoids any issues with cloned nodes from preloaded audio
+            audio = new Audio(file);
+            audio.preload = 'auto';
 
             this.previewAudio = audio;
 
