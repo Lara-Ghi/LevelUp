@@ -30,11 +30,28 @@ class DesksSeeder extends Seeder
             $simulatorDeskIds = [];
         }
 
-        foreach ($simulatorDeskIds as $deskId) {
+        // Only register half of the desks
+        $totalDesks = count($simulatorDeskIds);
+
+        if ($totalDesks === 0) {
+            return;
+        }
+
+        $halfCount = (int) floor($totalDesks / 2);
+
+        // If there is only 1 desk, still seed that one
+        if ($halfCount === 0) {
+            $halfCount = 1;
+        }
+
+        // Take the first half of the list
+        $deskIdsToSeed = array_slice($simulatorDeskIds, 0, $halfCount);
+
+        foreach ($deskIdsToSeed as $deskId) {
             Desk::create([
-                'name'               => null,
-                'desk_model'         => 'Linak Desk',
-                'serial_number'      => $deskId,
+                'name'          => null,
+                'desk_model'    => 'Linak Desk',
+                'serial_number' => $deskId,
             ]);
         }
     }
