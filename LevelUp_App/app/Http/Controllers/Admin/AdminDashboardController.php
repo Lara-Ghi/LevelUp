@@ -66,6 +66,11 @@ class AdminDashboardController extends Controller
         $editRewardId    = $request->integer('edit_reward');
         $editReward      = $editRewardId ? Reward::find($editRewardId) : null;
 
+        // --- Average statistics for all users ---
+        $avgSitting = \App\Models\HealthCycle::avg('sitting_minutes');
+        $avgStanding = \App\Models\HealthCycle::avg('standing_minutes');
+        $totalUsers = \App\Models\User::count();
+
         // ---------- DESKS & CLEANING TAB DATA ----------
         $desks            = collect();
         $availableDeskIds = [];
@@ -153,7 +158,10 @@ class AdminDashboardController extends Controller
             'deskStates',
             'allManagedDesks',
             'deskOptions',
-            'deskLimits'
+            'deskLimits',
+            'avgSitting',
+            'avgStanding',
+            'totalUsers'
         ));
     }
 }
