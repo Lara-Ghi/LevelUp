@@ -47,10 +47,6 @@
                         >
                     </div>
 
-                    <div class="forgot-password">
-                        <a href="{{ route('password.request') }}">Forgot Password?</a>
-                    </div>
-
                     <div class="loginpage-btn">
                         <button type="submit">Log In</button>
                     </div>
