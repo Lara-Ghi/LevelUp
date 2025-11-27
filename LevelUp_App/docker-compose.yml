@@ -59,7 +59,6 @@ services:
       dockerfile: Dockerfile
     image: wifi2ble-simulator
     restart: unless-stopped
-    command: ["python", "simulator/main.py", "--port", "8000"]
     ports:
       - "8000:8000"
     volumes:
