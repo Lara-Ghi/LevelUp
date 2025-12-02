@@ -2339,6 +2339,9 @@ class FocusClockUI {
         
         // Load points from database after setup completion
         this.loadPointsStatus();
+        
+        // Auto-start the timer after initial setup
+        this.startTimer();
     }
 
     // Update settings from settings modal
