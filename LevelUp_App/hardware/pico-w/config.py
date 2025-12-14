@@ -3,8 +3,8 @@ Configuration file for Pico W connection to LevelUp Laravel backend
 """
 
 # WiFi credentials for your phone hotspot
-WIFI_SSID = "POCO C65"
-WIFI_PASSWORD = "d7f0fcb8946a"
+WIFI_SSID = "your_phone"
+WIFI_PASSWORD = "your_password"
 
 # Laravel API endpoint
 # Update this IP to match your laptop's IP on the hotspot network
