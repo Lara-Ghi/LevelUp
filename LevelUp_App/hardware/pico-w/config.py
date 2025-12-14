@@ -9,7 +9,7 @@ WIFI_PASSWORD = "your_password"
 # Laravel API endpoint
 # Update this IP to match your laptop's IP on the hotspot network
 # Run ipconfig (Windows) and use the IPv4 address for "Wireless LAN adapter Wi-Fi"
-API_URL = "http://10.197.105.81:8000/api/pico/display"
+API_URL = "http://your_ip/api/pico/display"
 
 # Display settings
 POLL_INTERVAL_SECONDS = 2  # How often to fetch data from API (2 seconds = faster response)
