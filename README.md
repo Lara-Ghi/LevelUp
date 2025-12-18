@@ -8,10 +8,6 @@ LevelUp is a Group 3 web app that guides users through healthy sit–stand cycle
 
 ## Highlights
 
-<div align="center">
-  <img src="Images/clock.png" alt="Dashboard Clock" width="100%">
-</div>
-
 - Sit/stand scheduler with audible and visual cues
 - Wifi2ble simulator that mimics a LINAK desk
 - Daily point tracking with anti-gaming rules and feedback colors
@@ -52,6 +48,27 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
   <p>Points can be redeemed for gift cards in this page</p>
 </div>
 
+
+
+## Pico W Controls
+
+<div align="center">
+  <h3>Pause button</h3>
+  <img src="Images/embedded_1.png" alt="Pause button img" width="100%">
+  <br>
+  <h3>RGB LED transition indicator</h3>
+  <img src="Images/embedded_2.png" alt="RGB LED transition indicator" width="100%">
+  <br>
+  <img src="Images/embedded_3.png" alt="Pico W Display" width="100%">
+</div>
+
+- **OLED display** – Shows the active user greeting, total points, and real-time sit/stand alerts so you can demo LevelUp away from the browser.
+- **RGB LED** – Glows purple while sitting, green while standing, and dims or pulses when the timer is paused.
+- **Potentiometer** – Connected to the Pico’s ADC to modulate LED brightness; turn the knob to match the lighting of your workspace or make demos camera-friendly.
+- **Pause button (GP10)** – Mirrors the in-app pause/resume toggle so you can control the timer from the hardware without touching the UI.
+
+See [SETUP.md](SETUP.md) for flashing instructions via Thonny.
+
 ## 👥 Contributors
 
 <table width="100%">
@@ -76,7 +93,7 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
     </tr>
     <tr>
       <td><b>Lara</b></td>
-      <td><a href="https://github.com/Lara-Ghi">Lara-Ghi</a></td>
+      <td>-</td>
     </tr>
     <tr>
       <td><b>Mats</b></td>
@@ -84,26 +101,7 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
     </tr>
     <tr>
       <td><b>Manish</b></td>
-      <td>-</td>
+      <td><a href="https://github.com/Manish-SDU">Manish-SDU</a></td>
     </tr>
   </tbody>
 </table>
-
-## Pico W Controls
-
-<div align="center">
-  <h3>Pause button</h3>
-  <img src="Images/embedded_1.png" alt="Pause button img" width="100%">
-  <br>
-  <h3>RGB LED transition indicator</h3>
-  <img src="Images/embedded_2.png" alt="RGB LED transition indicator" width="100%">
-  <br>
-  <img src="Images/embedded_3.png" alt="Pico W Display" width="100%">
-</div>
-
-- **OLED display** – Shows the active user greeting, total points, and real-time sit/stand alerts so you can demo LevelUp away from the browser.
-- **RGB LED** – Glows purple while sitting, green while standing, and dims or pulses when the timer is paused.
-- **Potentiometer** – Connected to the Pico’s ADC to modulate LED brightness; turn the knob to match the lighting of your workspace or make demos camera-friendly.
-- **Pause button (GP10)** – Mirrors the in-app pause/resume toggle so you can control the timer from the hardware without touching the UI.
-
-See [SETUP.md](SETUP.md) for flashing instructions via Thonny.
