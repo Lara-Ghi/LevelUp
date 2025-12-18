@@ -2,10 +2,14 @@
 
 LevelUp is a Group 3 web app that guides users through healthy sit–stand cycles using Cornell ergonomics research, awards points that can be redeemed for gift cards, and can optionally integrate hardware features like LED alerts and display text on an OLED display via a Raspberry Pi Pico W.
 
+<div align="center">
+  <img src="Images/log_in.png" alt="Login Page" width="100%">
+</div>
+
 ## Highlights
 
 <div align="center">
-  <img src="Images/clock.png" alt="Dashboard Clock" width="80%">
+  <img src="Images/clock.png" alt="Dashboard Clock" width="100%">
 </div>
 
 - Sit/stand scheduler with audible and visual cues
@@ -26,10 +30,6 @@ Once the application is running and seeded, you can log in with the following cr
 | **Admin** | `admin` | `admin123` |
 | **User** | `maxmust123` | `password` |
 
-<div align="center">
-  <img src="Images/log_in.png" alt="Login Page" width="80%">
-</div>
-
 ## Wifi2ble Simulator
 
 The wifi2ble box simulator exposes the same API as a LINAK desk controller so you can test commands locally without moving a real desk. Run it when you want to validate commands, telemetry, and logging.
@@ -48,7 +48,7 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 | <50 or <15 min | 0 | 🔴 Too short or imbalanced |
 
 <div align="center">
-  <img src="Images/rewards_page.png" alt="Rewards Page" width="80%">
+  <img src="Images/rewards_page.png" alt="Rewards Page" width="100%">
   <p>Points can be redeemed for gift cards in this page</p>
 </div>
 
@@ -66,9 +66,10 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 ## Pico W Controls
 
 <div align="center">
-  <img src="Images/embedded_1.png" alt="Embedded Setup" width="80%">
+  <img src="Images/embedded_1.png" alt="Embedded Setup" width="100%">
   <br>
-  <img src="Images/embedded_3.png" alt="Pico W Display" width="80%">
+  <img src="Images/embedded_2.png" alt="Pico W Display" width="45%">
+  <img src="Images/embedded_3.png" alt="Pico W Display" width="45%">
 </div>
 
 - **OLED display** – Shows the active user greeting, total points, and real-time sit/stand alerts so you can demo LevelUp away from the browser.
