@@ -5,8 +5,13 @@ LevelUp is a Group 3 web app that guides users through healthy sit–stand cycle
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="public/images/dashboard.png" alt="Dashboard" width="45%">
-  <img src="public/images/rewards.png" alt="Rewards" width="45%">
+  <img src="Images/clock.png" alt="Dashboard Clock" width="45%">
+  <img src="Images/rewards_page.png" alt="Rewards Page" width="45%">
+</div>
+<div align="center">
+  <img src="Images/log_in.png" alt="Login Page" width="30%">
+  <img src="Images/embedded_1.png" alt="Embedded Setup" width="30%">
+  <img src="Images/embedded_3.png" alt="Pico W Display" width="30%">
 </div>
 
 ## Highlights
