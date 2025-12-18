@@ -2,24 +2,16 @@
 
 LevelUp is a Group 3 web app that guides users through healthy sit–stand cycles using Cornell ergonomics research, awards points that can be redeemed for gift cards, and can optionally integrate hardware features like LED alerts and display text on an OLED display via a Raspberry Pi Pico W.
 
-## 📸 Screenshots
-
-<div align="center">
-  <img src="Images/clock.png" alt="Dashboard Clock" width="45%">
-  <img src="Images/rewards_page.png" alt="Rewards Page" width="45%">
-</div>
-<div align="center">
-  <img src="Images/log_in.png" alt="Login Page" width="30%">
-  <img src="Images/embedded_1.png" alt="Embedded Setup" width="30%">
-  <img src="Images/embedded_3.png" alt="Pico W Display" width="30%">
-</div>
-
 ## Highlights
 
 - Sit/stand scheduler with audible and visual cues
 - Wifi2ble simulator that mimics a LINAK desk
 - Daily point tracking with anti-gaming rules and feedback colors
 - Optional Rasberry Pi Pico W board integration (OLED + RGB LED status display)
+
+<div align="center">
+  <img src="Images/clock.png" alt="Dashboard Clock" width="60%">
+</div>
 
 ## 🚀 Getting Started
 
@@ -33,6 +25,10 @@ Once the application is running and seeded, you can log in with the following cr
 |------|----------|----------|
 | **Admin** | `admin` | `admin123` |
 | **User** | `maxmust123` | `password` |
+
+<div align="center">
+  <img src="Images/log_in.png" alt="Login Page" width="40%">
+</div>
 
 ## Wifi2ble Simulator
 
@@ -50,6 +46,10 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 | 70–89 | +7 | 🟡 Great — minor tweaks optional |
 | 50–69 | +4 | 🟠 Fair — adjust times |
 | <50 or <15 min | 0 | 🔴 Too short or imbalanced |
+
+<div align="center">
+  <img src="Images/rewards_page.png" alt="Rewards Page" width="60%">
+</div>
 
 ## 👥 Contributors
 
@@ -69,4 +69,9 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 - **Potentiometer** – Connected to the Pico’s ADC to modulate LED brightness; turn the knob to match the lighting of your workspace or make demos camera-friendly.
 - **Pause button (GP10)** – Mirrors the in-app pause/resume toggle so you can control the timer from the hardware without touching the UI.
 
-See `SETUP.md` for flashing instructions via Thonny.
+<div align="center">
+  <img src="Images/embedded_1.png" alt="Embedded Setup" width="45%">
+  <img src="Images/embedded_3.png" alt="Pico W Display" width="45%">
+</div>
+
+See [SETUP.md](SETUP.md) for flashing instructions via Thonny.

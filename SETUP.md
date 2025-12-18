@@ -2,17 +2,6 @@
 
 This document consolidates everything required to run LevelUp locally, in Docker, and with the optional Pico W display. Use it as the single source of truth for ports, environment variables, and testing commands.
 
-## 👥 Contributors
-
-| Name | GitHub Profile |
-|------|----------------|
-| **Luigi** | [Lucol24](https://github.com/Lucol24) |
-| **Carolina** | [chaeyrie](https://github.com/chaeyrie) |
-| **Gabriele** | [Gabbo693](https://github.com/Gabbo693) |
-| **Lara** | [Lara-Ghi](https://github.com/Lara-Ghi) |
-| **Mats** | [mqts241](https://github.com/mqts241) |
-| **Manish** | - |
-
 ## Quick Reference
 
 | Workflow | Commands | Default Ports |
