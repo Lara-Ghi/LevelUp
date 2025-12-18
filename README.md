@@ -3,7 +3,7 @@
 LevelUp is a Group 3 web app that guides users through healthy sit–stand cycles using Cornell ergonomics research, awards points that can be redeemed for gift cards, and can optionally integrate hardware features like LED alerts and display text on an OLED display via a Raspberry Pi Pico W.
 
 <div align="center">
-  <img src="Images/log_in.png" alt="Login Page" width="100%">
+  <img src="Images/noteup.png" alt="LevelUp Note" width="100%">
 </div>
 
 ## Highlights
@@ -54,22 +54,51 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 
 ## 👥 Contributors
 
-| Name | GitHub Profile |
-|------|----------------|
-| **Luigi** | [Lucol24](https://github.com/Lucol24) |
-| **Carolina** | [chaeyrie](https://github.com/chaeyrie) |
-| **Gabriele** | [Gabbo693](https://github.com/Gabbo693) |
-| **Lara** | [Lara-Ghi](https://github.com/Lara-Ghi) |
-| **Mats** | [mqts241](https://github.com/mqts241) |
-| **Manish** | - |
+<table width="100%">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>GitHub Profile</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>Luigi</b></td>
+      <td><a href="https://github.com/Lucol24">Lucol24</a></td>
+    </tr>
+    <tr>
+      <td><b>Carolina</b></td>
+      <td><a href="https://github.com/chaeyrie">chaeyrie</a></td>
+    </tr>
+    <tr>
+      <td><b>Gabriele</b></td>
+      <td><a href="https://github.com/Gabbo693">Gabbo693</a></td>
+    </tr>
+    <tr>
+      <td><b>Lara</b></td>
+      <td><a href="https://github.com/Lara-Ghi">Lara-Ghi</a></td>
+    </tr>
+    <tr>
+      <td><b>Mats</b></td>
+      <td><a href="https://github.com/mqts241">mqts241</a></td>
+    </tr>
+    <tr>
+      <td><b>Manish</b></td>
+      <td>-</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Pico W Controls
 
 <div align="center">
-  <img src="Images/embedded_1.png" alt="Embedded Setup" width="100%">
+  <h3>Pause button</h3>
+  <img src="Images/embedded_1.png" alt="Pause button img" width="100%">
   <br>
-  <img src="Images/embedded_2.png" alt="Pico W Display" width="45%">
-  <img src="Images/embedded_3.png" alt="Pico W Display" width="45%">
+  <h3>RGB LED transition indicator</h3>
+  <img src="Images/embedded_2.png" alt="RGB LED transition indicator" width="100%">
+  <br>
+  <img src="Images/embedded_3.png" alt="Pico W Display" width="100%">
 </div>
 
 - **OLED display** – Shows the active user greeting, total points, and real-time sit/stand alerts so you can demo LevelUp away from the browser.
