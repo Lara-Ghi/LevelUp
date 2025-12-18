@@ -4,14 +4,14 @@ LevelUp is a Group 3 web app that guides users through healthy sit–stand cycle
 
 ## Highlights
 
+<div align="center">
+  <img src="Images/clock.png" alt="Dashboard Clock" width="80%">
+</div>
+
 - Sit/stand scheduler with audible and visual cues
 - Wifi2ble simulator that mimics a LINAK desk
 - Daily point tracking with anti-gaming rules and feedback colors
 - Optional Rasberry Pi Pico W board integration (OLED + RGB LED status display)
-
-<div align="center">
-  <img src="Images/clock.png" alt="Dashboard Clock" width="60%">
-</div>
 
 ## 🚀 Getting Started
 
@@ -27,7 +27,7 @@ Once the application is running and seeded, you can log in with the following cr
 | **User** | `maxmust123` | `password` |
 
 <div align="center">
-  <img src="Images/log_in.png" alt="Login Page" width="40%">
+  <img src="Images/log_in.png" alt="Login Page" width="80%">
 </div>
 
 ## Wifi2ble Simulator
@@ -48,7 +48,8 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 | <50 or <15 min | 0 | 🔴 Too short or imbalanced |
 
 <div align="center">
-  <img src="Images/rewards_page.png" alt="Rewards Page" width="60%">
+  <img src="Images/rewards_page.png" alt="Rewards Page" width="80%">
+  <p>Points can be redeemed for gift cards in this page</p>
 </div>
 
 ## 👥 Contributors
@@ -64,14 +65,15 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 
 ## Pico W Controls
 
+<div align="center">
+  <img src="Images/embedded_1.png" alt="Embedded Setup" width="80%">
+  <br>
+  <img src="Images/embedded_3.png" alt="Pico W Display" width="80%">
+</div>
+
 - **OLED display** – Shows the active user greeting, total points, and real-time sit/stand alerts so you can demo LevelUp away from the browser.
 - **RGB LED** – Glows purple while sitting, green while standing, and dims or pulses when the timer is paused.
 - **Potentiometer** – Connected to the Pico’s ADC to modulate LED brightness; turn the knob to match the lighting of your workspace or make demos camera-friendly.
 - **Pause button (GP10)** – Mirrors the in-app pause/resume toggle so you can control the timer from the hardware without touching the UI.
-
-<div align="center">
-  <img src="Images/embedded_1.png" alt="Embedded Setup" width="45%">
-  <img src="Images/embedded_3.png" alt="Pico W Display" width="45%">
-</div>
 
 See [SETUP.md](SETUP.md) for flashing instructions via Thonny.
