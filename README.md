@@ -2,12 +2,32 @@
 
 LevelUp is a Group 3 web app that guides users through healthy sit–stand cycles using Cornell ergonomics research, awards points that can be redeemed for gift cards, and can optionally integrate hardware features like LED alerts and display text on an OLED display via a Raspberry Pi Pico W.
 
+## 📸 Screenshots
+
+<div align="center">
+  <img src="public/images/dashboard.png" alt="Dashboard" width="45%">
+  <img src="public/images/rewards.png" alt="Rewards" width="45%">
+</div>
+
 ## Highlights
 
 - Sit/stand scheduler with audible and visual cues
 - Wifi2ble simulator that mimics a LINAK desk
 - Daily point tracking with anti-gaming rules and feedback colors
 - Optional Rasberry Pi Pico W board integration (OLED + RGB LED status display)
+
+## 🚀 Getting Started
+
+For full setup instructions including local PHP, Docker stack, simulator ports, and Pico W hardware flashing, please refer to the [SETUP.md](SETUP.md) guide.
+
+### 🔑 Login Credentials
+
+Once the application is running and seeded, you can log in with the following credentials:
+
+| Role | Username | Password |
+|------|----------|----------|
+| **Admin** | `admin` | `admin123` |
+| **User** | `maxmust123` | `password` |
 
 ## Wifi2ble Simulator
 
@@ -26,9 +46,16 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 | 50–69 | +4 | 🟠 Fair — adjust times |
 | <50 or <15 min | 0 | 🔴 Too short or imbalanced |
 
-## Run It
+## 👥 Contributors
 
-Full environment instructions (local PHP, Docker stack, simulator ports, Pico W hardware flashing, real-time log tailing, and common troubleshooting) now live in `SETUP.md`. Start there for step-by-step commands and the log command that streams desk-simulator traffic while you test.
+| Name | GitHub Profile |
+|------|----------------|
+| **Luigi** | [Lucol24](https://github.com/Lucol24) |
+| **Carolina** | [chaeyrie](https://github.com/chaeyrie) |
+| **Gabriele** | [Gabbo693](https://github.com/Gabbo693) |
+| **Lara** | [Lara-Ghi](https://github.com/Lara-Ghi) |
+| **Mats** | [mqts241](https://github.com/mqts241) |
+| **Manish** | - |
 
 ## Pico W Controls
 
