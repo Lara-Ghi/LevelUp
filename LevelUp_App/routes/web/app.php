@@ -54,5 +54,11 @@ return function () {
             Route::get('/points-status', [HealthCycleController::class, 'getPointsStatus']);
             Route::get('/history', [HealthCycleController::class, 'getHistory']);
         });
+
+        // Statistics API routes (require authentication)
+        Route::prefix('api/statistics')->group(function () {
+            Route::get('/today-stats', [StatisticsController::class, 'getTodayStats']);
+            Route::get('/all-time-stats', [StatisticsController::class, 'getAllTimeStats']);
+        });
     });
 };

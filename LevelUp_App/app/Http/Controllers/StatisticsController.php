@@ -31,4 +31,58 @@ class StatisticsController extends BaseController
         
         return view('statistics', compact('healthCycle', 'totalSitting', 'totalStanding'));
     }
+
+    public function getTodayStats(Request $request)
+    {
+        $user = auth()->user();
+        
+        // If no user logged in, return empty
+        if (!$user) {
+            return response()->json([
+                'sitting_minutes' => 0,
+                'standing_minutes' => 0,
+                'total_minutes' => 0,
+            ]);
+        }
+        
+        // Get user's timezone date (from frontend) or fallback to server date
+        $userDate = $request->get('user_date', now()->toDateString());
+        
+        // Sum all health cycles completed today
+        $todayStats = $user->healthCycles()
+            ->whereDate('completed_at', $userDate)
+            ->selectRaw('SUM(sitting_minutes) as sitting_minutes, SUM(standing_minutes) as standing_minutes')
+            ->first();
+
+        return response()->json([
+            'sitting_minutes' => $todayStats->sitting_minutes ?? 0,
+            'standing_minutes' => $todayStats->standing_minutes ?? 0,
+            'total_minutes' => ($todayStats->sitting_minutes ?? 0) + ($todayStats->standing_minutes ?? 0),
+        ]);
+    }
+
+    public function getAllTimeStats(Request $request)
+    {
+        $user = auth()->user();
+        
+        // If no user logged in, return empty
+        if (!$user) {
+            return response()->json([
+                'sitting_minutes' => 0,
+                'standing_minutes' => 0,
+                'total_minutes' => 0,
+            ]);
+        }
+        
+        // Sum all health cycles for this user
+        $allTimeStats = $user->healthCycles()
+            ->selectRaw('SUM(sitting_minutes) as sitting_minutes, SUM(standing_minutes) as standing_minutes')
+            ->first();
+
+        return response()->json([
+            'sitting_minutes' => $allTimeStats->sitting_minutes ?? 0,
+            'standing_minutes' => $allTimeStats->standing_minutes ?? 0,
+            'total_minutes' => ($allTimeStats->sitting_minutes ?? 0) + ($allTimeStats->standing_minutes ?? 0),
+        ]);
+    }
 }

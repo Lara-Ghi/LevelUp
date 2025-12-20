@@ -1,61 +1,125 @@
 import Chart from 'chart.js/auto';
 
-// Get data from the database
-const day = healthCycle ? new Date(healthCycle.completed_at).toLocaleDateString() : 'Today';
-const sittingTime = healthCycle ? healthCycle.sitting_minutes : 0;
-const standingTime = healthCycle ? healthCycle.standing_minutes : 0;
-const totalTime = sittingTime + standingTime;
+// State variables
+let currentHealthCycle = healthCycle;
+let allTimeStats = {
+    sitting_minutes: totalSitting,
+    standing_minutes: totalStanding
+};
+let barChart;
+let pieChart;
+let pieInited = false;
 
-// Bar Chart (Time per Day)
-const barCtx = document.getElementById('barChart').getContext('2d');
-const barChart = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-        labels: [day],
-        datasets: [
-            {
-                label: 'Total Time',
-                data: [totalTime],
-                backgroundColor: '#6C4AB6'
-            },
-            {
-                label: 'Sitting Time',
-                data: [sittingTime],
-                backgroundColor: '#B9E0FF'
-            },
-            {
-                label: 'Standing Time',
-                data: [standingTime],
-                backgroundColor: '#8D9EFF'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            title: {
-                display: true,
-                text: 'Daily Activity Time (in minutes)'
-            }
+// Initialize bar chart
+function initBarChart() {
+    const day = currentHealthCycle ? new Date(currentHealthCycle.completed_at).toLocaleDateString() : 'Today';
+    const sittingTime = currentHealthCycle ? currentHealthCycle.sitting_minutes : 0;
+    const standingTime = currentHealthCycle ? currentHealthCycle.standing_minutes : 0;
+
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: [day],
+            datasets: [
+                {
+                    label: 'Sitting Time',
+                    data: [sittingTime],
+                    backgroundColor: '#B9E0FF'
+                },
+                {
+                    label: 'Standing Time',
+                    data: [standingTime],
+                    backgroundColor: '#8D9EFF'
+                }
+            ]
         },
-        scales: {
-            y: {
-                beginAtZero: true,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
                 title: {
                     display: true,
-                    text: 'Minutes'
+                    text: 'Daily Activity Time (in minutes)'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Minutes'
+                    }
                 }
             }
         }
+    });
+}
+
+// Update bar chart with new data
+function updateBarChart() {
+    if (!barChart || !currentHealthCycle) return;
+    
+    const sittingTime = currentHealthCycle.sitting_minutes || 0;
+    const standingTime = currentHealthCycle.standing_minutes || 0;
+
+    barChart.data.datasets[0].data = [sittingTime];
+    barChart.data.datasets[1].data = [standingTime];
+    barChart.update();
+}
+
+// Update pie chart with new data
+function updatePieChart() {
+    if (!pieChart || !pieInited) return;
+    
+    const data = [allTimeStats.sitting_minutes, allTimeStats.standing_minutes];
+    pieChart.data.datasets[0].data = data;
+    pieChart.update();
+}
+
+// Fetch latest health cycle data
+async function fetchLatestHealthCycle() {
+    try {
+        // Get user's current date in their LOCAL timezone (not UTC)
+        const now = new Date();
+        const userDate = now.getFullYear() + '-' + 
+                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(now.getDate()).padStart(2, '0');
+        
+        const [todayResponse, allTimeResponse] = await Promise.all([
+            fetch(`/api/statistics/today-stats?user_date=${userDate}`),
+            fetch('/api/statistics/all-time-stats')
+        ]);
+
+        if (todayResponse.ok) {
+            const data = await todayResponse.json();
+            currentHealthCycle = {
+                sitting_minutes: data.sitting_minutes,
+                standing_minutes: data.standing_minutes,
+                completed_at: new Date().toISOString()
+            };
+            updateBarChart();
+        }
+
+        if (allTimeResponse.ok) {
+            const data = await allTimeResponse.json();
+            allTimeStats = {
+                sitting_minutes: data.sitting_minutes,
+                standing_minutes: data.standing_minutes
+            };
+            updatePieChart();
+        }
+    } catch (error) {
+        console.error('Error fetching health cycle data:', error);
     }
-});
+}
+
+// Initialize bar chart on page load
+initBarChart();
 
 // Button For Toggling Pie Chart
 const togglePiebtn = document.getElementById("togglePieChart");
 const allTime = document.getElementById("allTimeChart");
-let pieInited = false;
-let pieChart;
 
 togglePiebtn.addEventListener("click", () => {
     const expanded = allTime.classList.toggle("expanded");
@@ -109,3 +173,5 @@ function initPieChart() {
         }
     });
 }
+
+setInterval(fetchLatestHealthCycle, 1000);
