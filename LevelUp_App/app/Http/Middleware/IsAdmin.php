@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 class IsAdmin
 {
     /**
-     * Gestisce la richiesta in ingresso e controlla se l'utente è admin.
+     * Handles an incoming request and checks if the user is an admin.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -17,6 +17,6 @@ class IsAdmin
             return $next($request);
         }
 
-        return redirect()->route('home')->with('error', 'Accesso non autorizzato.');
+        return redirect()->route('home')->with('error', 'Unauthorized access.');
     }
 }
