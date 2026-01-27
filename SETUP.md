@@ -184,15 +184,25 @@ When using Docker, prepend commands with `docker compose exec app`.
 
 1. **Configure Wi-Fi and API endpoint**
 
-   - Edit `hardware/pico-w/config.py`
-   - Set `WIFI_SSID`/`WIFI_PASSWORD` to your hotspot details
-   - Update `API_URL` to `http://<laptop-ip>:8000/api/pico/display` (run `ipconfig` to find the IPv4 address while on the hotspot)
+   - Do **not** edit `hardware/pico-w/config.py` directly (it contains defaults).
+   - Create a new file named `hardware/pico-w/secrets.py` (this file is ignored by git).
+   - Add your specific configuration to `secrets.py`:
+     ```python
+     WIFI_SSID = "MyWiFi"
+     WIFI_PASSWORD = "password"
+     API_URL = "http://<laptop-ip>:8000/api/pico/display"
+     ```
+   - Run `ipconfig` (Windows) to find your IPv4 address to use in `API_URL`.
 
 2. **Flash files to the board with Thonny**
 
    1. Install [Thonny](https://thonny.org/) and choose **MicroPython (Raspberry Pi Pico)** as the interpreter.
    2. Connect the Pico W while holding the **BOOTSEL** button so it appears as a USB drive.
-   3. In Thonny, open each of `main.py`, `config.py`, and `ssd1306.py` from `hardware/pico-w`, then use **File → Save as → Raspberry Pi Pico** to copy them onto the board.
+   3. In Thonny, open and save the following files to the Raspberry Pi Pico:
+      - `hardware/pico-w/main.py`
+      - `hardware/pico-w/ssd1306.py`
+      - `hardware/pico-w/config.py`
+      - `hardware/pico-w/secrets.py` (The one you just created)
    4. Reboot the Pico W (or press `Ctrl+D` in Thonny) to start the script.
 
 3. **Usage**

@@ -10,8 +10,8 @@ WIFI_SSID = ""
 WIFI_PASSWORD = ""
 
 # Laravel API endpoint (override in secrets.py)
-API_URL = "http://192.168.1.100:8000/api/pico/display"	
-
+# Example: "http://194.143.1.110:8100/api/pico/display"
+API_URL = ""
 # Display settings
 POLL_INTERVAL_SECONDS = 2
 API_TIMEOUT_SECONDS = 3
