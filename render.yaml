@@ -1,44 +1,43 @@
 services:
   # 1. The Laravel Application
   - type: web
+    plan: free
     name: levelup-app
     env: docker
-    context: LevelUp_App
-    dockerfilePath: Dockerfile  # You will need to create this Dockerfile if you don't have one, or use Render's PHP native environment
-    # Alternatively, use Render's native PHP environment (easier for beginners):
-    # env: php
-    # buildCommand: composer setup
-    # startCommand: heroku-php-apache2 public/
+    rootDir: LevelUp_App
+    dockerfilePath: Dockerfile
     envVars:
       - key: APP_KEY
         generateValue: true
       - key: APP_DEBUG
-        value: true
+        value: "true"
       - key: APP_URL
-        value: https://levelup-app.onrender.com # You'll update this after creation
+        value: https://levelup-app-div9.onrender.com
+      - key: ASSET_URL
+        value: https://levelup-app-div9.onrender.com
       - key: DB_CONNECTION
-        value: mysql
-      - key: DB_HOST
-        sync: false # You will enter your Aiven Host here manually in Render Dashboard
-      - key: DB_PORT
-        value: 16751 # Example port, copy from Aiven
+        value: sqlite
       - key: DB_DATABASE
-        value: defaultdb
-      - key: DB_USERNAME
-        sync: false # Enter manually
-      - key: DB_PASSWORD
-        sync: false # Enter manually
-      - key: SIMULATOR_URL
+        value: /tmp/database.sqlite
+      - key: WIFI2BLE_API_KEY
+        value: E9Y2LxT4g1hQZ7aD8nR3mWx5P0qK6pV7
+      - key: WIFI2BLE_BASE_URL
+        value: https://levelup-simulator.onrender.com
+      - key: WIFI2BLE_HOSTPORT
         fromService:
           type: web
           name: levelup-simulator
+          property: hostport
+      - key: WIFI2BLE_HOST
+        fromService:
+          type: web
+          name: levelup-simulator
+          property: host
 
   # 2. The Python Simulator
   - type: web
+    plan: free
     name: levelup-simulator
-    env: python
-    context: wifi2ble-box-simulator-main
-    startCommand: python simulator/main.py
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.0
+    env: docker
+    rootDir: wifi2ble-box-simulator-main
+    dockerfilePath: Dockerfile
