@@ -1,4 +1,4 @@
-# LevelUp
+# LevelUp ⬆️
 
 LevelUp is a Group 3 web app that guides users through healthy sit–stand cycles using Cornell ergonomics research, awards points that can be redeemed for gift cards, and can optionally integrate hardware features like LED alerts and display text on an OLED display via a Raspberry Pi Pico W.
 
@@ -13,7 +13,7 @@ LevelUp is a Group 3 web app that guides users through healthy sit–stand cycle
 - Daily point tracking with anti-gaming rules and feedback colors
 - Optional Rasberry Pi Pico W board integration (OLED + RGB LED status display)
 
-## 🚀 Getting Started
+## Getting Started
 
 For full setup instructions including local PHP, Docker stack, simulator ports, and Pico W hardware flashing, please refer to the [SETUP.md](SETUP.md) guide.
 
@@ -28,9 +28,7 @@ Once the application is running and seeded, you can log in with the following cr
 
 ## 🧪 Live Demo (Render)
 
-We are currently hosting **both** the LevelUp app and the Wifi2Ble simulator.
-
-Try the hosted demo here: https://levelup-app-div9.onrender.com/
+We are currently hosting **both** the LevelUp app and the Wifi2Ble simulator. Open the simulator first and keep it open (https://levelup-simulator.onrender.com/), then open https://levelup-app-div9.onrender.com/ (the LevelUp app), which reads from the hosted simulator.
 
 **What you can do in the demo**
 - Log in as admin or user
@@ -42,9 +40,9 @@ Try the hosted demo here: https://levelup-app-div9.onrender.com/
 **What the demo does not include**
 - Pico W hardware integration (OLED, RGB LED, pause button)
 
-**Important demo notes**
+**Demo Limitations**
 - You can’t use the hosted demo and a Pico W at the same time (the demo can’t reach local hardware).
-- Demo data resets periodically (ephemeral storage). This demo is for demonstration only.
+- Demo data resets periodically (ephemeral storage), including demo users created through the admin account (see credentials above).
 
 **To use a Pico W**
 Run the Laravel app locally or on a server in the same network as the Pico W, then set `WIFI2BLE_BASE_URL` to the Pico W’s URL. See [SETUP.md](SETUP.md) for the Pico W setup steps.
@@ -87,7 +85,7 @@ The wifi2ble box simulator exposes the same API as a LINAK desk controller so yo
 
 - **OLED display** – Shows the active user greeting, total points, and real-time sit/stand alerts so you can demo LevelUp away from the browser.
 - **RGB LED** – Glows purple while sitting, green while standing, and dims or pulses when the timer is paused.
-- **Potentiometer** – Connected to the Pico’s ADC to modulate LED brightness; turn the knob to match the lighting of your workspace or make demos camera-friendly.
+- **Potentiometer** – Connected to the Pico’s ADC to modulate LED brightness, turn the knob to match the lighting of your workspace or make demos camera-friendly.
 - **Pause button (GP10)** – Mirrors the in-app pause/resume toggle so you can control the timer from the hardware without touching the UI.
 
 See [SETUP.md](SETUP.md) for flashing instructions via Thonny.
@@ -116,7 +114,7 @@ See [SETUP.md](SETUP.md) for flashing instructions via Thonny.
     </tr>
     <tr>
       <td><b>Lara</b></td>
-      <td>-</td>
+      <td><a href="https://github.com/Lara-Ghi">Lara-Ghi</a></td>
     </tr>
     <tr>
       <td><b>Mats</b></td>
@@ -124,7 +122,7 @@ See [SETUP.md](SETUP.md) for flashing instructions via Thonny.
     </tr>
     <tr>
       <td><b>Manish</b></td>
-      <td><a href="https://github.com/Manish-SDU">Manish-SDU</a></td>
+      <td>-</td>
     </tr>
   </tbody>
 </table>
